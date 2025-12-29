@@ -1,6 +1,6 @@
 """Operation base class for poolparty."""
+import statecounter as sc
 from .types import Pool_type, Sequence, ModeType, Optional, beartype
-from .counter import Counter, multiply_counters
 import numpy as np
 
 
@@ -52,7 +52,7 @@ class Operation:
         self._seq_length = seq_length
         if mode == 'random':
             num_states = 1
-        self.counter = Counter(num_states=num_states, name=f"{self._name}.state")
+        self.counter = sc.Counter(num_states=num_states, name=f"{self._name}.state")
         self.rng: np.random.Generator | None = None
         self.num_states = num_states
         # Register operation with party after name is set
@@ -96,9 +96,9 @@ class Operation:
     @beartype
     def build_pool_counter(
         self,
-        parent_counters: list[Counter],
+        parent_counters: list[sc.Counter],
         iteration_order: Sequence[int] | None = None,
-    ) -> Counter:
+    ) -> sc.Counter:
         """Build the output Pool's counter from parent pool counters.
         
         Args:
@@ -118,14 +118,14 @@ class Operation:
             parent_counters = [parent_counters[i] for i in iteration_order]
         # Only include each unique counter once (by object identity)
         seen_ids: set[int] = set()
-        unique_counters: list[Counter] = []
+        unique_counters: list[sc.Counter] = []
         for counter in parent_counters:
             counter_id = id(counter)
             if counter_id not in seen_ids:
                 seen_ids.add(counter_id)
                 unique_counters.append(counter)
         all_counters = unique_counters + [self.counter]
-        return multiply_counters(*all_counters)
+        return sc.product(all_counters)
     
     @beartype
     def compute_design_card(

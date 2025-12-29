@@ -1,6 +1,6 @@
 """Sync operation - synchronize pools to iterate in lockstep."""
+import statecounter as sc
 from ..types import Optional, beartype
-from ..counter import synchronize_counters
 
 
 @beartype
@@ -25,7 +25,7 @@ def sync(pools: list, name: Optional[str] = None) -> None:
         raise ValueError(f"Cannot sync pools with different num_states: {sizes}")
     
     counters = [p.counter for p in pools]
-    shared_counter = synchronize_counters(*counters, name=name)
+    shared_counter = sc.sync(*counters, name=name)
     
     for pool in pools:
         pool.counter = shared_counter

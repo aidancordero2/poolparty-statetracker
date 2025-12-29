@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import poolparty as pp
 from poolparty.operations.breakpoint_scan import BreakpointScanOp, breakpoint_scan
-from poolparty.counter import ConflictingStateAssignmentError
+import statecounter as sc
 
 
 class TestBreakpointScanFactory:
@@ -394,7 +394,7 @@ class TestBreakpointScanWithOtherOperations:
             mutated_right = pp.mutation_scan(right, k=1, mode='sequential')
             combined = pp.join([left, mutated_right]).named('seq')
         
-        with pytest.raises(ConflictingStateAssignmentError):
+        with pytest.raises(sc.ConflictingStateAssignmentError):
             combined.generate_seqs(num_seqs=10)
     
     def test_with_join(self):
@@ -649,7 +649,7 @@ class TestSynchronizePoolsParameter:
             mutated_right = pp.mutation_scan(right, k=1, mode='sequential')
             combined = pp.join([left, mutated_right]).named('seq')
         
-        with pytest.raises(ConflictingStateAssignmentError):
+        with pytest.raises(sc.ConflictingStateAssignmentError):
             combined.generate_seqs(num_seqs=10)
     
     def test_decoupled_with_mutation_scan(self):

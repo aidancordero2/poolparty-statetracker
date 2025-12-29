@@ -27,8 +27,8 @@ def format_counter_node(counter, style: StyleType = 'clean') -> str:
     # style == 'clean'
     if counter._parents:
         op_name = type(counter._op).__name__
-        if op_name.endswith('CoOp'):
-            op_name = op_name[:-4]
+        if op_name.endswith('Op'):
+            op_name = op_name[:-2]
         return f"{name} [{op_name}, n={n}]"
     else:
         return f"{name} [Leaf, n={n}]"

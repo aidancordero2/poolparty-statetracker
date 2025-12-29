@@ -1,6 +1,6 @@
 """Pool class for poolparty."""
+import statecounter as sc
 from .types import Pool_type, Operation_type, Union, Optional, beartype
-from .counter import Counter
 import pandas as pd
 
 # TODO: add @beartype to class and remove from individual methods in class. 
@@ -12,7 +12,7 @@ class Pool:
         operation: Operation_type,
         output_index: int = 0,
         name: Optional[str] = None,
-        counter: Optional[Counter] = None,
+        counter: Optional[sc.Counter] = None,
     ) -> None:
         """Initialize Pool and build its counter."""
         from .party import get_active_party
@@ -31,7 +31,7 @@ class Pool:
         else:
             parent_counters = [p.counter for p in operation.parent_pools]
             iteration_order = getattr(operation, 'iteration_order', None)
-            self.counter: Counter = operation.build_pool_counter(
+            self.counter: sc.Counter = operation.build_pool_counter(
                 parent_counters, iteration_order=iteration_order
             )
         self._name: str = ""

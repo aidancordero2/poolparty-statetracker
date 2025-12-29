@@ -1,9 +1,10 @@
 """DataFrame formatting utilities for poolparty."""
 from typing import Literal, TYPE_CHECKING
+import statecounter as sc
 import pandas as pd
 
 if TYPE_CHECKING:
-    from .counter import Counter
+    Counter = sc.Counter
 
 
 def counter_col_name(counter: "Counter", index: int) -> str:

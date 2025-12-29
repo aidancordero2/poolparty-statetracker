@@ -1,8 +1,8 @@
 """SeqSlice operation - slice SEQUENCES (string slicing)."""
+import statecounter as sc
 from ..types import Pool_type, Union, Optional, Sequence, beartype
 from ..operation import Operation
 from ..pool import Pool
-from ..counter import Counter
 import numpy as np
 
 
@@ -40,9 +40,9 @@ class SeqSliceOp(Operation):
     @beartype
     def build_pool_counter(
         self,
-        parent_counters: list[Counter],
+        parent_counters: list[sc.Counter],
         iteration_order: Sequence[int] | None = None,
-    ) -> Counter:
+    ) -> sc.Counter:
         """Return parent counter directly (no state added)."""
         return parent_counters[0]
     

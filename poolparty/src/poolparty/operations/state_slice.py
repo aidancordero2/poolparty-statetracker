@@ -1,8 +1,8 @@
 """StateSlice operation - slice a pool's states (not sequences)."""
+import statecounter as sc
 from ..types import Pool_type, Union, Optional, Sequence, beartype
 from ..operation import Operation
 from ..pool import Pool
-from ..counter import Counter, slice_counter
 import numpy as np
 
 
@@ -33,12 +33,12 @@ class StateSliceOp(Operation):
     @beartype
     def build_pool_counter(
         self,
-        parent_counters: list[Counter],
+        parent_counters: list[sc.Counter],
         iteration_order: Sequence[int] | None = None,
-    ) -> Counter:
-        """Build pool counter using slice_counter."""
+    ) -> sc.Counter:
+        """Build pool counter using sc.slice."""
         # iteration_order ignored for single-parent slice
-        return slice_counter(
+        return sc.slice(
             parent_counters[0], 
             start=self.start, 
             stop=self.stop, 

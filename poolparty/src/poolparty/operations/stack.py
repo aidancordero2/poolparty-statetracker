@@ -1,8 +1,8 @@
 """Stack operation - combine pools sequentially (disjoint union)."""
+import statecounter as sc
 from ..types import Pool_type, Optional, Sequence, beartype
 from ..operation import Operation
 from ..pool import Pool
-from ..counter import Counter, sum_counters
 import numpy as np
 
 
@@ -39,11 +39,11 @@ class StackOp(Operation):
     @beartype
     def build_pool_counter(
         self,
-        parent_counters: list[Counter],
+        parent_counters: list[sc.Counter],
         iteration_order: Sequence[int] | None = None,
-    ) -> Counter:
-        """Build pool counter using sum_counters (disjoint union)."""
-        return sum_counters(*parent_counters)
+    ) -> sc.Counter:
+        """Build pool counter using sc.stack (disjoint union)."""
+        return sc.stack(parent_counters)
     
     @beartype
     def compute_design_card(

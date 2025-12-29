@@ -1,6 +1,6 @@
 """Sequence generation functions for poolparty."""
+import statecounter as sc
 from .types import Pool_type, Union, Sequence, Literal, Optional, beartype
-from .counter import Counter
 from .utils import clean_df_int_columns
 from .df_format import counter_col_name, organize_columns, finalize_generate_df
 import numpy as np
@@ -168,10 +168,10 @@ def _collect_counters(
     pools_filter: set,
     include_pool_counters: bool = True,
     include_op_counters: bool = True,
-) -> list[Counter]:
+) -> list[sc.Counter]:
     """Collect counters from the specified pools."""
     visited: set[int] = set()
-    result: list[Counter] = []
+    result: list[sc.Counter] = []
     for pool in pools_filter:
         if include_pool_counters:
             counter_id = id(pool.counter)
@@ -192,7 +192,7 @@ def _compute_one(
     sorted_ops: list,
     outputs: dict,
     global_state: int,
-    counters: list[Counter] = (),
+    counters: list[sc.Counter] = (),
     report_op_keys: bool = True,
     ops_to_report: set = None,
 ) -> dict:

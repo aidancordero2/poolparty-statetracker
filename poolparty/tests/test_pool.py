@@ -409,9 +409,8 @@ class TestPoolAddOperator:
             stacked = (a + b + c).named('stacked')
         
         df = stacked.generate_seqs(num_complete_iterations=1)
-        # Parents are sorted by (iteration_order, counter_id)
-        # (a+b)+c has parents sorted as (c, (a+b)), so order is C, A, B
-        assert list(df['seq']) == ['C', 'A', 'B']
+        # With statecounter ordering preserved, sequences follow input order A, B, C
+        assert list(df['seq']) == ['A', 'B', 'C']
     
     def test_pool_plus_string_raises_error(self):
         """Test Pool + string raises error (use join instead)."""
@@ -1124,23 +1123,23 @@ class TestPoolStateMinusOneReturnsNone:
         
         df = stacked.generate_seqs(num_complete_iterations=1, aux_pools=[a, b, c])
         
-        # 3 states total, order is C, A, B due to parent sorting by (iteration_order, counter_id)
+        # 3 states total, order preserves input A, B, C
         assert len(df) == 3
         
-        # Row 0: C active, A and B inactive (C has lower id than (a+b) composite)
-        assert pd.isna(df.loc[0, 'A.seq'])
+        # Row 0: A active, B/C inactive
+        assert df.loc[0, 'A.seq'] == 'A'
         assert pd.isna(df.loc[0, 'B.seq'])
-        assert df.loc[0, 'C.seq'] == 'C'
+        assert pd.isna(df.loc[0, 'C.seq'])
         
-        # Row 1: A active, B and C inactive  
-        assert df.loc[1, 'A.seq'] == 'A'
-        assert pd.isna(df.loc[1, 'B.seq'])
+        # Row 1: B active, A/C inactive  
+        assert pd.isna(df.loc[1, 'A.seq'])
+        assert df.loc[1, 'B.seq'] == 'B'
         assert pd.isna(df.loc[1, 'C.seq'])
         
-        # Row 2: B active, A and C inactive
+        # Row 2: C active, A/B inactive
         assert pd.isna(df.loc[2, 'A.seq'])
-        assert df.loc[2, 'B.seq'] == 'B'
-        assert pd.isna(df.loc[2, 'C.seq'])
+        assert pd.isna(df.loc[2, 'B.seq'])
+        assert df.loc[2, 'C.seq'] == 'C'
     
     def test_inactive_operation_design_keys_are_none(self):
         """Test that operation design card keys are None when op.counter.state=None."""

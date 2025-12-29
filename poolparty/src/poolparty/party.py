@@ -1,6 +1,6 @@
 """Party class - context manager for building and executing sequence libraries."""
+import statecounter as sc
 from .types import Pool_type, Operation_type, Optional, beartype
-from .counter import CounterManager
 
 _active_party: Optional["Party"] = None
 
@@ -20,7 +20,7 @@ class Party:
         self._operations: list = []
         self._outputs: dict[str, Pool_type] = {}
         self._is_active: bool = False
-        self._counter_manager: CounterManager = CounterManager()
+        self._counter_manager: sc.Manager = sc.Manager()
         self._next_pool_id: int = 0
         self._next_op_id: int = 0
         # Track pools and operations by ID (list) and name (dict)
@@ -44,8 +44,8 @@ class Party:
         return id_
     
     @property
-    def counter_manager(self) -> CounterManager:
-        """Access the CounterManager for debugging counter iteration."""
+    def counter_manager(self) -> sc.Manager:
+        """Access the statecounter Manager for debugging counter iteration."""
         return self._counter_manager
     
     @beartype

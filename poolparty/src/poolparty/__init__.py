@@ -2,11 +2,12 @@
 
 __version__ = "0.3.0"
 
+import statecounter as sc
+
 from .party import Party, get_active_party
 from .pool import Pool
 from .operation import Operation
 from .generate_seqs import generate_seqs
-from .counter import Counter, CounterManager
 from .alphabet import get_alphabet, NAMED_ALPHABETS
 from .operations import (
     from_seq, FromSeqOp,
@@ -45,3 +46,7 @@ __all__ = [
     'state_slice', 'StateSliceOp',
     'sync',
 ]
+
+# Re-export statecounter primitives for backward compatibility
+Counter = sc.Counter
+CounterManager = sc.Manager

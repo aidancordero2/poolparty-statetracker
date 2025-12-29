@@ -13,7 +13,7 @@ import poolparty as pp
 from poolparty import join
 from poolparty.operations.seq_slice import seq_slice
 from poolparty.operations.stack import stack, StackOp
-from poolparty.counter import ConflictingStateAssignmentError
+import statecounter as sc
 
 
 class TestBasicUsage:
@@ -156,7 +156,7 @@ class TestBreakpointScan:
             mutated_right = pp.mutation_scan(right, k=1, mode='sequential')
             oligo = join([left, mutated_right]).named('oligo')
         
-        with pytest.raises(ConflictingStateAssignmentError):
+        with pytest.raises(sc.ConflictingStateAssignmentError):
             oligo.generate_seqs(num_seqs=10)
 
 
@@ -421,11 +421,10 @@ class TestCounterManagerIntegration:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C']).named('seq')
             
-            # test_iteration should work on the pool's counter
-            df = party.counter_manager.test_iteration(
-                pool.counter, 
-                display_df=False,
-                return_df=True
+            # get_iteration_df should work on the pool's counter
+            df = party.counter_manager.get_iteration_df(
+                pool.counter,
+                counters=None,
             )
             
             # Should have iterated through all states
@@ -445,14 +444,12 @@ class TestCounterManagerIntegration:
     
     def test_counter_manager_deactivated_on_exit(self):
         """Test that CounterManager is deactivated when exiting Party context."""
-        from poolparty.counter import CounterManager
-        
         with pp.Party() as party:
             # Inside context, manager should be active
-            assert CounterManager._active_manager is party.counter_manager
+            assert sc.Manager._active_manager is party.counter_manager
         
         # Outside context, manager should be deactivated
-        assert CounterManager._active_manager is None
+        assert sc.Manager._active_manager is None
     
     def test_complex_dag_counters_registered(self):
         """Test that counters from a complex DAG are all registered."""
