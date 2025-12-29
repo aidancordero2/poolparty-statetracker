@@ -1,0 +1,1 @@
+Does this make sense? Any questions or concerns? Please acknowledge these instructions before proceeding. End by making sure that all tests pass. Note: I'm using uv to manage this python package, so if you need to run code at the command line do `uv run ...`. 

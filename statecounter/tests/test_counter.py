@@ -104,19 +104,19 @@ class TestComplexGraphs:
             
             assert ABC.num_states == 12
             
-            # Parents in ABC are sorted by (iteration_order, _id)
-            # C has id=2, AB has id=3, so parents are (C, AB)
+            # Parents in ABC are in order as provided: (AB, C)
+            # AB cycles fastest, C cycles slowest
             # For ABC.state = 7:
-            #   C = 7 % 2 = 1
-            #   AB = 7 // 2 = 3
-            # For AB.state = 3:
-            #   A = 3 % 2 = 1
-            #   B = 3 // 2 = 1
+            #   AB = 7 % 6 = 1
+            #   C = (7 // 6) % 2 = 1 % 2 = 1
+            # For AB.state = 1:
+            #   A = 1 % 2 = 1
+            #   B = 1 // 2 = 0
             ABC.state = 7
+            assert AB.state == 1
             assert C.state == 1
-            assert AB.state == 3
             assert A.state == 1
-            assert B.state == 1
+            assert B.state == 0
     
     def test_product_and_stack_combined(self):
         """Test combining product and sum operations."""

@@ -28,7 +28,7 @@ def stack(counters, name=None):
         for c in counters:
             if not isinstance(c, Counter):
                 raise TypeError(f"Expected Counter, got {type(c)}")
-        result = Counter(_parents=counters, _op=StackOp(), deduplicate_parents=False, sort_parents=False)
+        result = Counter(_parents=counters, _op=StackOp())
     if name is not None:
         result.name = name
     return result

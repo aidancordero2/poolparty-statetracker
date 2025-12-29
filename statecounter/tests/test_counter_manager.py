@@ -275,12 +275,12 @@ class TestDAGSupport:
             B = stack([A,A])  # Should not raise - DAGs are allowed, sum preserves duplicates
             assert B.num_states == 4  # Sum of 2 + 2
     
-    def test_same_counter_in_product_deduplicated(self):
-        """product([A, A]) is deduplicated - duplicate parents are removed."""
+    def test_same_counter_in_product_raises_error(self):
+        """product([A, A]) raises ValueError - duplicate counters not allowed."""
         with Manager() as mgr:
             A = Counter(num_states=2, name='A')
-            B = product([A, A])  # Deduplicated to just (A,)
-            assert B.num_states == 2  # Just A after dedup
+            with pytest.raises(ValueError, match="product\\(\\) does not allow duplicate counters"):
+                B = product([A, A])
     
     def test_same_counter_nested_allowed(self):
         """C = stack([A,B]) where B = product([A, X]) is allowed - A reachable via two paths."""

@@ -30,6 +30,18 @@ def product(counters, name=None):
         for c in counters:
             if not isinstance(c, Counter):
                 raise TypeError(f"Expected Counter, got {type(c)}")
+        # Check for duplicate counters
+        if len(counters) != len(set(counters)):
+            seen = set()
+            duplicates = []
+            for c in counters:
+                if c in seen:
+                    duplicates.append(c.name if c.name else f"Counter[{c.id}]")
+                seen.add(c)
+            raise ValueError(
+                f"product() does not allow duplicate counters. "
+                f"Found duplicates: {', '.join(set(duplicates))}"
+            )
         result = Counter(_parents=counters, _op=ProductOp())
     if name is not None:
         result.name = name

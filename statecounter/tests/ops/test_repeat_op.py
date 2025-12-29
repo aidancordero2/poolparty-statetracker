@@ -119,8 +119,7 @@ class TestRepeatCounter:
             
             assert C.num_states == 4 + 3  # 7
             
-            # Parents are sorted by (iteration_order, _id)
-            # B has id=1, A_rep has id=2, so B comes first in sum
+            # Parents are in order as provided: (B, A_rep)
             # First 3 states: B cycles
             # Last 4 states: A_rep cycles (A cycles twice)
             results = []

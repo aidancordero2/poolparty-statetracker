@@ -11,7 +11,7 @@ class ConflictingStateAssignmentError(RuntimeError):
 class Counter:
     """A counter that can be iterated and composed with other counters."""
     
-    def __init__(self, num_states=None, name=None, *, _parents=None, _op=None, iteration_order=None, deduplicate_parents=True, sort_parents=True):
+    def __init__(self, num_states=None, name=None, *, _parents=None, _op=None):
         """Create a counter."""
         # Require an active Manager
         if Manager._active_manager is None:
@@ -20,23 +20,8 @@ class Counter:
         self._id = None
         self._name = name
         self._state = 0
-        if _parents:
-            if deduplicate_parents:
-                _parents = tuple(dict.fromkeys(_parents))     
-            if sort_parents:
-                _parents = tuple(sorted(_parents, key=lambda p: (p.iteration_order, p._id)))
-        else:
-            _parents = ()
-        self._parents = _parents
+        self._parents = tuple(_parents) if _parents else ()
         self._op = _op
-        
-        # Set iteration_order
-        if iteration_order is not None:
-            self.iteration_order = iteration_order
-        elif self._parents:
-            self.iteration_order = min(p.iteration_order for p in self._parents)
-        else:
-            self.iteration_order = 0
         
         if _parents and _op:
             parent_num_states = tuple(p.num_states for p in _parents)
@@ -152,9 +137,9 @@ class Counter:
     def copy(self, name=None):
         """Create a shallow copy with the same parents but a new Counter object."""
         if self._parents:
-            new_counter = Counter(_parents=self._parents, _op=self._op, iteration_order=self.iteration_order)
+            new_counter = Counter(_parents=self._parents, _op=self._op)
         else:
-            new_counter = Counter(self._num_states, iteration_order=self.iteration_order)
+            new_counter = Counter(self._num_states)
         if name is not None:
             new_counter._name = name
         new_counter.state = self._state
@@ -163,10 +148,10 @@ class Counter:
     def deepcopy(self, name=None):
         """Create a deep copy with all ancestors also copied."""
         if not self._parents:
-            new_counter = Counter(self._num_states, iteration_order=self.iteration_order)
+            new_counter = Counter(self._num_states)
         else:
             new_parents = tuple(p.deepcopy() for p in self._parents)
-            new_counter = Counter(_parents=new_parents, _op=self._op, iteration_order=self.iteration_order)
+            new_counter = Counter(_parents=new_parents, _op=self._op)
         if name is not None:
             new_counter._name = name
         new_counter.state = self._state
