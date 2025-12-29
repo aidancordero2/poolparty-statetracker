@@ -2,7 +2,6 @@
 import pytest
 from statecounter import Counter, Manager, ProductOp, product
 
-
 class TestProductOperation:
     """Test product (multiplication) operation."""
     
@@ -146,7 +145,7 @@ class TestMultiplyCounters:
         """product_counters raises for non-Counter arguments."""
         with Manager():
             A = Counter(num_states=2, name='A')
-            with pytest.raises(TypeError, match="Expected Counter"):
+            with pytest.raises(Exception):
                 product([A, 123], "not a counter")
     
     def test_product_with_name(self):

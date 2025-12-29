@@ -1,15 +1,13 @@
 """ProductOp - Cartesian product of N counters."""
+from ..imports import beartype, Sequence, Optional, math, Integral, Counter_type
 from ..operation import Operation
 
 
+@beartype
 class ProductOp(Operation):
-    """C = A * B * ... : Cartesian product of N counters."""
-    
-    def compute_num_states(self, parent_num_states):
-        result = 1
-        for n in parent_num_states:
-            result *= n
-        return result
+    """Cartesian product of N counters."""
+    def compute_num_states(self, parent_num_states:Sequence[Integral]):
+        return math.prod(parent_num_states)
     
     def decompose(self, state, parent_num_states):
         if state is None:
@@ -20,28 +18,15 @@ class ProductOp(Operation):
             state //= n
         return tuple(result)
 
-
-def product(counters, name=None):
+@beartype
+def product(counters:Sequence[Counter_type], name:Optional[str]=None):
     """Create product counter from 0 or more counters."""
     from ..counter import Counter
+    if len(counters) != len(set(counters)):
+        raise ValueError(f"product() does not allow duplicate counters")
     if len(counters) == 0:
         result = Counter(1)
     else:
-        for c in counters:
-            if not isinstance(c, Counter):
-                raise TypeError(f"Expected Counter, got {type(c)}")
-        # Check for duplicate counters
-        if len(counters) != len(set(counters)):
-            seen = set()
-            duplicates = []
-            for c in counters:
-                if c in seen:
-                    duplicates.append(c.name if c.name else f"Counter[{c.id}]")
-                seen.add(c)
-            raise ValueError(
-                f"product() does not allow duplicate counters. "
-                f"Found duplicates: {', '.join(set(duplicates))}"
-            )
         result = Counter(_parents=counters, _op=ProductOp())
     if name is not None:
         result.name = name

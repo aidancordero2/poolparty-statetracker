@@ -1,6 +1,5 @@
 """Counter class for composable iteration."""
 from .manager import Manager
-from .ops import SliceOp
 
 
 class ConflictingStateAssignmentError(RuntimeError):
@@ -129,6 +128,7 @@ class Counter:
     
     def __getitem__(self, key):
         """Create sliced counter: B = A[1:5] or A[::2] or A[::-1]."""
+        from .ops import SliceOp
         if not isinstance(key, slice):
             raise TypeError("Counter indices must be slices, not integers")
         start, stop, step = key.indices(self._num_states)
