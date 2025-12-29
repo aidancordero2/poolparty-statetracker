@@ -109,28 +109,23 @@ class Operation:
             A Counter that is the product of unique parent counters and this op's counter,
             sorted by iteration_order (lower values iterate faster).
         """
-        # Extract counters and iteration orders from parent pools
-        parent_counters = [p.counter for p in parent_pools]
-        iteration_orders = [p._iteration_order for p in parent_pools]
-        iteration_orders.append(self._iteration_order)
         
-        # Deduplicate counters while preserving iteration_order association
-        seen_ids: set[int] = set()
-        counter_order_pairs: list[tuple] = []
-        for counter, order in zip(parent_counters, iteration_orders[:-1]):
-            cid = id(counter)
-            if cid not in seen_ids:
-                seen_ids.add(cid)
-                counter_order_pairs.append((counter, order))
-        
-        # Add operation's counter with its iteration_order
-        counter_order_pairs.append((self.counter, iteration_orders[-1]))
-        
-        # Sort by iteration_order (lower = faster = first in product)
-        counter_order_pairs.sort(key=lambda x: x[1])
-        sorted_counters = [c for c, _ in counter_order_pairs]
-        
-        return sc.product(sorted_counters)
+        # Get counter info
+        counters = [p.counter for p in parent_pools] + [self.counter]
+        iteration_orders = [p._iteration_order for p in parent_pools] + [self._iteration_order]
+        counter_ids = [c._id for c in counters]
+        # Remove tuples that have duplicate counter_ids (keep first occurrence)
+        unique_counter_tuples = []
+        for i, (ctr, io, id) in enumerate(zip(counters, iteration_orders, counter_ids)):
+            if id not in counter_ids[:i]:
+                unique_counter_tuples.append((ctr, io, id))
+        seen = set()
+        # Sort by iteration_order, then by id
+        unique_counter_tuples.sort(key=lambda x: (x[1],x[2]))
+        sorted_counters = [x[0] for x in unique_counter_tuples]
+        # Compute product counter
+        product_counter = sc.product(sorted_counters)
+        return product_counter
     
     @beartype
     def compute_design_card(
