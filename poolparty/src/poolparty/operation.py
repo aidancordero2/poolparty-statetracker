@@ -1,4 +1,5 @@
 """Operation base class for poolparty."""
+from numbers import Real
 import statecounter as sc
 from .types import Pool_type, Sequence, ModeType, Optional, beartype
 import numpy as np
@@ -47,6 +48,7 @@ class Operation:
         self.parent_pools = list(parent_pools)
         self.mode = mode
         self._id = party._get_next_op_id()
+        self._iteration_order: Real = 0
         # Set _name directly during init (counter doesn't exist yet)
         self._name = name if name is not None else f'op[{self._id}]:{self.factory_name}'
         self._seq_length = seq_length
@@ -97,35 +99,43 @@ class Operation:
     def build_pool_counter(
         self,
         parent_counters: list[sc.Counter],
-        iteration_order: Sequence[int] | None = None,
+        iteration_orders: Sequence[Real],
     ) -> sc.Counter:
-        """Build the output Pool's counter from parent pool counters.
+        """Build the output Pool's counter from parent pool counters, sorted by iteration_orders.
         
         Args:
             parent_counters: List of counters from parent pools.
-            iteration_order: Optional sequence specifying iteration order.
-                If provided, must be a permutation of [0, 1, ..., n-1] where
-                n is len(parent_counters). The counter at iteration_order[0]
-                will vary fastest.
+            iteration_orders: Sort keys for each counter. Length must be 
+                len(parent_counters) + 1 (last entry is for operation's counter).
+                Lower values iterate faster (come first in product).
         
         Returns:
-            A Counter that is the product of unique parent counters and this op's counter.
-            If the same counter object appears multiple times, it is only included once.
+            A Counter that is the product of unique parent counters and this op's counter,
+            sorted by iteration_orders.
         """
-        from .utils import validate_iteration_order
-        if iteration_order is not None:
-            validate_iteration_order(iteration_order, len(parent_counters))
-            parent_counters = [parent_counters[i] for i in iteration_order]
-        # Only include each unique counter once (by object identity)
+        if len(iteration_orders) != len(parent_counters) + 1:
+            raise ValueError(
+                f"iteration_orders length ({len(iteration_orders)}) must be "
+                f"len(parent_counters) + 1 ({len(parent_counters) + 1})"
+            )
+        
+        # Deduplicate counters while preserving iteration_order association
         seen_ids: set[int] = set()
-        unique_counters: list[sc.Counter] = []
-        for counter in parent_counters:
-            counter_id = id(counter)
-            if counter_id not in seen_ids:
-                seen_ids.add(counter_id)
-                unique_counters.append(counter)
-        all_counters = unique_counters + [self.counter]
-        return sc.product(all_counters)
+        counter_order_pairs: list[tuple] = []
+        for counter, order in zip(parent_counters, iteration_orders[:-1]):
+            cid = id(counter)
+            if cid not in seen_ids:
+                seen_ids.add(cid)
+                counter_order_pairs.append((counter, order))
+        
+        # Add operation's counter with its iteration_order (last in iteration_orders)
+        counter_order_pairs.append((self.counter, iteration_orders[-1]))
+        
+        # Sort by iteration_order (lower = faster = first in product)
+        counter_order_pairs.sort(key=lambda x: x[1])
+        sorted_counters = [c for c, _ in counter_order_pairs]
+        
+        return sc.product(sorted_counters)
     
     @beartype
     def compute_design_card(

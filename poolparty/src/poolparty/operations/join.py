@@ -1,4 +1,5 @@
 """Join operation - join multiple sequences together."""
+from numbers import Real
 from ..types import Pool_type, Union, Optional, Sequence, beartype
 from ..operation import Operation
 from ..pool import Pool
@@ -71,7 +72,8 @@ class JoinOp(Operation):
 def join(
     items: list[Union[Pool_type, str]],
     spacer_str: str = '',
-    iteration_order: int = 0,
+    pool_iteration_order: Real = 0,
+    op_iteration_order: Real = 0,
     op_name: Optional[str] = None,
     pool_name: Optional[str] = None,
 ) -> Pool_type:
@@ -80,7 +82,8 @@ def join(
     Args:
         items: List of pools and/or strings to join.
         spacer_str: String to insert between joined sequences.
-        iteration_order: Sort key for this operation's counter (default 0).
+        pool_iteration_order: Sort key for the result pool (default 0).
+        op_iteration_order: Sort key for this operation's counter (default 0).
         op_name: Optional operation name.
         pool_name: Optional pool name.
     
@@ -96,8 +99,9 @@ def join(
         else:
             parent_pools.append(item)
     op = JoinOp(parent_pools, spacer_str=spacer_str, name=op_name)
-    op.counter.iteration_order = iteration_order
+    op._iteration_order = op_iteration_order
     pool = Pool(operation=op, output_index=0)
+    pool._iteration_order = pool_iteration_order
     if pool_name is not None:
         pool.name = pool_name
     return pool

@@ -1,4 +1,5 @@
 """Repeat operation - repeat a pool's states n times."""
+from numbers import Real
 from ..types import Pool_type, Optional, beartype
 from ..operation import Operation
 from ..pool import Pool
@@ -62,14 +63,16 @@ class RepeatOp(Operation):
 def repeat(
     pool: Pool_type,
     times: int,
-    iteration_order: int = 0,
+    pool_iteration_order: Real = 0,
+    op_iteration_order: Real = 0,
     op_name: Optional[str] = None,
     pool_name: Optional[str] = None,
 ) -> Pool_type:
     """Repeat a pool's states n times."""
     op = RepeatOp(pool, times=times, name=op_name)
-    op.counter.iteration_order = iteration_order
+    op._iteration_order = op_iteration_order
     result_pool = Pool(operation=op, output_index=0)
+    result_pool._iteration_order = pool_iteration_order
     if pool_name is not None:
         result_pool.name = pool_name
     return result_pool

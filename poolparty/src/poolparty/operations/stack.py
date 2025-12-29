@@ -1,4 +1,5 @@
 """Stack operation - combine pools sequentially (disjoint union)."""
+from numbers import Real
 import statecounter as sc
 from ..types import Pool_type, Optional, Sequence, beartype
 from ..operation import Operation
@@ -40,7 +41,7 @@ class StackOp(Operation):
     def build_pool_counter(
         self,
         parent_counters: list[sc.Counter],
-        iteration_order: Sequence[int] | None = None,
+        iteration_orders: Sequence[Real],
     ) -> sc.Counter:
         """Build pool counter using sc.stack (disjoint union)."""
         return sc.stack(parent_counters)
@@ -82,7 +83,8 @@ class StackOp(Operation):
 @beartype
 def stack(
     pools: list,
-    iteration_order: int = 0,
+    pool_iteration_order: Real = 0,
+    op_iteration_order: Real = 0,
     op_name: Optional[str] = None,
     pool_name: Optional[str] = None,
 ) -> Pool_type:
@@ -90,7 +92,8 @@ def stack(
     
     Args:
         pools: List of pools to stack.
-        iteration_order: Sort key for this operation's counter (default 0).
+        pool_iteration_order: Sort key for the result pool (default 0).
+        op_iteration_order: Sort key for this operation's counter (default 0).
         op_name: Optional operation name.
         pool_name: Optional pool name.
     
@@ -98,8 +101,9 @@ def stack(
         A pool that is the disjoint union of all input pools.
     """
     op = StackOp(pools, name=op_name)
-    op.counter.iteration_order = iteration_order
+    op._iteration_order = op_iteration_order
     result_pool = Pool(operation=op, output_index=0)
+    result_pool._iteration_order = pool_iteration_order
     if pool_name is not None:
         result_pool.name = pool_name
     return result_pool

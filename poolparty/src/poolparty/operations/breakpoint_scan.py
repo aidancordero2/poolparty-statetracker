@@ -1,6 +1,7 @@
 """BreakpointScan operation - split sequences at breakpoint positions."""
 from itertools import combinations
 from math import comb
+from numbers import Real
 from ..types import Pool_type, Union, Sequence, ModeType, Optional, beartype
 from ..operation import Operation
 from ..pool import Pool
@@ -193,7 +194,8 @@ def breakpoint_scan(
     max_spacing: Optional[int] = None,
     mode: ModeType = 'sequential',
     hybrid_mode_num_states: Optional[int] = None,
-    iteration_order: int = 0,
+    pool_iteration_order: Real = 0,
+    op_iteration_order: Real = 0,
     op_name: Optional[str] = None,
     pool_names: Optional[Sequence[str]] = None,
     synchronize_pools: bool = True,
@@ -207,15 +209,21 @@ def breakpoint_scan(
                           step_size=step_size, min_spacing=min_spacing,
                           max_spacing=max_spacing, mode=mode, 
                           hybrid_mode_num_states=hybrid_mode_num_states, name=op_name)
-    op.counter.iteration_order = iteration_order
+    op._iteration_order = op_iteration_order
+    # Build counter with iteration orders from parent pools + operation
     parent_counters = [p.counter for p in op.parent_pools]
-    shared_counter = op.build_pool_counter(parent_counters)
+    iteration_orders = [p._iteration_order for p in op.parent_pools]
+    iteration_orders.append(op._iteration_order)
+    shared_counter = op.build_pool_counter(parent_counters, iteration_orders)
     if synchronize_pools:
         pools = tuple(Pool(operation=op, output_index=i, counter=shared_counter) 
                       for i in range(op.num_outputs))
     else:
         pools = tuple(Pool(operation=op, output_index=i, counter=shared_counter.deepcopy()) 
                       for i in range(op.num_outputs))
+    # Set iteration_order on all output pools
+    for pool in pools:
+        pool._iteration_order = pool_iteration_order
     if pool_names is not None:
         if len(pool_names) != len(pools):
             raise ValueError(

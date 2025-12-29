@@ -1,4 +1,5 @@
 """InsertionScan - insert sequences into background at scanning positions."""
+from numbers import Real
 from ..types import Pool_type, Union, ModeType, Optional, beartype
 from ..pool import Pool
 
@@ -12,7 +13,8 @@ def insertion_scan(
     step_size: int = 1,
     mode: ModeType = 'sequential',
     hybrid_mode_num_states: Optional[int] = None,
-    iteration_order: int = 0,
+    pool_iteration_order: Real = 0,
+    op_iteration_order: Real = 0,
     spacer_str: str = '',
     op_name: Optional[str] = None,
     pool_name: Optional[str] = None,
@@ -32,7 +34,8 @@ def insertion_scan(
         step_size: Step size for scanning positions (default: 1).
         mode: Iteration mode ('sequential', 'random', or 'hybrid').
         hybrid_mode_num_states: Number of states for hybrid mode.
-        iteration_order: Sort key for the breakpoint_scan counter (default 0).
+        pool_iteration_order: Sort key for the result pool (default 0).
+        op_iteration_order: Sort key for the breakpoint_scan counter (default 0).
         spacer_str: String to insert between segments (default: '').
         op_name: Optional name for the join operation.
         pool_name: Optional name for the result pool.
@@ -86,12 +89,13 @@ def insertion_scan(
         step_size=step_size,
         mode=mode,
         hybrid_mode_num_states=hybrid_mode_num_states,
-        iteration_order=iteration_order,
+        op_iteration_order=op_iteration_order,
     )
     
     # Join left, insert, and right (no clipping - insert is added)
     result = join([left, ins_pool, right], spacer_str=spacer_str, op_name=op_name)
     
+    result._iteration_order = pool_iteration_order
     if pool_name is not None:
         result.name = pool_name
     

@@ -1,4 +1,5 @@
 """Pool class for poolparty."""
+from numbers import Real
 import statecounter as sc
 from .types import Pool_type, Operation_type, Union, Optional, beartype
 import pandas as pd
@@ -24,15 +25,18 @@ class Pool:
             )
         self._party = party
         self._id = party._get_next_pool_id()
+        self._iteration_order: Real = 0
         self.operation = operation
         self.output_index = output_index
         if counter is not None:
             self.counter = counter
         else:
+            # Gather iteration orders from parent pools + operation
             parent_counters = [p.counter for p in operation.parent_pools]
-            iteration_order = getattr(operation, 'iteration_order', None)
+            iteration_orders = [p._iteration_order for p in operation.parent_pools]
+            iteration_orders.append(operation._iteration_order)
             self.counter: sc.Counter = operation.build_pool_counter(
-                parent_counters, iteration_order=iteration_order
+                parent_counters, iteration_orders
             )
         self._name: str = ""
         self.name = name if name is not None else f'pool[{self._id}]'
@@ -116,9 +120,12 @@ class Pool:
         return self
     
     @beartype
-    def iteration_order(self, order: int) -> Pool_type:
-        """Set the iteration order of this pool's counter, return self for chaining."""
-        self.counter.iteration_order = order
+    def iteration_order(self, order: Real) -> Pool_type:
+        """Set the iteration order for this pool, return self for chaining.
+        
+        Lower values iterate faster (come first in product counters).
+        """
+        self._iteration_order = order
         return self
     
     def copy(self, name: Optional[str] = None) -> Pool_type:

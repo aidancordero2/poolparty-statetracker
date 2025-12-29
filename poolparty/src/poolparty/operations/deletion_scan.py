@@ -1,4 +1,5 @@
 """DeletionScan - delete segments from background at scanning positions."""
+from numbers import Real
 from ..types import Pool_type, Union, ModeType, Optional, beartype
 from ..pool import Pool
 
@@ -12,7 +13,8 @@ def deletion_scan(
     step_size: int = 1,
     mode: ModeType = 'sequential',
     hybrid_mode_num_states: Optional[int] = None,
-    iteration_order: int = 0,
+    pool_iteration_order: Real = 0,
+    op_iteration_order: Real = 0,
     deletion_marker: Optional[str] = '-',
     spacer_str: str = '',
     op_name: Optional[str] = None,
@@ -35,7 +37,8 @@ def deletion_scan(
         step_size: Step size for scanning positions (default: 1).
         mode: Iteration mode ('sequential', 'random', or 'hybrid').
         hybrid_mode_num_states: Number of states for hybrid mode.
-        iteration_order: Sort key for the breakpoint_scan counter (default 0).
+        pool_iteration_order: Sort key for the result pool (default 0).
+        op_iteration_order: Sort key for the breakpoint_scan counter (default 0).
         deletion_marker: Character(s) to mark deletion (default: '-').
             If None, segment is simply removed without marker.
         spacer_str: String to insert between segments (default: '').
@@ -96,7 +99,7 @@ def deletion_scan(
         step_size=step_size,
         mode=mode,
         hybrid_mode_num_states=hybrid_mode_num_states,
-        iteration_order=iteration_order,
+        op_iteration_order=op_iteration_order,
     )
     
     # Clip the right segment by removing the first deletion_length characters
@@ -112,6 +115,7 @@ def deletion_scan(
         # No marker - just join left and right_clipped
         result = join([left, right_clipped], spacer_str=spacer_str, op_name=op_name)
     
+    result._iteration_order = pool_iteration_order
     if pool_name is not None:
         result.name = pool_name
     
