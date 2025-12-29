@@ -27,6 +27,7 @@ class BreakpointScanOp(Operation):
         mode: ModeType = 'sequential',
         hybrid_mode_num_states: Optional[int] = None,
         name: Optional[str] = None,
+        op_iteration_order: Real = 0,
     ) -> None:
         """Initialize BreakpointScanOp."""
         if num_breakpoints < 1:
@@ -60,6 +61,7 @@ class BreakpointScanOp(Operation):
             mode=mode,
             seq_length=None,  # Variable output lengths
             name=name,
+            op_iteration_order=op_iteration_order,
         )
     
     def _is_valid_spacing(self, breakpoints) -> bool:
@@ -179,6 +181,7 @@ class BreakpointScanOp(Operation):
             'mode': self.mode,
             'hybrid_mode_num_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
+            'op_iteration_order': self.iteration_order,
         }
 
 
@@ -208,8 +211,8 @@ def breakpoint_scan(
                           positions=positions, start=start, end=end,
                           step_size=step_size, min_spacing=min_spacing,
                           max_spacing=max_spacing, mode=mode, 
-                          hybrid_mode_num_states=hybrid_mode_num_states, name=op_name)
-    op._iteration_order = op_iteration_order
+                          hybrid_mode_num_states=hybrid_mode_num_states, name=op_name,
+                          op_iteration_order=op_iteration_order)
     shared_counter = op.build_pool_counter(op.parent_pools)
     if synchronize_pools:
         pools = tuple(Pool(operation=op, output_index=i, counter=shared_counter) 
@@ -219,7 +222,7 @@ def breakpoint_scan(
                       for i in range(op.num_outputs))
     # Set iteration_order on all output pools
     for pool in pools:
-        pool._iteration_order = pool_iteration_order
+        pool.iteration_order = pool_iteration_order
     if pool_names is not None:
         if len(pool_names) != len(pools):
             raise ValueError(

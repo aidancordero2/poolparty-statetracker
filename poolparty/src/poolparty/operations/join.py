@@ -17,6 +17,7 @@ class JoinOp(Operation):
         parent_pools: list,
         spacer_str: str = '',
         name: Optional[str] = None,
+        op_iteration_order: Real = 0,
     ) -> None:
         """Initialize JoinOp.
         
@@ -24,6 +25,7 @@ class JoinOp(Operation):
             parent_pools: List of parent pools to join.
             spacer_str: String to insert between joined sequences.
             name: Optional operation name.
+            op_iteration_order: Iteration order for this operation's counter.
         """
         self.spacer_str = spacer_str
         
@@ -39,6 +41,7 @@ class JoinOp(Operation):
             num_states=1,
             seq_length=seq_length,
             name=name,
+            op_iteration_order=op_iteration_order,
         )
     
     @beartype
@@ -65,6 +68,7 @@ class JoinOp(Operation):
             'parent_pools': self.parent_pools,
             'spacer_str': self.spacer_str,
             'name': None,
+            'op_iteration_order': self.iteration_order,
         }
 
 
@@ -98,10 +102,10 @@ def join(
             parent_pools.append(pool)
         else:
             parent_pools.append(item)
-    op = JoinOp(parent_pools, spacer_str=spacer_str, name=op_name)
-    op._iteration_order = op_iteration_order
+    op = JoinOp(parent_pools, spacer_str=spacer_str, name=op_name,
+                op_iteration_order=op_iteration_order)
     pool = Pool(operation=op, output_index=0)
-    pool._iteration_order = pool_iteration_order
+    pool.iteration_order = pool_iteration_order
     if pool_name is not None:
         pool.name = pool_name
     return pool

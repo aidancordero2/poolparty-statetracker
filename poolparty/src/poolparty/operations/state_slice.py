@@ -20,6 +20,7 @@ class StateSliceOp(Operation):
         stop: Optional[int],
         step: Optional[int],
         name: Optional[str] = None,
+        op_iteration_order: Real = 0,
     ) -> None:
         """Initialize StateSliceOp."""
         self.start = start
@@ -29,6 +30,7 @@ class StateSliceOp(Operation):
             parent_pools=[parent_pool],
             num_states=1,
             name=name,
+            op_iteration_order=op_iteration_order,
         )
     
     @beartype
@@ -70,6 +72,7 @@ class StateSliceOp(Operation):
             'stop': self.stop,
             'step': self.step,
             'name': None,
+            'op_iteration_order': self.iteration_order,
         }
 
 
@@ -95,10 +98,10 @@ def state_slice(
         start = key.start
         stop = key.stop
         step = key.step
-    op = StateSliceOp(pool, start=start, stop=stop, step=step, name=op_name)
-    op._iteration_order = op_iteration_order
+    op = StateSliceOp(pool, start=start, stop=stop, step=step, name=op_name,
+                      op_iteration_order=op_iteration_order)
     result_pool = Pool(operation=op, output_index=0)
-    result_pool._iteration_order = pool_iteration_order
+    result_pool.iteration_order = pool_iteration_order
     if pool_name is not None:
         result_pool.name = pool_name
     return result_pool

@@ -115,7 +115,7 @@ def deletion_scan(
         # No marker - just join left and right_clipped
         result = join([left, right_clipped], spacer_str=spacer_str, op_name=op_name)
     
-    result._iteration_order = pool_iteration_order
+    result.iteration_order = pool_iteration_order
     if pool_name is not None:
         result.name = pool_name
     

@@ -25,7 +25,7 @@ class TestFromSeqsFactory:
     def test_with_names(self):
         """Test from_seqs with custom names."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA', 'TTT'], names=['seq_a', 'seq_b'], op_name='seqs').named('mypool')
+            pool = from_seqs(['AAA', 'TTT'], seq_names=['seq_a', 'seq_b'], op_name='seqs').named('mypool')
         
         df = pool.generate_seqs(num_seqs=2)
         assert list(df['mypool.op.key.seq_name']) == ['seq_a', 'seq_b']
@@ -126,7 +126,7 @@ class TestFromSeqsNames:
     def test_custom_names(self):
         """Test custom names."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA', 'TTT'], names=['first', 'second'], op_name='seqs').named('mypool')
+            pool = from_seqs(['AAA', 'TTT'], seq_names=['first', 'second'], op_name='seqs').named('mypool')
         
         df = pool.generate_seqs(num_seqs=2)
         assert list(df['mypool.op.key.seq_name']) == ['first', 'second']
@@ -138,7 +138,7 @@ class TestFromSeqsDesignCards:
     def test_seq_name_in_output(self):
         """Test seq_name is in output."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA'], names=['test'], op_name='seqs').named('mypool')
+            pool = from_seqs(['AAA'], seq_names=['test'], op_name='seqs').named('mypool')
         
         df = pool.generate_seqs(num_seqs=1)
         assert 'mypool.op.key.seq_name' in df.columns
@@ -174,7 +174,7 @@ class TestFromSeqsErrors:
         """Test error for mismatched names length."""
         with pp.Party() as party:
             with pytest.raises(ValueError, match="same length"):
-                from_seqs(['A', 'B', 'C'], names=['x', 'y'])
+                from_seqs(['A', 'B', 'C'], seq_names=['x', 'y'])
 
 
 class TestFromSeqsCompute:

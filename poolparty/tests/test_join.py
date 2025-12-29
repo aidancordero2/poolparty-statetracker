@@ -186,8 +186,8 @@ class TestJoinDesignCards:
     def test_parent_design_cards_preserved(self):
         """Test that parent design cards are still included."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA'], names=['seq_a'])
-            b = pp.from_seqs(['TTT'], names=['seq_b'])
+            a = pp.from_seqs(['AAA'], seq_names=['seq_a'])
+            b = pp.from_seqs(['TTT'], seq_names=['seq_b'])
             combined = join([a, b]).named('seq')
         
         df = combined.generate_seqs(num_seqs=1)

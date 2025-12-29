@@ -17,6 +17,7 @@ class RepeatOp(Operation):
         parent_pool: Pool_type,
         times: int,
         name: Optional[str] = None,
+        op_iteration_order: Real = 0,
     ) -> None:
         """Initialize RepeatOp."""
         if times < 1:
@@ -28,6 +29,7 @@ class RepeatOp(Operation):
             mode='sequential',
             seq_length=parent_pool.seq_length,
             name=name,
+            op_iteration_order=op_iteration_order,
         )
     
     @beartype
@@ -56,6 +58,7 @@ class RepeatOp(Operation):
             'parent_pool': self.parent_pools[0],
             'times': self.times,
             'name': None,
+            'op_iteration_order': self.iteration_order,
         }
 
 
@@ -69,10 +72,9 @@ def repeat(
     pool_name: Optional[str] = None,
 ) -> Pool_type:
     """Repeat a pool's states n times."""
-    op = RepeatOp(pool, times=times, name=op_name)
-    op._iteration_order = op_iteration_order
+    op = RepeatOp(pool, times=times, name=op_name, op_iteration_order=op_iteration_order)
     result_pool = Pool(operation=op, output_index=0)
-    result_pool._iteration_order = pool_iteration_order
+    result_pool.iteration_order = pool_iteration_order
     if pool_name is not None:
         result_pool.name = pool_name
     return result_pool

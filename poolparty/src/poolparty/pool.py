@@ -25,7 +25,6 @@ class Pool:
             )
         self._party = party
         self._id = party._get_next_pool_id()
-        self._iteration_order: Real = 0
         self.operation = operation
         self.output_index = output_index
         if counter is not None:
@@ -115,13 +114,26 @@ class Pool:
         self.operation.name = op_name if op_name is not None else name + '.op'
         return self
     
+    @property
+    def iteration_order(self) -> Real:
+        """Iteration order for this pool's counter.
+        
+        Lower values iterate faster (come first in product counters).
+        """
+        return self.counter.pp_iteration_order
+    
+    @iteration_order.setter
+    def iteration_order(self, value: Real) -> None:
+        """Set iteration order on this pool's counter."""
+        self.counter.pp_iteration_order = value
+    
     @beartype
-    def iteration_order(self, order: Real) -> Pool_type:
+    def set_iteration_order(self, order: Real) -> Pool_type:
         """Set the iteration order for this pool, return self for chaining.
         
         Lower values iterate faster (come first in product counters).
         """
-        self._iteration_order = order
+        self.counter.pp_iteration_order = order
         return self
     
     def copy(self, name: Optional[str] = None) -> Pool_type:

@@ -15,6 +15,7 @@ class FromSeqOp(Operation):
         self,
         seq: str,
         name: Optional[str] = None,
+        op_iteration_order: Real = 0,
     ) -> None:
         """Initialize FromSeqOp."""
         self.seq = seq
@@ -24,6 +25,7 @@ class FromSeqOp(Operation):
             mode='fixed',
             seq_length=len(seq),
             name=name,
+            op_iteration_order=op_iteration_order,
         )
     
     @beartype
@@ -41,6 +43,7 @@ class FromSeqOp(Operation):
         return {
             'seq': self.seq,
             'name': None,
+            'op_iteration_order': self.iteration_order,
         }
 
 
@@ -53,10 +56,9 @@ def from_seq(
     pool_name: Optional[str] = None,
 ) -> Pool_type:
     """Create a Pool from a single sequence."""
-    op = FromSeqOp(seq, name=op_name)
-    op._iteration_order = op_iteration_order
+    op = FromSeqOp(seq, name=op_name, op_iteration_order=op_iteration_order)
     pool = Pool(operation=op, output_index=0)
-    pool._iteration_order = pool_iteration_order
+    pool.iteration_order = pool_iteration_order
     if pool_name is not None:
         pool.name = pool_name
     return pool

@@ -17,12 +17,14 @@ class StackOp(Operation):
         self,
         parent_pools: list,
         name: Optional[str] = None,
+        op_iteration_order: Real = 0,
     ) -> None:
         """Initialize StackOp.
         
         Args:
             parent_pools: List of parent pools to stack.
             name: Optional operation name.
+            op_iteration_order: Iteration order for this operation's counter.
         """
         # Compute seq_length: same as parents if all equal, else None
         parent_lengths = [p.seq_length for p in parent_pools]
@@ -35,6 +37,7 @@ class StackOp(Operation):
             num_states=1,
             seq_length=seq_length,
             name=name,
+            op_iteration_order=op_iteration_order,
         )
     
     @beartype
@@ -77,6 +80,7 @@ class StackOp(Operation):
         return {
             'parent_pools': self.parent_pools,
             'name': None,
+            'op_iteration_order': self.iteration_order,
         }
 
 
@@ -100,10 +104,9 @@ def stack(
     Returns:
         A pool that is the disjoint union of all input pools.
     """
-    op = StackOp(pools, name=op_name)
-    op._iteration_order = op_iteration_order
+    op = StackOp(pools, name=op_name, op_iteration_order=op_iteration_order)
     result_pool = Pool(operation=op, output_index=0)
-    result_pool._iteration_order = pool_iteration_order
+    result_pool.iteration_order = pool_iteration_order
     if pool_name is not None:
         result_pool.name = pool_name
     return result_pool

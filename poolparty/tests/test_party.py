@@ -229,7 +229,7 @@ class TestDesignCards:
     def test_from_seqs_metadata(self):
         """Test that from_seqs includes name and index metadata."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'], names=['seq_a', 'seq_b'], op_name='seqs').named('myseq')
+            pool = pp.from_seqs(['AAA', 'TTT'], seq_names=['seq_a', 'seq_b'], op_name='seqs').named('myseq')
         
         df = pool.generate_seqs(num_seqs=2)
         

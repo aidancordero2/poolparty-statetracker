@@ -98,7 +98,7 @@ def replacement_scan(
     # Join left, insert, and right_clipped
     result = join([left, ins_pool, right_clipped], spacer_str=spacer_str, op_name=op_name)
     
-    result._iteration_order = pool_iteration_order
+    result.iteration_order = pool_iteration_order
     if pool_name is not None:
         result.name = pool_name
     
