@@ -43,7 +43,7 @@ class GetKmersOp(Operation):
             mode=mode,
             seq_length=length,
             name=name,
-            op_iteration_order=op_iteration_order,
+            iter_order=op_iteration_order,
         )
     
     @beartype
@@ -116,7 +116,7 @@ def get_kmers(
     pool_iteration_order: Real = 0,
     op_iteration_order: Real = 0,
     op_name: Optional[str] = None,
-    pool_name: Optional[str] = None,
+    name: Optional[str] = None,
 ) -> Pool_type:
     """Create a Pool that generates k-mers."""
     op = GetKmersOp(length, alphabet=alphabet, mode=mode, 
@@ -124,6 +124,6 @@ def get_kmers(
                     op_iteration_order=op_iteration_order)
     pool = Pool(operation=op, output_index=0)
     pool.iteration_order = pool_iteration_order
-    if pool_name is not None:
-        pool.name = pool_name
+    if name is not None:
+        pool.name = name
     return pool

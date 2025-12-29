@@ -61,7 +61,7 @@ class BreakpointScanOp(Operation):
             mode=mode,
             seq_length=None,  # Variable output lengths
             name=name,
-            op_iteration_order=op_iteration_order,
+            iter_order=op_iteration_order,
         )
     
     def _is_valid_spacing(self, breakpoints) -> bool:
@@ -200,7 +200,7 @@ def breakpoint_scan(
     pool_iteration_order: Real = 0,
     op_iteration_order: Real = 0,
     op_name: Optional[str] = None,
-    pool_names: Optional[Sequence[str]] = None,
+    names: Optional[Sequence[str]] = None,
     synchronize_pools: bool = True,
 ) -> tuple:
     """Split a sequence at breakpoint positions."""
@@ -223,12 +223,12 @@ def breakpoint_scan(
     # Set iteration_order on all output pools
     for pool in pools:
         pool.iteration_order = pool_iteration_order
-    if pool_names is not None:
-        if len(pool_names) != len(pools):
+    if names is not None:
+        if len(names) != len(pools):
             raise ValueError(
-                f"pool_names length ({len(pool_names)}) must match "
+                f"names length ({len(names)}) must match "
                 f"num_outputs ({len(pools)})"
             )
-        for pool, name in zip(pools, pool_names):
+        for pool, name in zip(pools, names):
             pool.name = name
     return pools

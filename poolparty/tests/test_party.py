@@ -472,7 +472,7 @@ class TestPrintGraph:
     def test_print_graph_simple_clean(self, capsys):
         """Test print_graph() with clean style (default)."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='mypool')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='mypool')
         
         party.print_graph()  # clean is default
         captured = capsys.readouterr()
@@ -487,7 +487,7 @@ class TestPrintGraph:
     def test_print_graph_minimal(self, capsys):
         """Test print_graph() with minimal style."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='mypool')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='mypool')
         
         party.print_graph(style='minimal')
         captured = capsys.readouterr()
@@ -502,7 +502,7 @@ class TestPrintGraph:
     def test_print_graph_repr(self, capsys):
         """Test print_graph() with repr style."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='mypool')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='mypool')
         
         party.print_graph(style='repr')
         captured = capsys.readouterr()
@@ -515,8 +515,8 @@ class TestPrintGraph:
     def test_print_graph_chain(self, capsys):
         """Test print_graph() with a chain of pools."""
         with pp.Party() as party:
-            seq = pp.from_seqs(['ACGT'], pool_name='seq')
-            mutants = pp.mutation_scan(seq, k=1, mode='sequential', pool_name='mutants')
+            seq = pp.from_seqs(['ACGT'], name='seq')
+            mutants = pp.mutation_scan(seq, k=1, mode='sequential', name='mutants')
         
         party.print_graph()
         captured = capsys.readouterr()
@@ -530,9 +530,9 @@ class TestPrintGraph:
     def test_print_graph_multi_parent(self, capsys):
         """Test print_graph() with multiple parent pools (join)."""
         with pp.Party() as party:
-            left = pp.from_seqs(['AAA'], pool_name='left')
-            right = pp.from_seqs(['TTT'], pool_name='right')
-            oligo = pp.join([left, right], pool_name='oligo')
+            left = pp.from_seqs(['AAA'], name='left')
+            right = pp.from_seqs(['TTT'], name='right')
+            oligo = pp.join([left, right], name='oligo')
         
         party.print_graph()
         captured = capsys.readouterr()
@@ -547,8 +547,8 @@ class TestPrintGraph:
     def test_print_graph_multiple_roots(self, capsys):
         """Test print_graph() with multiple root pools."""
         with pp.Party() as party:
-            pool1 = pp.from_seqs(['A', 'B'], pool_name='pool1')
-            pool2 = pp.from_seqs(['X', 'Y'], pool_name='pool2')
+            pool1 = pp.from_seqs(['A', 'B'], name='pool1')
+            pool2 = pp.from_seqs(['X', 'Y'], name='pool2')
         
         party.print_graph()
         captured = capsys.readouterr()
@@ -560,8 +560,8 @@ class TestPrintGraph:
     def test_print_graph_shows_mode(self, capsys):
         """Test print_graph() shows operation mode."""
         with pp.Party() as party:
-            seq_pool = pp.from_seqs(['ACGT'], pool_name='seq')
-            mutants = pp.mutation_scan(seq_pool, k=1, mode='sequential', pool_name='mutants')
+            seq_pool = pp.from_seqs(['ACGT'], name='seq')
+            mutants = pp.mutation_scan(seq_pool, k=1, mode='sequential', name='mutants')
         
         party.print_graph()
         captured = capsys.readouterr()
@@ -572,8 +572,8 @@ class TestPrintGraph:
     def test_print_graph_shows_factory_name(self, capsys):
         """Test print_graph() shows operation factory_name."""
         with pp.Party() as party:
-            seq_pool = pp.from_seqs(['ACGT'], pool_name='seq')
-            mutants = pp.mutation_scan(seq_pool, k=1, mode='sequential', pool_name='mutants')
+            seq_pool = pp.from_seqs(['ACGT'], name='seq')
+            mutants = pp.mutation_scan(seq_pool, k=1, mode='sequential', name='mutants')
         
         party.print_graph()
         captured = capsys.readouterr()
@@ -595,7 +595,7 @@ class TestPrintGraph:
     def test_pool_print_tree(self, capsys):
         """Test Pool.print_tree() method directly."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='mypool')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='mypool')
             pool.print_tree()  # clean is default
         
         captured = capsys.readouterr()
@@ -608,7 +608,7 @@ class TestPrintGraph:
     def test_pool_print_tree_repr(self, capsys):
         """Test Pool.print_tree() with repr style."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='mypool')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='mypool')
             pool.print_tree(style='repr')
         
         captured = capsys.readouterr()
@@ -620,7 +620,7 @@ class TestPrintGraph:
     def test_operation_print_tree(self, capsys):
         """Test Operation.print_tree() method directly."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='mypool')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='mypool')
             pool.operation.print_tree()  # clean is default
         
         captured = capsys.readouterr()
@@ -631,7 +631,7 @@ class TestPrintGraph:
     def test_operation_print_tree_repr(self, capsys):
         """Test Operation.print_tree() with repr style."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='mypool')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='mypool')
             pool.operation.print_tree(style='repr')
         
         captured = capsys.readouterr()
@@ -642,7 +642,7 @@ class TestPrintGraph:
     def test_print_graph_with_repeat(self, capsys):
         """Test print_graph() with repeat operation."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B'], pool_name='base')
+            pool = pp.from_seqs(['A', 'B'], name='base')
             repeated = (pool * 2).named('repeated')
         
         party.print_graph()
@@ -657,8 +657,8 @@ class TestPrintGraph:
     def test_print_graph_with_stack(self, capsys):
         """Test print_graph() with stack operation."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A'], pool_name='a')
-            b = pp.from_seqs(['B'], pool_name='b')
+            a = pp.from_seqs(['A'], name='a')
+            b = pp.from_seqs(['B'], name='b')
             stacked = (a + b).named('stacked')
         
         party.print_graph()

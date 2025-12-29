@@ -35,7 +35,7 @@ class Operation:
         mode: ModeType = 'fixed',
         seq_length: Optional[int] = None,
         name: Optional[str] = None,
-        op_iteration_order: Real = 0,
+        iter_order: Real = 0,
     ) -> None:
         """Initialize Operation."""
         from .party import get_active_party
@@ -55,7 +55,7 @@ class Operation:
         if mode == 'random':
             num_states = 1
         self.counter = sc.Counter(num_states=num_states, name=f"{self._name}.state")
-        self.counter.pp_iteration_order = op_iteration_order
+        self.counter.pp_iteration_order = iter_order
         self.rng: np.random.Generator | None = None
         self.num_states = num_states
         # Register operation with party after name is set

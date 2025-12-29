@@ -41,7 +41,7 @@ class JoinOp(Operation):
             num_states=1,
             seq_length=seq_length,
             name=name,
-            op_iteration_order=op_iteration_order,
+            iter_order=op_iteration_order,
         )
     
     @beartype
@@ -79,7 +79,7 @@ def join(
     pool_iteration_order: Real = 0,
     op_iteration_order: Real = 0,
     op_name: Optional[str] = None,
-    pool_name: Optional[str] = None,
+    name: Optional[str] = None,
 ) -> Pool_type:
     """Join multiple pools and/or strings.
     
@@ -89,7 +89,7 @@ def join(
         pool_iteration_order: Sort key for the result pool (default 0).
         op_iteration_order: Sort key for this operation's counter (default 0).
         op_name: Optional operation name.
-        pool_name: Optional pool name.
+        name: Optional pool name.
     
     Returns:
         A pool that joins all input sequences.
@@ -106,7 +106,7 @@ def join(
                 op_iteration_order=op_iteration_order)
     pool = Pool(operation=op, output_index=0)
     pool.iteration_order = pool_iteration_order
-    if pool_name is not None:
-        pool.name = pool_name
+    if name is not None:
+        pool.name = name
     return pool
 

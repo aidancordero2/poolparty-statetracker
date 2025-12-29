@@ -124,7 +124,7 @@ class TestPoolCopy:
     def test_copy_produces_same_sequences(self):
         """Test that copied pool produces the same sequences."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='original')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='original')
             copied = pool.copy(name='copied')
         
         df_original = pool.generate_seqs(num_complete_iterations=1, seed=0, init_state=0)
@@ -135,7 +135,7 @@ class TestPoolCopy:
     def test_copy_independent_generation(self):
         """Test that copied pools can generate independently."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D'], pool_name='original')
+            pool = pp.from_seqs(['A', 'B', 'C', 'D'], name='original')
             copied = pool.copy(name='copied')
         
         # Generate from original
@@ -150,7 +150,7 @@ class TestPoolCopy:
         """Test copying a mutation_scan pool."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutation_scan(seq, k=1, pool_name='mutants')
+            mutants = pp.mutation_scan(seq, k=1, name='mutants')
             copied = mutants.copy(name='copied')
         
         df_mutants = mutants.generate_seqs(num_seqs=5, seed=42, init_state=0)
@@ -199,7 +199,7 @@ class TestPoolCopy:
     def test_copy_default_name_uses_suffix(self):
         """Test that copy() uses self.name + '.copy' as default name."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], pool_name='my_pool')
+            pool = pp.from_seqs(['AAA'], name='my_pool')
             copied = pool.copy()
             
             assert copied.name == 'my_pool.copy'
@@ -264,7 +264,7 @@ class TestPoolDeepCopy:
     def test_deepcopy_default_name_uses_suffix(self):
         """Test that deepcopy() uses self.name + '.copy' as default name."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], pool_name='my_pool')
+            pool = pp.from_seqs(['AAA'], name='my_pool')
             copied = pool.deepcopy()
             
             assert copied.name == 'my_pool.copy'
@@ -272,7 +272,7 @@ class TestPoolDeepCopy:
     def test_deepcopy_produces_same_sequences(self):
         """Test that deepcopied pool produces the same sequences."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='original')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='original')
             copied = pool.deepcopy(name='copied')
         
         df_original = pool.generate_seqs(num_complete_iterations=1, seed=0, init_state=0)
@@ -283,8 +283,8 @@ class TestPoolDeepCopy:
     def test_deepcopy_independent_dag(self):
         """Test that deepcopy creates a fully independent DAG."""
         with pp.Party() as party:
-            seq = pp.from_seqs(['ACGT'], pool_name='seq')
-            mutants = pp.mutation_scan(seq, k=1, pool_name='mutants')
+            seq = pp.from_seqs(['ACGT'], name='seq')
+            mutants = pp.mutation_scan(seq, k=1, name='mutants')
             copied = mutants.deepcopy(name='copied')
             
             # Verify the copied pool's parent is different from original
@@ -297,9 +297,9 @@ class TestPoolDeepCopy:
     def test_deepcopy_chain(self):
         """Test deepcopy on a chain of pools."""
         with pp.Party() as party:
-            a = pp.from_seqs(['ACGT'], pool_name='a')
-            b = pp.mutation_scan(a, k=1, pool_name='b')
-            c = pp.mutation_scan(b, k=1, pool_name='c')
+            a = pp.from_seqs(['ACGT'], name='a')
+            b = pp.mutation_scan(a, k=1, name='b')
+            c = pp.mutation_scan(b, k=1, name='c')
             copied = c.deepcopy(name='copied')
         
         # Verify the entire chain is copied
@@ -309,8 +309,8 @@ class TestPoolDeepCopy:
     def test_deepcopy_stacked_pool(self):
         """Test deepcopy on a stacked pool."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A', 'B'], pool_name='a')
-            b = pp.from_seqs(['X', 'Y'], pool_name='b')
+            a = pp.from_seqs(['A', 'B'], name='a')
+            b = pp.from_seqs(['X', 'Y'], name='b')
             stacked = (a + b).named('stacked')
             copied = stacked.deepcopy(name='copied')
         
@@ -327,7 +327,7 @@ class TestPoolDeepCopy:
         """Test deepcopy of mutation_scan produces same sequences."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutation_scan(seq, k=1, pool_name='mutants')
+            mutants = pp.mutation_scan(seq, k=1, name='mutants')
             copied = mutants.deepcopy(name='copied')
         
         df_mutants = mutants.generate_seqs(num_seqs=5, seed=42, init_state=0)
@@ -342,7 +342,7 @@ class TestPoolRepr:
     def test_repr_basic(self):
         """Test basic repr output."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], pool_name='test_pool')
+            pool = pp.from_seqs(['AAA'], name='test_pool')
             repr_str = repr(pool)
             assert 'Pool' in repr_str
             # The repr uses the operation's name attribute
@@ -641,7 +641,7 @@ class TestPoolGenerate:
     def test_generate_basic(self):
         """Test basic generate() call with num_seqs."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='X')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='X')
         
         df = pool.generate_seqs(num_seqs=3)
         assert len(df) == 3
@@ -651,7 +651,7 @@ class TestPoolGenerate:
     def test_generate_num_complete_iterations(self):
         """Test generate() with num_complete_iterations."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B'], pool_name='X')
+            pool = pp.from_seqs(['A', 'B'], name='X')
         
         df = pool.generate_seqs(num_complete_iterations=2)
         assert len(df) == 4
@@ -660,8 +660,8 @@ class TestPoolGenerate:
     def test_generate_with_aux_pools(self):
         """Test generate() with aux_pools."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], pool_name='A')
-            b = pp.mutation_scan(a, k=1, pool_name='B')
+            a = pp.from_seqs(['AAA', 'TTT'], name='A')
+            b = pp.mutation_scan(a, k=1, name='B')
         
         df = b.generate_seqs(num_complete_iterations=1, aux_pools=[a])
         assert 'B.seq' in df.columns
@@ -672,8 +672,8 @@ class TestPoolGenerate:
     def test_generate_multiple_aux_pools(self):
         """Test generate() with multiple aux_pools."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A', 'B'], pool_name='A')
-            b = pp.from_seqs(['X', 'Y'], pool_name='B')
+            a = pp.from_seqs(['A', 'B'], name='A')
+            b = pp.from_seqs(['X', 'Y'], name='B')
             stacked = a + b
         
         df = stacked.generate_seqs(num_complete_iterations=1, aux_pools=[a, b])
@@ -686,7 +686,7 @@ class TestPoolGenerate:
     def test_generate_with_seed(self):
         """Test generate() with seed for reproducibility."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='X')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='X')
         
         df1 = pool.generate_seqs(num_seqs=3, seed=42)
         df2 = pool.generate_seqs(num_seqs=3, seed=42, init_state=0)
@@ -695,7 +695,7 @@ class TestPoolGenerate:
     def test_generate_with_init_state(self):
         """Test generate() with init_state."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='X')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='X')
         
         df = pool.generate_seqs(num_seqs=2, init_state=1)
         assert list(df['X.seq']) == ['B', 'C']
@@ -703,7 +703,7 @@ class TestPoolGenerate:
     def test_generate_state_continuation(self):
         """Test that generate() continues from last state."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D'], pool_name='X')
+            pool = pp.from_seqs(['A', 'B', 'C', 'D'], name='X')
         
         df1 = pool.generate_seqs(num_seqs=2, init_state=0)
         df2 = pool.generate_seqs(num_seqs=2)  # Should continue from state 2
@@ -725,8 +725,8 @@ class TestPoolGenerate:
     def test_generate_seq_column_first(self):
         """Test that 'seq' column appears first, then pool's .seq column."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], pool_name='A')
-            mutants = pp.mutation_scan(pool, k=1, pool_name='B')
+            pool = pp.from_seqs(['AAA'], name='A')
+            mutants = pp.mutation_scan(pool, k=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=3)
         assert df.columns[0] == 'seq'
@@ -735,9 +735,9 @@ class TestPoolGenerate:
     def test_generate_aux_columns_order(self):
         """Test that seq columns are sorted by reverse topological order."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A'], pool_name='A')
-            b = pp.from_seqs(['B'], pool_name='B')
-            c = pp.from_seqs(['C'], pool_name='C')
+            a = pp.from_seqs(['A'], name='A')
+            b = pp.from_seqs(['B'], name='B')
+            c = pp.from_seqs(['C'], name='C')
             combined = (a + b + c)
         
         df = combined.generate_seqs(num_seqs=3, aux_pools=[a, b])
@@ -780,7 +780,7 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_false_no_columns(self):
         """Test that report_pool_states=False produces no pool state columns."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='X')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='X')
         
         df = pool.generate_seqs(num_seqs=3, report_pool_states=False, report_op_states=False)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -789,7 +789,7 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_true_adds_columns(self):
         """Test that report_pool_states=True adds counter state columns."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='X')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='X')
         
         df = pool.generate_seqs(num_seqs=3, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -798,7 +798,7 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_column_format(self):
         """Test counter column naming format."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='X')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='X')
         
         df = pool.generate_seqs(num_seqs=3, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -812,7 +812,7 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_state_values(self):
         """Test that counter states are recorded correctly."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], pool_name='X')
+            pool = pp.from_seqs(['A', 'B', 'C'], name='X')
         
         df = pool.generate_seqs(num_complete_iterations=1, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -830,8 +830,8 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_column_order(self):
         """Test that counter columns appear after output cols, before design cards."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'], pool_name='A')
-            mutants = pp.mutation_scan(pool, k=1, pool_name='B')
+            pool = pp.from_seqs(['AAA', 'TTT'], name='A')
+            mutants = pp.mutation_scan(pool, k=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=5, report_pool_states=True)
         
@@ -852,7 +852,7 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_with_aux_pools(self):
         """Test report_pool_states works with aux_pools."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A', 'B'], pool_name='A')
+            a = pp.from_seqs(['A', 'B'], name='A')
             b = a + a  # Stack creates a sum counter
         
         df = b.generate_seqs(num_complete_iterations=1, aux_pools=[a], report_pool_states=True)
@@ -867,7 +867,7 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_named_counter(self):
         """Test that named counters use their name in column."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B'], pool_name='my_pool')
+            pool = pp.from_seqs(['A', 'B'], name='my_pool')
         
         df = pool.generate_seqs(num_seqs=2, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -888,8 +888,8 @@ class TestPoolGenerateRecordKeys:
     def test_report_op_keys_default_true(self):
         """Test that report_op_keys=True (default) includes design card columns."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'], pool_name='A')
-            mutants = pp.mutation_scan(pool, k=1, pool_name='B')
+            pool = pp.from_seqs(['AAA', 'TTT'], name='A')
+            mutants = pp.mutation_scan(pool, k=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=5)
         # Should have design card columns (contain '.key.')
@@ -899,8 +899,8 @@ class TestPoolGenerateRecordKeys:
     def test_report_op_keys_false_excludes_columns(self):
         """Test that report_op_keys=False excludes design card columns."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'], pool_name='A')
-            mutants = pp.mutation_scan(pool, k=1, pool_name='B')
+            pool = pp.from_seqs(['AAA', 'TTT'], name='A')
+            mutants = pp.mutation_scan(pool, k=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=5, report_op_keys=False)
         # Should NOT have design card columns
@@ -910,8 +910,8 @@ class TestPoolGenerateRecordKeys:
     def test_report_op_keys_false_still_has_seq(self):
         """Test that report_op_keys=False still includes sequence columns."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'], pool_name='A')
-            mutants = pp.mutation_scan(pool, k=1, pool_name='B')
+            pool = pp.from_seqs(['AAA', 'TTT'], name='A')
+            mutants = pp.mutation_scan(pool, k=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=5, report_op_keys=False)
         assert 'B.seq' in df.columns
@@ -919,8 +919,8 @@ class TestPoolGenerateRecordKeys:
     def test_report_op_keys_false_with_report_pool_states(self):
         """Test that report_op_keys=False works with report_pool_states=True."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'], pool_name='A')
-            mutants = pp.mutation_scan(pool, k=1, pool_name='B')
+            pool = pp.from_seqs(['AAA', 'TTT'], name='A')
+            mutants = pp.mutation_scan(pool, k=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=5, report_op_keys=False, report_pool_states=True)
         
@@ -942,8 +942,8 @@ class TestPoolGeneratePoolsToRecord:
     def test_pools_to_report_all_default(self):
         """Test that pools_to_report='all' (default) includes all pools' info."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], pool_name='A', op_name='op_A')
-            b = pp.mutation_scan(a, k=1, pool_name='B', op_name='op_B')
+            a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
+            b = pp.mutation_scan(a, k=1, name='B', op_name='op_B')
         
         df = b.generate_seqs(num_seqs=5)
         
@@ -960,8 +960,8 @@ class TestPoolGeneratePoolsToRecord:
     def test_pools_to_report_self(self):
         """Test that pools_to_report='self' only includes self pool's info."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], pool_name='A', op_name='op_A')
-            b = pp.mutation_scan(a, k=1, pool_name='B', op_name='op_B')
+            a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
+            b = pp.mutation_scan(a, k=1, name='B', op_name='op_B')
         
         df = b.generate_seqs(num_seqs=5, pools_to_report='self')
         
@@ -978,8 +978,8 @@ class TestPoolGeneratePoolsToRecord:
     def test_pools_to_report_explicit_list(self):
         """Test that pools_to_report=[pool] filters to those pools."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], pool_name='A', op_name='op_A')
-            b = pp.mutation_scan(a, k=1, pool_name='B', op_name='op_B')
+            a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
+            b = pp.mutation_scan(a, k=1, name='B', op_name='op_B')
         
         # Record only A's info
         df = b.generate_seqs(num_seqs=5, pools_to_report=[a])
@@ -997,8 +997,8 @@ class TestPoolGeneratePoolsToRecord:
     def test_pools_to_report_with_report_pool_states_false(self):
         """Test that pools_to_report respects report_pool_states=False and report_op_states=False."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], pool_name='A', op_name='op_A')
-            b = pp.mutation_scan(a, k=1, pool_name='B', op_name='op_B')
+            a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
+            b = pp.mutation_scan(a, k=1, name='B', op_name='op_B')
         
         df = b.generate_seqs(num_seqs=5, pools_to_report='self', report_pool_states=False, report_op_states=False)
         
@@ -1013,8 +1013,8 @@ class TestPoolGeneratePoolsToRecord:
     def test_pools_to_report_with_report_op_keys_false(self):
         """Test that pools_to_report respects report_op_keys=False."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], pool_name='A')
-            b = pp.mutation_scan(a, k=1, pool_name='B')
+            a = pp.from_seqs(['AAA', 'TTT'], name='A')
+            b = pp.mutation_scan(a, k=1, name='B')
         
         df = b.generate_seqs(num_seqs=5, pools_to_report='self', report_op_keys=False)
         
@@ -1029,8 +1029,8 @@ class TestPoolGeneratePoolsToRecord:
     def test_pools_to_report_self_still_has_seq(self):
         """Test that pools_to_report='self' still includes sequence columns."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], pool_name='A')
-            b = pp.mutation_scan(a, k=1, pool_name='B')
+            a = pp.from_seqs(['AAA', 'TTT'], name='A')
+            b = pp.mutation_scan(a, k=1, name='B')
         
         df = b.generate_seqs(num_seqs=5, pools_to_report='self')
         assert 'B.seq' in df.columns
@@ -1047,8 +1047,8 @@ class TestPoolStateMinusOneReturnsNone:
         """Test that stacked pool with state=None has None sequence."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAAAA', 'TTTTT'], pool_name='A')
-            b = pp.from_seqs(['CCCCC'], pool_name='B')
+            a = pp.from_seqs(['AAAAA', 'TTTTT'], name='A')
+            b = pp.from_seqs(['CCCCC'], name='B')
             c = (a + b).named('C')
         
         df = c.generate_seqs(num_complete_iterations=1, aux_pools=[a, b])
@@ -1075,10 +1075,10 @@ class TestPoolStateMinusOneReturnsNone:
         """Test inactive pool returns None with downstream mutation_scan."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAAAA', 'TTTTT'], pool_name='A')
-            b = pp.from_seqs(['CCCCC'], pool_name='B')
+            a = pp.from_seqs(['AAAAA', 'TTTTT'], name='A')
+            b = pp.from_seqs(['CCCCC'], name='B')
             c = (a + b).named('C')
-            d = pp.mutation_scan(c, k=1, pool_name='D')
+            d = pp.mutation_scan(c, k=1, name='D')
         
         df = d.generate_seqs(num_complete_iterations=1, aux_pools=[a, b, c])
         
@@ -1096,8 +1096,8 @@ class TestPoolStateMinusOneReturnsNone:
         """Test that active pools (state != None) have valid sequences."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], pool_name='A')
-            b = pp.from_seqs(['CCC'], pool_name='B')
+            a = pp.from_seqs(['AAA', 'TTT'], name='A')
+            b = pp.from_seqs(['CCC'], name='B')
             c = (a + b).named('C')
         
         df = c.generate_seqs(num_complete_iterations=1, aux_pools=[a, b])
@@ -1116,9 +1116,9 @@ class TestPoolStateMinusOneReturnsNone:
         """Test state=None behavior with three stacked pools."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['A'], pool_name='A')
-            b = pp.from_seqs(['B'], pool_name='B')
-            c = pp.from_seqs(['C'], pool_name='C')
+            a = pp.from_seqs(['A'], name='A')
+            b = pp.from_seqs(['B'], name='B')
+            c = pp.from_seqs(['C'], name='C')
             stacked = (a + b + c).named('stacked')
         
         df = stacked.generate_seqs(num_complete_iterations=1, aux_pools=[a, b, c])
@@ -1145,8 +1145,8 @@ class TestPoolStateMinusOneReturnsNone:
         """Test that operation design card keys are None when op.counter.state=None."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAAAA', 'TTTTT'], pool_name='A', op_name='op_A')
-            b = pp.from_seqs(['CCCCC'], pool_name='B', op_name='op_B')
+            a = pp.from_seqs(['AAAAA', 'TTTTT'], name='A', op_name='op_A')
+            b = pp.from_seqs(['CCCCC'], name='B', op_name='op_B')
             c = (a + b).named('C')
         
         df = c.generate_seqs(num_complete_iterations=1, aux_pools=[a, b])
@@ -1184,10 +1184,10 @@ class TestPoolStateMinusOneReturnsNone:
         """Test that mutation_scan design card keys are None when parent is inactive."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAAAA'], pool_name='A', op_name='op_A')
-            b = pp.from_seqs(['CCCCC'], pool_name='B', op_name='op_B')
+            a = pp.from_seqs(['AAAAA'], name='A', op_name='op_A')
+            b = pp.from_seqs(['CCCCC'], name='B', op_name='op_B')
             c = (a + b).named('C')
-            d = pp.mutation_scan(c, k=1, pool_name='D', op_name='op_D')
+            d = pp.mutation_scan(c, k=1, name='D', op_name='op_D')
         
         df = d.generate_seqs(num_complete_iterations=1, aux_pools=[a, b, c])
         
@@ -1212,8 +1212,8 @@ class TestPoolStateMinusOneReturnsNone:
         """Test that active operation design card keys are not None."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], pool_name='A', op_name='op_A')
-            b = pp.from_seqs(['CCC'], pool_name='B', op_name='op_B')
+            a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
+            b = pp.from_seqs(['CCC'], name='B', op_name='op_B')
             c = (a + b).named('C')
         
         df = c.generate_seqs(num_complete_iterations=1, aux_pools=[a, b])

@@ -88,7 +88,7 @@ class TestFromSeqCustomName:
     def test_custom_pool_name(self):
         """Test custom pool name."""
         with pp.Party() as party:
-            pool = from_seq('AAA', pool_name='my_pool')
+            pool = from_seq('AAA', name='my_pool')
             assert pool.name == 'my_pool'
     
     def test_custom_name_in_design_card(self):

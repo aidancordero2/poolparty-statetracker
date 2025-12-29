@@ -17,7 +17,7 @@ def replacement_scan(
     op_iteration_order: Real = 0,
     spacer_str: str = '',
     op_name: Optional[str] = None,
-    pool_name: Optional[str] = None,
+    name: Optional[str] = None,
 ) -> Pool_type:
     """Replace a segment of background with insert sequences at scanning positions.
     
@@ -38,7 +38,7 @@ def replacement_scan(
         op_iteration_order: Sort key for the breakpoint_scan counter (default 0).
         spacer_str: String to insert between segments (default: '').
         op_name: Optional name for the join operation.
-        pool_name: Optional name for the result pool.
+        name: Optional name for the result pool.
     
     Returns:
         A pool with replaced sequences at scanning positions.
@@ -99,8 +99,8 @@ def replacement_scan(
     result = join([left, ins_pool, right_clipped], spacer_str=spacer_str, op_name=op_name)
     
     result.iteration_order = pool_iteration_order
-    if pool_name is not None:
-        result.name = pool_name
+    if name is not None:
+        result.name = name
     
     return result
 

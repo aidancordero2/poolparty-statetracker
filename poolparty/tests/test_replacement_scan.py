@@ -211,7 +211,7 @@ class TestReplacementScanNaming:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             ins = pp.from_seqs(['TTT'])
-            result = replacement_scan(bg, ins, pool_name='my_result')
+            result = replacement_scan(bg, ins, name='my_result')
         
         assert result.name == 'my_result'
     

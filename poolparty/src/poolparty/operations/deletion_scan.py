@@ -18,7 +18,7 @@ def deletion_scan(
     deletion_marker: Optional[str] = '-',
     spacer_str: str = '',
     op_name: Optional[str] = None,
-    pool_name: Optional[str] = None,
+    name: Optional[str] = None,
 ) -> Pool_type:
     """Delete segments from background at scanning positions.
     
@@ -43,7 +43,7 @@ def deletion_scan(
             If None, segment is simply removed without marker.
         spacer_str: String to insert between segments (default: '').
         op_name: Optional name for the join operation.
-        pool_name: Optional name for the result pool.
+        name: Optional name for the result pool.
     
     Returns:
         A pool with deleted segments at scanning positions.
@@ -116,8 +116,8 @@ def deletion_scan(
         result = join([left, right_clipped], spacer_str=spacer_str, op_name=op_name)
     
     result.iteration_order = pool_iteration_order
-    if pool_name is not None:
-        result.name = pool_name
+    if name is not None:
+        result.name = name
     
     return result
 

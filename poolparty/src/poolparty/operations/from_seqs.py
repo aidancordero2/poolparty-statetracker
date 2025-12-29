@@ -19,7 +19,7 @@ class FromSeqsOp(Operation):
         mode: ModeType = 'sequential',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
-        op_iteration_order: Real = 0,
+        iter_order: Real = 0,
     ) -> None:
         """Initialize FromSeqsOp."""
         if len(seqs) == 0:
@@ -47,7 +47,7 @@ class FromSeqsOp(Operation):
             mode=mode,
             seq_length=seq_length,
             name=name,
-            op_iteration_order=op_iteration_order,
+            iter_order=iter_order,
         )
     
     @beartype
@@ -88,7 +88,7 @@ class FromSeqsOp(Operation):
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
-            'op_iteration_order': self.iteration_order,
+            'iter_order': self.counter.pp_iteration_order,
         }
 
 
@@ -98,17 +98,17 @@ def from_seqs(
     seq_names: Optional[Sequence[str]] = None,
     mode: ModeType = 'sequential',
     num_hybrid_states: Optional[int] = None,
-    pool_iteration_order: Real = 0,
-    op_iteration_order: Real = 0,
+    iter_order: Real = 0,
+    op_iter_order: Real = 0,
     op_name: Optional[str] = None,
-    pool_name: Optional[str] = None,
+    name: Optional[str] = None,
 ) -> Pool_type:
     """Create a Pool from a list of sequences."""
     op = FromSeqsOp(seqs, seq_names=seq_names, mode=mode, 
                     num_hybrid_states=num_hybrid_states, name=op_name,
-                    op_iteration_order=op_iteration_order)
+                    iter_order=op_iter_order)
     pool = Pool(operation=op, output_index=0)
-    pool.iteration_order = pool_iteration_order
-    if pool_name is not None:
-        pool.name = pool_name
+    pool.counter.pp_iteration_order = iter_order
+    if name is not None:
+        pool.name = name
     return pool

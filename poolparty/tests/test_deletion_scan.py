@@ -234,7 +234,7 @@ class TestDeletionScanNaming:
         """Test pool_name parameter."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
-            result = deletion_scan(bg, deletion_length=3, pool_name='my_result')
+            result = deletion_scan(bg, deletion_length=3, name='my_result')
         
         assert result.name == 'my_result'
     
