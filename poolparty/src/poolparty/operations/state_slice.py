@@ -34,13 +34,11 @@ class StateSliceOp(Operation):
     @beartype
     def build_pool_counter(
         self,
-        parent_counters: list[sc.Counter],
-        iteration_orders: Sequence[Real],
+        parent_pools: Sequence[Pool_type],
     ) -> sc.Counter:
         """Build pool counter using sc.slice."""
-        # iteration_orders ignored for single-parent slice
         return sc.slice(
-            parent_counters[0], 
+            parent_pools[0].counter, 
             start=self.start, 
             stop=self.stop, 
             step=self.step,

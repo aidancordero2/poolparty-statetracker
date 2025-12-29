@@ -40,10 +40,10 @@ class StackOp(Operation):
     @beartype
     def build_pool_counter(
         self,
-        parent_counters: list[sc.Counter],
-        iteration_orders: Sequence[Real],
+        parent_pools: Sequence[Pool_type],
     ) -> sc.Counter:
         """Build pool counter using sc.stack (disjoint union)."""
+        parent_counters = [p.counter for p in parent_pools]
         return sc.stack(parent_counters)
     
     @beartype

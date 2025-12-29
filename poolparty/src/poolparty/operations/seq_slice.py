@@ -41,11 +41,10 @@ class SeqSliceOp(Operation):
     @beartype
     def build_pool_counter(
         self,
-        parent_counters: list[sc.Counter],
-        iteration_orders: Sequence[Real],
+        parent_pools: Sequence[Pool_type],
     ) -> sc.Counter:
         """Return parent counter directly (no state added)."""
-        return parent_counters[0]
+        return parent_pools[0].counter
     
     @beartype
     def compute_design_card(

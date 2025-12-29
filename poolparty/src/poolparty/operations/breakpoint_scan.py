@@ -210,11 +210,7 @@ def breakpoint_scan(
                           max_spacing=max_spacing, mode=mode, 
                           hybrid_mode_num_states=hybrid_mode_num_states, name=op_name)
     op._iteration_order = op_iteration_order
-    # Build counter with iteration orders from parent pools + operation
-    parent_counters = [p.counter for p in op.parent_pools]
-    iteration_orders = [p._iteration_order for p in op.parent_pools]
-    iteration_orders.append(op._iteration_order)
-    shared_counter = op.build_pool_counter(parent_counters, iteration_orders)
+    shared_counter = op.build_pool_counter(op.parent_pools)
     if synchronize_pools:
         pools = tuple(Pool(operation=op, output_index=i, counter=shared_counter) 
                       for i in range(op.num_outputs))

@@ -31,12 +31,8 @@ class Pool:
         if counter is not None:
             self.counter = counter
         else:
-            # Gather iteration orders from parent pools + operation
-            parent_counters = [p.counter for p in operation.parent_pools]
-            iteration_orders = [p._iteration_order for p in operation.parent_pools]
-            iteration_orders.append(operation._iteration_order)
             self.counter: sc.Counter = operation.build_pool_counter(
-                parent_counters, iteration_orders
+                operation.parent_pools
             )
         self._name: str = ""
         self.name = name if name is not None else f'pool[{self._id}]'

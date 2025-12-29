@@ -1,5 +1,4 @@
 """Operation base class for poolparty."""
-from numbers import Real
 import statecounter as sc
 from .types import Pool_type, Sequence, ModeType, Optional, beartype
 import numpy as np
@@ -98,26 +97,22 @@ class Operation:
     @beartype
     def build_pool_counter(
         self,
-        parent_counters: list[sc.Counter],
-        iteration_orders: Sequence[Real],
+        parent_pools: Sequence[Pool_type],
     ) -> sc.Counter:
-        """Build the output Pool's counter from parent pool counters, sorted by iteration_orders.
+        """Build the output Pool's counter from parent pool counters, sorted by iteration_order.
         
         Args:
-            parent_counters: List of counters from parent pools.
-            iteration_orders: Sort keys for each counter. Length must be 
-                len(parent_counters) + 1 (last entry is for operation's counter).
-                Lower values iterate faster (come first in product).
+            parent_pools: List of parent pools. Their counters and iteration orders
+                will be extracted and combined with this operation's counter.
         
         Returns:
             A Counter that is the product of unique parent counters and this op's counter,
-            sorted by iteration_orders.
+            sorted by iteration_order (lower values iterate faster).
         """
-        if len(iteration_orders) != len(parent_counters) + 1:
-            raise ValueError(
-                f"iteration_orders length ({len(iteration_orders)}) must be "
-                f"len(parent_counters) + 1 ({len(parent_counters) + 1})"
-            )
+        # Extract counters and iteration orders from parent pools
+        parent_counters = [p.counter for p in parent_pools]
+        iteration_orders = [p._iteration_order for p in parent_pools]
+        iteration_orders.append(self._iteration_order)
         
         # Deduplicate counters while preserving iteration_order association
         seen_ids: set[int] = set()
@@ -128,7 +123,7 @@ class Operation:
                 seen_ids.add(cid)
                 counter_order_pairs.append((counter, order))
         
-        # Add operation's counter with its iteration_order (last in iteration_orders)
+        # Add operation's counter with its iteration_order
         counter_order_pairs.append((self.counter, iteration_orders[-1]))
         
         # Sort by iteration_order (lower = faster = first in product)
