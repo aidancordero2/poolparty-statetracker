@@ -994,6 +994,10 @@ provides-extras = ["dev"]
 name = "poolparty-workspace"
 version = "0.0.0"
 source = { virtual = "." }
+dependencies = [
+    { name = "poolparty" },
+    { name = "statecounter" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -1003,6 +1007,10 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [
+    { name = "poolparty", editable = "poolparty" },
+    { name = "statecounter", editable = "statecounter" },
+]
 
 [package.metadata.requires-dev]
 dev = [
