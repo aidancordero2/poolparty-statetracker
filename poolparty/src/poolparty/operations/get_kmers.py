@@ -20,7 +20,7 @@ class GetKmersOp(Operation):
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize GetKmersOp."""
         if length < 1:
@@ -111,8 +111,8 @@ def get_kmers(
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
 ) -> Pool_type:
     """
     Create a Pool that generates k-mers from an alphabet.

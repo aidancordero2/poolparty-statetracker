@@ -19,8 +19,8 @@ def insertion_scan(
     spacer_str: str = '',
     name: Optional[str] = None,
     op_name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Create a Pool containing all possible variants of the background sequence or pool

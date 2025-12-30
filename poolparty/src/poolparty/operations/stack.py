@@ -17,7 +17,7 @@ class StackOp(Operation):
         self,
         parent_pools: Sequence[Pool],
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize StackOp."""
         # Compute seq_length: same as parents if all equal, else None
@@ -80,8 +80,8 @@ def stack(
     pools: Sequence[Pool],
     name: Optional[str] = None,
     op_name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Create a Pool by stacking multiple input Pools state-wise.

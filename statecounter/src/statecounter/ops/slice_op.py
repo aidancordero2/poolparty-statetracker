@@ -29,7 +29,5 @@ def slice(counter: Counter_type, start: Optional[Integral] = None, stop: Optiona
     from ..counter import Counter
     s = builtins.slice(start, stop, step)
     start_norm, stop_norm, step_norm = s.indices(counter.num_states)
-    result = Counter(_parents=(counter,), _op=SliceOp(start_norm, stop_norm, step_norm))
-    if name is not None:
-        result.name = name
+    result = Counter(_parents=(counter,), _op=SliceOp(start_norm, stop_norm, step_norm), name=name)
     return result

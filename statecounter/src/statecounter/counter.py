@@ -1,16 +1,23 @@
 """Counter class for composable iteration."""
+from .imports import beartype, Sequence, Optional, Real, Integral, Operation_type, Counter_type
 from .manager import Manager
 
-
+@beartype
 class ConflictingStateAssignmentError(RuntimeError):
     """Raised when a counter receives conflicting state assignments during propagation."""
     pass
 
 
+@beartype
 class Counter:
     """A counter that can be iterated and composed with other counters."""
     
-    def __init__(self, num_states=None, name=None, iter_order=0, *, _parents=None, _op=None):
+    def __init__(self, 
+                 num_states: Optional[Integral] = None, 
+                 name: Optional[str] = None, 
+                 iter_order: Optional[Real] = None, *, 
+                 _parents: Optional[Sequence[Counter_type]] = None, 
+                 _op: Optional[Operation_type] = None):
         """Create a counter."""
         # Require an active Manager
         if Manager._active_manager is None:
@@ -21,6 +28,13 @@ class Counter:
         self._state = 0
         self._parents = tuple(_parents) if _parents else ()
         self._op = _op
+        
+        # Set iter_order
+        if iter_order is None:
+            if len(self._parents) > 0:
+                iter_order = min(p.iter_order for p in self._parents)
+            else:
+                iter_order = 0
         self._iter_order = iter_order
         
         if _parents and _op:
@@ -171,9 +185,9 @@ class Counter:
     def __repr__(self):
         if self._parents:
             op_name = type(self._op).__name__
-            return f"Counter(name={self._name!r}, id={self._id}, op={op_name}, num_states={self._num_states}, state={self._state})"
+            return f"Counter(name={self._name!r}, id={self._id}, op={op_name}, num_states={self._num_states}, state={self._state}, iter_order={self._iter_order})"
         else:
-            return f"Counter(name={self._name!r}, id={self._id}, num_states={self._num_states}, state={self._state})"
+            return f"Counter(name={self._name!r}, id={self._id}, num_states={self._num_states}, state={self._state}, iter_order={self._iter_order})"
     
     def print_tree(self, style: str = 'clean'):
         """Print the ASCII tree visualization rooted at this counter.

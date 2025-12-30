@@ -35,7 +35,7 @@ class Operation:
         mode: ModeType = 'fixed',
         seq_length: Optional[int] = None,
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize Operation."""
         from .party import get_active_party

@@ -16,8 +16,8 @@ def replacement_scan(
     num_hybrid_states: Optional[Integral] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Replace a segment of a background sequence with an insert sequence at multiple positions.

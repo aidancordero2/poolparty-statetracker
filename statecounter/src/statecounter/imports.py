@@ -5,14 +5,12 @@ from beartype import beartype
 from numbers import Real, Integral
 from beartype.roar import BeartypeCallHintParamViolation
 
-Counter_type: TypeAlias = "statecounter.counter.Counter"
-
 import math
 import numpy
 import pandas
 
-# Forward reference type aliases (resolve circular imports)
 Counter_type: TypeAlias = "statecounter.counter.Counter"
+Operation_type: TypeAlias = "statecounter.operation.Operation"
 
 __all__ = [
     'beartype',
@@ -24,5 +22,6 @@ __all__ = [
     'Real',
     'Integral',
     'Counter_type',
+    'Operation_type',
     'math',
 ]

@@ -29,7 +29,5 @@ def interleave(counters: Sequence[Counter_type], name: Optional[str] = None):
     from ..counter import Counter
     if len(counters) < 2:
         raise ValueError("interleave() requires at least 2 counters")
-    result = Counter(_parents=counters, _op=InterleaveOp())
-    if name is not None:
-        result.name = name
+    result = Counter(_parents=counters, _op=InterleaveOp(), name=name)
     return result

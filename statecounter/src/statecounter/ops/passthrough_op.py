@@ -18,7 +18,5 @@ class PassthroughOp(Operation):
 def passthrough(counter: Counter_type, name: Optional[str] = None):
     """Create a passthrough counter that tracks its parent."""
     from ..counter import Counter
-    result = Counter(_parents=(counter,), _op=PassthroughOp())
-    if name is not None:
-        result.name = name
+    result = Counter(_parents=(counter,), _op=PassthroughOp(), name=name)
     return result

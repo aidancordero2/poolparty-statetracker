@@ -22,7 +22,7 @@ class MutagenizeUsingRateOp(Operation):
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize MutagenizeUsingRateOp."""
         if mutation_rate < 0 or mutation_rate > 1:
@@ -122,8 +122,8 @@ def mutagenize_using_rate(
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """Create a Pool that applies a random number of mutations to a sequence based on a mutation rate."""
     from .from_seq import from_seq

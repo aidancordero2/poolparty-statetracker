@@ -15,7 +15,7 @@ class FromSeqOp(Operation):
         self,
         seq: str,
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize FromSeqOp."""
         self.seq = seq
@@ -50,8 +50,8 @@ def from_seq(
     seq: str,
     op_name: Optional[str] = None,
     name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
 ) -> Pool_type:
     """
     Create a Pool containing a single, fixed sequence.

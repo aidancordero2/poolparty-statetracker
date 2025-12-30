@@ -24,8 +24,6 @@ def repeat(counter: Counter_type, times: Integral, name: Optional[str] = None):
     """Create a counter that repeats another counter N times."""
     from ..counter import Counter
     if times < 1:
-        raise ValueError("times must be at least 1")
-    result = Counter(_parents=(counter,), _op=RepeatOp(times))
-    if name is not None:
-        result.name = name
+        raise ValueError("times must be at least 1")    
+    result = Counter(_parents=(counter,), _op=RepeatOp(times), name=name)
     return result

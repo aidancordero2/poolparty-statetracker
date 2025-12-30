@@ -28,7 +28,5 @@ def stack(counters: Sequence[Counter_type], name: Optional[str] = None):
     if len(counters) == 0:
         result = Counter(0)
     else:
-        result = Counter(_parents=counters, _op=StackOp())
-    if name is not None:
-        result.name = name
+        result = Counter(_parents=counters, _op=StackOp(), name=name)
     return result

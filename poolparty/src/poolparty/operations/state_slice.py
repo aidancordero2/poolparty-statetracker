@@ -20,7 +20,7 @@ class StateSliceOp(Operation):
         stop: Optional[Integral],
         step: Optional[Integral],
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize StateSliceOp."""
         self.start = start
@@ -79,8 +79,8 @@ def state_slice(
     key: Union[Integral, slice],
     name: Optional[str] = None,
     op_name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,    
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,    
 ) -> Pool:
     """
     Create a Pool containing a slice of states from the input Pool.

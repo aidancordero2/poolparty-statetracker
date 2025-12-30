@@ -17,7 +17,7 @@ class JoinOp(Operation):
         parent_pools: list,
         spacer_str: str = '',
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize JoinOp."""
         self.spacer_str = spacer_str
@@ -69,8 +69,8 @@ def join(
     spacer_str: str = '',
     name: Optional[str] = None,
     op_name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
 ) -> Pool_type:
     """
     Concatenate multiple Pools or string sequences into a single Pool.

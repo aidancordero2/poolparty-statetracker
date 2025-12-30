@@ -18,7 +18,7 @@ class SeqSliceOp(Operation):
         parent_pool: Pool,
         key: Union[Integral, slice],
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize SeqSliceOp."""
         self.key = key
@@ -81,8 +81,8 @@ def seq_slice(
     key: Union[Integral, slice],
     name: Optional[str] = None,
     op_name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Create a Pool containing sequences that are slices of the input pool according to the specified key.

@@ -19,7 +19,7 @@ class FromSeqsOp(Operation):
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize FromSeqsOp."""
         if len(seqs) == 0:
@@ -97,8 +97,8 @@ def from_seqs(
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
 ) -> Pool_type:
     """
     Create a Pool containing the specified sequences.
@@ -119,7 +119,7 @@ def from_seqs(
         Name for the underlying Operation.
     iter_order : Real, default=0
         Iteration order priority for the resulting Pool.
-    op_iter_order : Real, default=0
+    op_iter_order : Optional[Real], default=None
         Iteration order priority for the underlying Operation.
 
     Returns

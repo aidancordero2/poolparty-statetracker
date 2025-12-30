@@ -22,7 +22,7 @@ class MutagenizeUsingNumOp(Operation):
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize MutagenizeUsingNumOp."""
         if num_mutations < 1:
@@ -170,8 +170,8 @@ def mutagenize_using_num(
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """Create a Pool that applies num_mutations mutations to a sequence."""
     from .from_seq import from_seq

@@ -27,7 +27,7 @@ class BreakpointScanOp(Operation):
         mode: ModeType = 'random',
         num_hybrid_states: Optional[Integral] = None,
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize BreakpointScanOp."""
         if num_breakpoints < 1:
@@ -196,8 +196,8 @@ def breakpoint_scan(
     num_hybrid_states: Optional[Integral] = None,
     op_name: Optional[str] = None,
     names: Optional[Sequence[str]] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None
 ) -> tuple[Pool, ...]:
     """
     Split a sequence or pool at specified breakpoints, returning the segments as individual pools.

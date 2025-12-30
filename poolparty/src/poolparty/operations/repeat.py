@@ -17,7 +17,7 @@ class RepeatOp(Operation):
         parent_pool: Pool_type,
         times: int,
         name: Optional[str] = None,
-        iter_order: Real = 0,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize RepeatOp."""
         if times < 1:
@@ -66,8 +66,8 @@ def repeat(
     times: int,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
 ) -> Pool_type:
     """
     Repeat the states of a pool a specified number of times, producing a new pool with

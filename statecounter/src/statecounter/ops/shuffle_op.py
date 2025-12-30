@@ -29,7 +29,5 @@ def shuffle(counter: Counter_type, seed: Optional[Integral] = None, name: Option
     from ..counter import Counter
     if seed is None:
         seed = random.randint(0, 2**32 - 1)
-    result = Counter(_parents=(counter,), _op=ShuffleOp(seed, counter.num_states))
-    if name is not None:
-        result.name = name
+    result = Counter(_parents=(counter,), _op=ShuffleOp(seed, counter.num_states), name=name)
     return result
