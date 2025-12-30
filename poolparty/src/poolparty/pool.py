@@ -70,7 +70,23 @@ class Pool:
         self._party._validate_pool_name(value, self)
         old_name = self._name
         self._name = value
-        self.counter.name = f"{value}.state"
+        # When pool.counter is the same as operation.counter (source operations),
+        # preserve operation counter name if operation has explicit name (not default)
+        # Otherwise, use pool counter name
+        if self.counter is self.operation.counter:
+            # Check if operation has explicit name (not default like "op[0]:from_seqs")
+            op_name = self.operation.name
+            is_default_op_name = op_name.startswith('op[') and ']:' in op_name
+            if not is_default_op_name:
+                # Operation has explicit name, preserve it
+                # Counter name should already be set to operation name
+                pass
+            else:
+                # Operation has default name, use pool name
+                self.counter.name = f"{value}.state"
+        else:
+            # Different counters, set pool counter name normally
+            self.counter.name = f"{value}.state"
         # Update party's name tracking if this is a rename (not initial set)
         if old_name:
             self._party._update_pool_name(self, old_name, value)

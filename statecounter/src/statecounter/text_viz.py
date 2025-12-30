@@ -55,7 +55,7 @@ def build_tree_lines(
 #         print(line)
 
 
-def format_node(counter, style: StyleType = 'clean') -> str:
+def format_counter_node(counter, style: StyleType = 'clean') -> str:
     """Format a Counter node for display.
     
     Args:
@@ -69,37 +69,77 @@ def format_node(counter, style: StyleType = 'clean') -> str:
         return repr(counter)
     
     name = counter.name if counter.name else f"id_{counter.id}"
-    n = counter.num_states
     
     if style == 'minimal':
-        return name
+        return f"{name} (counter)"
     
     # style == 'clean'
-    if counter._parents:
-        op_name = type(counter._op).__name__
+    n = counter.num_states
+    order = counter.iter_order
+    return f"{name} (counter, io={order}, n={n})"
+
+
+def format_operation_node(op, style: StyleType = 'clean') -> str:
+    """Format an Operation node for display.
+    
+    Args:
+        op: The Operation object to format.
+        style: Display style - 'clean', 'minimal', or 'repr'.
+    
+    Returns:
+        Formatted string representation of the operation.
+    """
+    if style == 'repr':
+        return repr(op)
+    elif style == 'minimal':
+        return "[op]"
+    else:  # clean
+        op_name = type(op).__name__
         if op_name.endswith('Op'):
-            op_name = op_name[:-2].lower()
-        return f"{name} [{op_name}, n={n}]"
-    else:
-        return f"{name} [leaf, n={n}]"
+            op_name = op_name[:-2]
+        return f"[op={op_name}]"
 
 
 def print_tree(counter, style: StyleType = 'clean') -> None:
     """Print ASCII tree for a single Counter and its ancestors.
     
+    The tree alternates between Counter and Operation nodes:
+    - Counter -> its Operation -> Operation's parent Counters -> ...
+    
     Args:
         counter: The root Counter to visualize.
         style: Display style - 'clean', 'minimal', or 'repr'.
     """
-    def get_label(c):
-        return format_node(c, style)
+    # We need to handle the alternating Counter/Operation structure.
+    # We'll wrap nodes to track their type.
     
-    def get_children(c):
-        return list(c._parents)
+    class CounterNode:
+        def __init__(self, counter):
+            self.counter = counter
     
-    #print_tree(counter, get_label, get_children)
+    class OpNode:
+        def __init__(self, op, parent_counters):
+            self.op = op
+            self.parent_counters = parent_counters
     
-    lines = build_tree_lines(counter, get_label, get_children)
+    def get_label(node):
+        if isinstance(node, CounterNode):
+            return format_counter_node(node.counter, style)
+        else:
+            return format_operation_node(node.op, style)
+    
+    def get_children(node):
+        if isinstance(node, CounterNode):
+            # Counter's child is its operation (if non-leaf)
+            if node.counter._op:
+                return [OpNode(node.counter._op, node.counter._parents)]
+            else:
+                return []
+        else:
+            # Operation's children are its parent counters
+            return [CounterNode(c) for c in node.parent_counters]
+    
+    lines = build_tree_lines(CounterNode(counter), get_label, get_children)
     for line in lines:
         print(line)
 
