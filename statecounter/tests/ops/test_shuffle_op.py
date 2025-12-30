@@ -248,3 +248,117 @@ class TestShuffleCounterFunction:
             for _ in B:
                 visited.append(A.state)
             assert sorted(visited) == [0, 1, 2, 3, 4]
+
+
+class TestShuffleWithPermutation:
+    """Test shuffle with custom permutation argument."""
+    
+    def test_shuffle_with_permutation(self):
+        """Shuffle with custom permutation uses that permutation."""
+        with Manager():
+            A = Counter(num_states=5, name='A')
+            perm = [4, 3, 2, 1, 0]  # Reverse order
+            B = shuffle(A, permutation=perm)
+            
+            assert B.num_states == 5
+            
+            # Verify the permutation is applied
+            for i in range(5):
+                B.state = i
+                assert A.state == perm[i]
+    
+    def test_shuffle_with_permutation_identity(self):
+        """Shuffle with identity permutation preserves order."""
+        with Manager():
+            A = Counter(num_states=5, name='A')
+            perm = [0, 1, 2, 3, 4]  # Identity
+            B = shuffle(A, permutation=perm)
+            
+            for i in range(5):
+                B.state = i
+                assert A.state == i
+    
+    def test_shuffle_with_permutation_iteration(self):
+        """Iterate shuffled counter with custom permutation."""
+        with Manager():
+            A = Counter(num_states=4, name='A')
+            perm = [3, 1, 0, 2]
+            B = shuffle(A, permutation=perm)
+            
+            a_states = []
+            for _ in B:
+                a_states.append(A.state)
+            
+            assert a_states == perm
+    
+    def test_shuffle_seed_and_permutation_raises(self):
+        """Specifying both seed and permutation raises ValueError."""
+        with Manager():
+            A = Counter(num_states=5, name='A')
+            with pytest.raises(ValueError, match="mutually exclusive"):
+                shuffle(A, seed=42, permutation=[0, 1, 2, 3, 4])
+    
+    def test_shuffle_permutation_wrong_length_raises(self):
+        """Permutation with wrong length raises ValueError."""
+        with Manager():
+            A = Counter(num_states=5, name='A')
+            with pytest.raises(ValueError, match="length"):
+                shuffle(A, permutation=[0, 1, 2])  # Too short
+    
+    def test_shuffle_permutation_wrong_contents_raises(self):
+        """Permutation with wrong contents raises ValueError."""
+        with Manager():
+            A = Counter(num_states=5, name='A')
+            with pytest.raises(ValueError, match="must contain exactly"):
+                shuffle(A, permutation=[0, 1, 2, 3, 5])  # 5 instead of 4
+    
+    def test_shuffle_permutation_duplicates_raises(self):
+        """Permutation with duplicates raises ValueError."""
+        with Manager():
+            A = Counter(num_states=5, name='A')
+            with pytest.raises(ValueError, match="must contain exactly"):
+                shuffle(A, permutation=[0, 1, 2, 3, 3])  # Duplicate 3
+
+
+class TestShuffleOpWithPermutation:
+    """Test ShuffleOp class with permutation argument."""
+    
+    def test_shuffleop_with_permutation(self):
+        """ShuffleOp with custom permutation uses that permutation."""
+        perm = [4, 3, 2, 1, 0]
+        op = ShuffleOp(num_parent_states=5, permutation=perm)
+        
+        assert op.permutation == tuple(perm)
+        assert op.seed is None
+    
+    def test_shuffleop_permutation_decompose(self):
+        """ShuffleOp with permutation decomposes correctly."""
+        perm = [2, 0, 1]
+        op = ShuffleOp(num_parent_states=3, permutation=perm)
+        
+        assert op.decompose(0, (3,)) == (2,)
+        assert op.decompose(1, (3,)) == (0,)
+        assert op.decompose(2, (3,)) == (1,)
+    
+    def test_shuffleop_seed_and_permutation_raises(self):
+        """ShuffleOp with both seed and permutation raises ValueError."""
+        with pytest.raises(ValueError, match="mutually exclusive"):
+            ShuffleOp(num_parent_states=5, seed=42, permutation=[0, 1, 2, 3, 4])
+    
+    def test_shuffleop_permutation_wrong_length_raises(self):
+        """ShuffleOp with wrong length permutation raises ValueError."""
+        with pytest.raises(ValueError, match="length"):
+            ShuffleOp(num_parent_states=5, permutation=[0, 1, 2])
+    
+    def test_shuffleop_permutation_wrong_contents_raises(self):
+        """ShuffleOp with wrong contents raises ValueError."""
+        with pytest.raises(ValueError, match="must contain exactly"):
+            ShuffleOp(num_parent_states=5, permutation=[0, 1, 2, 3, 5])
+    
+    def test_shuffleop_no_args_generates_random(self):
+        """ShuffleOp with no seed or permutation generates random permutation."""
+        op = ShuffleOp(num_parent_states=5)
+        
+        assert op.seed is not None
+        assert len(op.permutation) == 5
+        assert sorted(op.permutation) == [0, 1, 2, 3, 4]

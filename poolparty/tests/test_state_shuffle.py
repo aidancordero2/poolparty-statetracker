@@ -155,3 +155,61 @@ class TestStateShuffleCompute:
         card = shuffled.operation.compute_design_card(['ACGT'])
         result = shuffled.operation.compute_seq_from_card(['ACGT'], card)
         assert result == {'seq_0': 'ACGT'}
+
+
+class TestStateShuffleWithPermutation:
+    """Test state_shuffle with custom permutation argument."""
+    
+    def test_with_permutation(self):
+        """Test state_shuffle with custom permutation."""
+        with pp.Party() as party:
+            seqs = ['A', 'B', 'C', 'D', 'E']
+            pool = pp.from_seqs(seqs, mode='sequential')
+            perm = [4, 3, 2, 1, 0]  # Reverse order
+            shuffled = state_shuffle(pool, permutation=perm).named('sh')
+        
+        df = shuffled.generate_seqs(num_complete_iterations=1)
+        output_seqs = df['seq'].tolist()
+        # With reverse permutation, order should be E, D, C, B, A
+        assert output_seqs == ['E', 'D', 'C', 'B', 'A']
+    
+    def test_with_permutation_identity(self):
+        """Test state_shuffle with identity permutation preserves order."""
+        with pp.Party() as party:
+            seqs = ['A', 'B', 'C', 'D', 'E']
+            pool = pp.from_seqs(seqs, mode='sequential')
+            perm = [0, 1, 2, 3, 4]
+            shuffled = state_shuffle(pool, permutation=perm).named('sh')
+        
+        df = shuffled.generate_seqs(num_complete_iterations=1)
+        output_seqs = df['seq'].tolist()
+        assert output_seqs == seqs
+    
+    def test_seed_and_permutation_raises(self):
+        """Test that specifying both seed and permutation raises ValueError."""
+        with pp.Party() as party:
+            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
+            with pytest.raises(ValueError, match="mutually exclusive"):
+                state_shuffle(pool, seed=42, permutation=[0, 1, 2, 3, 4])
+    
+    def test_permutation_wrong_length_raises(self):
+        """Test that permutation with wrong length raises ValueError."""
+        with pp.Party() as party:
+            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
+            with pytest.raises(ValueError, match="length"):
+                state_shuffle(pool, permutation=[0, 1, 2])
+    
+    def test_permutation_wrong_contents_raises(self):
+        """Test that permutation with wrong contents raises ValueError."""
+        with pp.Party() as party:
+            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
+            with pytest.raises(ValueError, match="must contain exactly"):
+                state_shuffle(pool, permutation=[0, 1, 2, 3, 5])
+    
+    def test_permutation_stored_in_op(self):
+        """Test that permutation is stored in StateShuffleOp."""
+        with pp.Party() as party:
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
+            perm = [2, 0, 1]
+            shuffled = state_shuffle(pool, permutation=perm)
+            assert shuffled.operation.permutation == perm
