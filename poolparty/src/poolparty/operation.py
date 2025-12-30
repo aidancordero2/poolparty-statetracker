@@ -121,8 +121,12 @@ class Operation:
     ) -> sc.Counter:
         """Build the output Pool's counter from parent pool counters, sorted by iteration_order."""
         parent_counters = [p.counter for p in parent_pools]
-        product_counter = sc.ordered_product(parent_counters + [self.counter])
-        return product_counter
+        if not parent_counters:
+            # Source operation: pool counter IS the operation counter
+            return sc.passthrough(self.counter)
+        else: 
+            return sc.ordered_product(parent_counters + [self.counter])
+
     
     def compute_design_card(
         self,
