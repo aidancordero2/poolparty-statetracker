@@ -383,7 +383,7 @@ class TestBreakpointScanCompute:
 class TestBreakpointScanWithOtherOperations:
     """Test BreakpointScan combined with other operations."""
     
-    def test_with_mutagenize_using_num(self):
+    def test_with_mutagenize(self):
         """Test breakpoint scan followed by mutation raises conflict error.
         
         This creates a diamond pattern where the breakpoint counter appears
@@ -391,7 +391,7 @@ class TestBreakpointScanWithOtherOperations:
         """
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential')
-            mutated_right = pp.mutagenize_using_num(right, num_mutations=1, mode='sequential')
+            mutated_right = pp.mutagenize(right, num_mutations=1, mode='sequential')
             combined = pp.join([left, mutated_right]).named('seq')
         
         with pytest.raises(sc.ConflictingStateAssignmentError):
@@ -623,7 +623,7 @@ class TestSynchronizePoolsParameter:
         for seq in df['seq']:
             assert '---' in seq
     
-    def test_synchronized_with_mutagenize_using_num_raises_conflict(self):
+    def test_synchronized_with_mutagenize_raises_conflict(self):
         """Test synchronized pools with downstream mutation raises conflict.
         
         Synchronized pools share the same counter, so joining one
@@ -631,7 +631,7 @@ class TestSynchronizePoolsParameter:
         """
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential')
-            mutated_right = pp.mutagenize_using_num(right, num_mutations=1, mode='sequential')
+            mutated_right = pp.mutagenize(right, num_mutations=1, mode='sequential')
             combined = pp.join([left, mutated_right]).named('seq')
         
         

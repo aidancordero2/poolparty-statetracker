@@ -1,4 +1,4 @@
-"""MutationScan operation - apply k mutations to a sequence."""
+"""Mutagenize operation - apply mutations to a sequence."""
 from itertools import combinations
 from math import comb
 from ..types import Union, AlphabetType, ModeType, Optional, Real, Integral, beartype
@@ -9,38 +9,82 @@ import numpy as np
 
 
 @beartype
-class MutagenizeUsingNumOp(Operation):
-    """Apply a fixed number of mutations to a parent sequence."""
-    factory_name = "mutagenize_using_num"
+class MutagenizeOp(Operation):
+    """Apply mutations to a parent sequence.
+    
+    Supports two mutation modes:
+    - num_mutations: Apply exactly this many mutations to each sequence
+    - mutation_rate: Apply a random number of mutations based on a binomial distribution
+    
+    Exactly one of num_mutations or mutation_rate must be provided.
+    Sequential mode is only available when num_mutations is specified.
+    """
+    factory_name = "mutagenize"
     design_card_keys = ['positions', 'wt_chars', 'mut_chars']
     
     def __init__(
         self,
         parent_pool: Pool,
-        num_mutations: Integral = 1,
+        num_mutations: Optional[Integral] = None,
+        mutation_rate: Optional[Real] = None,
         alphabet: AlphabetType = 'dna',
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
-        """Initialize MutagenizeUsingNumOp."""
-        if num_mutations < 1:
+        """Initialize MutagenizeOp.
+        
+        Args:
+            parent_pool: The parent pool to mutate.
+            num_mutations: Fixed number of mutations to apply (mutually exclusive with mutation_rate).
+            mutation_rate: Probability of mutation at each position (mutually exclusive with num_mutations).
+            alphabet: The alphabet to use for mutations.
+            mode: 'random', 'sequential', or 'hybrid'. Sequential only available with num_mutations.
+            num_hybrid_states: Required when mode='hybrid'.
+            name: Optional name for the operation.
+            iter_order: Optional iteration order.
+        """
+        # Validate mutually exclusive parameters
+        if num_mutations is None and mutation_rate is None:
+            raise ValueError("Either num_mutations or mutation_rate must be provided")
+        if num_mutations is not None and mutation_rate is not None:
+            raise ValueError("Only one of num_mutations or mutation_rate can be provided, not both")
+        
+        # Validate num_mutations
+        if num_mutations is not None and num_mutations < 1:
             raise ValueError(f"num_mutations must be >= 1, got {num_mutations}")
+        
+        # Validate mutation_rate
+        if mutation_rate is not None:
+            if mutation_rate < 0 or mutation_rate > 1:
+                raise ValueError(f"mutation_rate must be between 0 and 1, got {mutation_rate}")
+            if mode == 'sequential':
+                raise ValueError("mode='sequential' is not supported with mutation_rate (use num_mutations instead)")
+        
+        # Validate hybrid mode
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
+        
         self.num_mutations = num_mutations
+        self.mutation_rate = mutation_rate
         self.alphabet = get_alphabet(alphabet)
         self.alpha_size = len(self.alphabet)
         self._mode = mode
+        
+        # Build mutation map: (wt_char, index) -> mut_char
         self._mutation_map = {}
         for wt in self.alphabet:
             available = [c for c in self.alphabet if c != wt]
             for i, mut in enumerate(available):
                 self._mutation_map[(wt, i)] = mut
+        
         self._seq_length = parent_pool.seq_length
         self._sequential_cache = None
+        
+        # Determine num_states based on mode
         if mode == 'sequential':
+            # Sequential mode only available with num_mutations
             if self._seq_length is not None:
                 if self._seq_length < num_mutations:
                     raise ValueError(
@@ -54,6 +98,7 @@ class MutagenizeUsingNumOp(Operation):
             num_states = num_hybrid_states
         else:
             num_states = 1
+        
         super().__init__(
             parent_pools=[parent_pool],
             num_states=num_states,
@@ -85,15 +130,29 @@ class MutagenizeUsingNumOp(Operation):
     def _random_mutation(self, seq: str, rng: np.random.Generator) -> tuple:
         """Generate random mutation positions and characters."""
         seq_len = len(seq)
-        positions = tuple(sorted(rng.choice(seq_len, size=self.num_mutations, replace=False)))
+        
+        # Determine number of mutations
+        if self.num_mutations is not None:
+            num_mut = self.num_mutations
+        else:
+            # Use binomial distribution based on mutation_rate
+            num_mut = rng.binomial(seq_len, self.mutation_rate)
+            if num_mut == 0:
+                return tuple(), tuple(), tuple()
+        
+        # Choose random positions
+        positions = tuple(sorted(rng.choice(seq_len, size=num_mut, replace=False)))
+        
+        # Determine wild-type and mutant characters
         wt_chars = []
         mut_chars = []
         for pos in positions:
             wt = seq[pos]
             wt_chars.append(wt)
-            available = [c for c in self.alphabet if c != wt]
-            mut = available[rng.integers(0, len(available))]
+            mut_idx = rng.integers(0, self.alpha_size - 1)
+            mut = self._mutation_map[(wt, mut_idx)]
             mut_chars.append(mut)
+        
         return positions, tuple(wt_chars), tuple(mut_chars)
     
     def compute_design_card(
@@ -104,13 +163,16 @@ class MutagenizeUsingNumOp(Operation):
         """Return design card with mutation positions and characters."""
         seq = parent_seqs[0]
         seq_len = len(seq)
-        if self.num_mutations > seq_len:
+        
+        if self.num_mutations is not None and self.num_mutations > seq_len:
             raise ValueError(f"Cannot apply {self.num_mutations} mutations to sequence of length {seq_len}")
+        
         if self.mode in ('random', 'hybrid'):
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
             positions, wt_chars, mut_chars = self._random_mutation(seq, rng)
         else:
+            # Sequential mode (only available with num_mutations)
             if self._sequential_cache is None:
                 self._seq_length = seq_len
                 self._build_caches()
@@ -128,6 +190,7 @@ class MutagenizeUsingNumOp(Operation):
                 mut_chars.append(mut)
             wt_chars = tuple(wt_chars)
             mut_chars = tuple(mut_chars)
+        
         return {
             'positions': positions,
             'wt_chars': wt_chars,
@@ -153,6 +216,7 @@ class MutagenizeUsingNumOp(Operation):
         return {
             'parent_pool': self.parent_pools[0],
             'num_mutations': self.num_mutations,
+            'mutation_rate': self.mutation_rate,
             'alphabet': self.alphabet,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
@@ -162,9 +226,10 @@ class MutagenizeUsingNumOp(Operation):
 
 
 @beartype
-def mutagenize_using_num(
+def mutagenize(
     pool: Union[Pool, str],
-    num_mutations: Integral = 1,
+    num_mutations: Optional[Integral] = None,
+    mutation_rate: Optional[Real] = None,
     alphabet: AlphabetType = 'dna',
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
@@ -173,11 +238,50 @@ def mutagenize_using_num(
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
 ) -> Pool:
-    """Create a Pool that applies num_mutations mutations to a sequence."""
+    """Create a Pool that applies mutations to a sequence.
+    
+    Supports two mutation modes (exactly one must be specified):
+    - num_mutations: Apply exactly this many mutations to each sequence.
+      Supports 'random', 'sequential', and 'hybrid' modes.
+    - mutation_rate: Apply a random number of mutations based on a binomial distribution.
+      Only supports 'random' and 'hybrid' modes.
+    
+    Args:
+        pool: Parent pool or sequence string to mutate.
+        num_mutations: Fixed number of mutations to apply (mutually exclusive with mutation_rate).
+        mutation_rate: Probability of mutation at each position (mutually exclusive with num_mutations).
+        alphabet: The alphabet to use for mutations. Default is 'dna'.
+        mode: 'random', 'sequential', or 'hybrid'. Sequential only available with num_mutations.
+        num_hybrid_states: Required when mode='hybrid'.
+        name: Optional name for the output pool.
+        op_name: Optional name for the operation.
+        iter_order: Optional iteration order for the pool.
+        op_iter_order: Optional iteration order for the operation.
+    
+    Returns:
+        A Pool that generates mutated sequences.
+    
+    Examples:
+        # Apply exactly 2 mutations
+        >>> mutants = mutagenize('ACGTACGT', num_mutations=2)
+        
+        # Apply mutations with 10% rate per position
+        >>> mutants = mutagenize('ACGTACGT', mutation_rate=0.1)
+        
+        # Enumerate all single mutants
+        >>> mutants = mutagenize('ACGT', num_mutations=1, mode='sequential')
+    """
     from .from_seq import from_seq
     pool = from_seq(pool) if isinstance(pool, str) else pool
-    op = MutagenizeUsingNumOp(parent_pool=pool, num_mutations=num_mutations, alphabet=alphabet, mode=mode, 
-                        num_hybrid_states=num_hybrid_states, name=op_name,
-                        iter_order=op_iter_order)
+    op = MutagenizeOp(
+        parent_pool=pool,
+        num_mutations=num_mutations,
+        mutation_rate=mutation_rate,
+        alphabet=alphabet,
+        mode=mode,
+        num_hybrid_states=num_hybrid_states,
+        name=op_name,
+        iter_order=op_iter_order,
+    )
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool

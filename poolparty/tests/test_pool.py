@@ -45,7 +45,7 @@ class TestPoolCreation:
         """Test Pool parents property returns operation's parent_pools."""
         with pp.Party() as party:
             seq = pp.from_seqs(['AAA'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)
+            mutants = pp.mutagenize(seq, num_mutations=1)
             
             # mutants pool should have seq as parent
             assert len(mutants.parents) == 1
@@ -114,7 +114,7 @@ class TestPoolCopy:
         """Test that copied pool's operation references same parent_pools."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)
+            mutants = pp.mutagenize(seq, num_mutations=1)
             copied = mutants.copy()
             
             # Both should reference the same parent pool
@@ -146,11 +146,11 @@ class TestPoolCopy:
         assert list(df1['original.seq']) == ['A', 'B']
         assert list(df2['copied.seq']) == ['A', 'B']
     
-    def test_copy_mutagenize_using_num_pool(self):
-        """Test copying a mutagenize_using_num pool."""
+    def test_copy_mutagenize_pool(self):
+        """Test copying a mutagenize pool."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], mode='sequential')
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1, name='mutants', mode='sequential')
+            mutants = pp.mutagenize(seq, num_mutations=1, name='mutants', mode='sequential')
             copied = mutants.copy(name='copied')
         
         df_mutants = mutants.generate_seqs(num_seqs=5, seed=42, init_state=0)
@@ -212,7 +212,7 @@ class TestPoolDeepCopy:
         """Test that deepcopy() creates a new pool instance."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)
+            mutants = pp.mutagenize(seq, num_mutations=1)
             copied = mutants.deepcopy()
             
             assert copied is not mutants
@@ -222,7 +222,7 @@ class TestPoolDeepCopy:
         """Test that deepcopy() creates a new operation."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)
+            mutants = pp.mutagenize(seq, num_mutations=1)
             copied = mutants.deepcopy()
             
             assert copied.operation is not mutants.operation
@@ -231,7 +231,7 @@ class TestPoolDeepCopy:
         """Test that deepcopy() creates new parent pools."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)
+            mutants = pp.mutagenize(seq, num_mutations=1)
             copied = mutants.deepcopy()
             
             # The parent pool should be a different object
@@ -284,7 +284,7 @@ class TestPoolDeepCopy:
         """Test that deepcopy creates a fully independent DAG."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], name='seq', mode='sequential')
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1, name='mutants', mode='sequential')
+            mutants = pp.mutagenize(seq, num_mutations=1, name='mutants', mode='sequential')
             copied = mutants.deepcopy(name='copied')
             
             # Verify the copied pool's parent is different from original
@@ -298,8 +298,8 @@ class TestPoolDeepCopy:
         """Test deepcopy on a chain of pools."""
         with pp.Party() as party:
             a = pp.from_seqs(['ACGT'], name='a', mode='sequential')
-            b = pp.mutagenize_using_num(a, num_mutations=1, name='b', mode='sequential')
-            c = pp.mutagenize_using_num(b, num_mutations=1, name='c', mode='sequential')
+            b = pp.mutagenize(a, num_mutations=1, name='b', mode='sequential')
+            c = pp.mutagenize(b, num_mutations=1, name='c', mode='sequential')
             copied = c.deepcopy(name='copied')
         
         # Verify the entire chain is copied
@@ -323,11 +323,11 @@ class TestPoolDeepCopy:
         df_copied = copied.generate_seqs(num_complete_iterations=1, init_state=0)
         assert list(df_stacked['stacked.seq']) == list(df_copied['copied.seq'])
     
-    def test_deepcopy_mutagenize_using_num_produces_same(self):
-        """Test deepcopy of mutagenize_using_num produces same sequences."""
+    def test_deepcopy_mutagenize_produces_same(self):
+        """Test deepcopy of mutagenize produces same sequences."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], mode='sequential')
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1, name='mutants', mode='sequential')
+            mutants = pp.mutagenize(seq, num_mutations=1, name='mutants', mode='sequential')
             copied = mutants.deepcopy(name='copied')
         
         df_mutants = mutants.generate_seqs(num_seqs=5, seed=42, init_state=0)
@@ -661,7 +661,7 @@ class TestPoolGenerate:
         """Test generate() with aux_pools."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', mode='sequential')
-            b = pp.mutagenize_using_num(a, num_mutations=1, name='B', mode='sequential')
+            b = pp.mutagenize(a, num_mutations=1, name='B', mode='sequential')
         
         df = b.generate_seqs(num_complete_iterations=1, aux_pools=[a])
         assert 'B.seq' in df.columns
@@ -715,10 +715,10 @@ class TestPoolGenerate:
         """Test that generate() includes design card columns."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'])
-            mutants = pp.mutagenize_using_num(pool, num_mutations=1)
+            mutants = pp.mutagenize(pool, num_mutations=1)
         
         df = mutants.generate_seqs(num_seqs=5)
-        # Should have design card columns from mutagenize_using_num
+        # Should have design card columns from mutagenize
         design_cols = [c for c in df.columns if '.' in c]
         assert len(design_cols) > 0
     
@@ -726,7 +726,7 @@ class TestPoolGenerate:
         """Test that 'seq' column appears first, then pool's .seq column."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA'], name='A')
-            mutants = pp.mutagenize_using_num(pool, num_mutations=1, name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=3)
         assert df.columns[0] == 'seq'
@@ -831,7 +831,7 @@ class TestPoolGenerateRecordStates:
         """Test that counter columns appear after output cols, before design cards."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
-            mutants = pp.mutagenize_using_num(pool, num_mutations=1, name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=5, report_pool_states=True)
         
@@ -889,7 +889,7 @@ class TestPoolGenerateRecordKeys:
         """Test that report_op_keys=True (default) includes design card columns."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
-            mutants = pp.mutagenize_using_num(pool, num_mutations=1, name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=5)
         # Should have design card columns (contain '.key.')
@@ -900,7 +900,7 @@ class TestPoolGenerateRecordKeys:
         """Test that report_op_keys=False excludes design card columns."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
-            mutants = pp.mutagenize_using_num(pool, num_mutations=1, name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=5, report_op_keys=False)
         # Should NOT have design card columns
@@ -911,7 +911,7 @@ class TestPoolGenerateRecordKeys:
         """Test that report_op_keys=False still includes sequence columns."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
-            mutants = pp.mutagenize_using_num(pool, num_mutations=1, name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=5, report_op_keys=False)
         assert 'B.seq' in df.columns
@@ -920,7 +920,7 @@ class TestPoolGenerateRecordKeys:
         """Test that report_op_keys=False works with report_pool_states=True."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
-            mutants = pp.mutagenize_using_num(pool, num_mutations=1, name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
         df = mutants.generate_seqs(num_seqs=5, report_op_keys=False, report_pool_states=True)
         
@@ -943,7 +943,7 @@ class TestPoolGeneratePoolsToRecord:
         """Test that pools_to_report='all' (default) includes all pools' info."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
-            b = pp.mutagenize_using_num(a, num_mutations=1, name='B', op_name='op_B')
+            b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
         
         df = b.generate_seqs(num_seqs=5)
         
@@ -961,7 +961,7 @@ class TestPoolGeneratePoolsToRecord:
         """Test that pools_to_report='self' only includes self pool's info."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
-            b = pp.mutagenize_using_num(a, num_mutations=1, name='B', op_name='op_B')
+            b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
         
         df = b.generate_seqs(num_seqs=5, pools_to_report='self')
         
@@ -979,7 +979,7 @@ class TestPoolGeneratePoolsToRecord:
         """Test that pools_to_report=[pool] filters to those pools."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
-            b = pp.mutagenize_using_num(a, num_mutations=1, name='B', op_name='op_B')
+            b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
         
         # Record only A's info
         df = b.generate_seqs(num_seqs=5, pools_to_report=[a])
@@ -998,7 +998,7 @@ class TestPoolGeneratePoolsToRecord:
         """Test that pools_to_report respects report_pool_states=False and report_op_states=False."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
-            b = pp.mutagenize_using_num(a, num_mutations=1, name='B', op_name='op_B')
+            b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
         
         df = b.generate_seqs(num_seqs=5, pools_to_report='self', report_pool_states=False, report_op_states=False)
         
@@ -1014,7 +1014,7 @@ class TestPoolGeneratePoolsToRecord:
         """Test that pools_to_report respects report_op_keys=False."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA', 'TTT'], name='A')
-            b = pp.mutagenize_using_num(a, num_mutations=1, name='B')
+            b = pp.mutagenize(a, num_mutations=1, name='B')
         
         df = b.generate_seqs(num_seqs=5, pools_to_report='self', report_op_keys=False)
         
@@ -1030,7 +1030,7 @@ class TestPoolGeneratePoolsToRecord:
         """Test that pools_to_report='self' still includes sequence columns."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA', 'TTT'], name='A')
-            b = pp.mutagenize_using_num(a, num_mutations=1, name='B')
+            b = pp.mutagenize(a, num_mutations=1, name='B')
         
         df = b.generate_seqs(num_seqs=5, pools_to_report='self')
         assert 'B.seq' in df.columns
@@ -1071,14 +1071,14 @@ class TestPoolStateMinusOneReturnsNone:
             else:
                 assert row['A.seq'] in ['AAAAA', 'TTTTT'], f"Row {i}: A.seq should be valid when active"
     
-    def test_inactive_pool_seq_none_with_mutagenize_using_num(self):
-        """Test inactive pool returns None with downstream mutagenize_using_num."""
+    def test_inactive_pool_seq_none_with_mutagenize(self):
+        """Test inactive pool returns None with downstream mutagenize."""
         import pandas as pd
         with pp.Party() as party:
             a = pp.from_seqs(['AAAAA', 'TTTTT'], name='A', mode='sequential')
             b = pp.from_seqs(['CCCCC'], name='B', mode='sequential')
             c = (a + b).named('C')
-            d = pp.mutagenize_using_num(c, num_mutations=1, name='D', mode='sequential')
+            d = pp.mutagenize(c, num_mutations=1, name='D', mode='sequential')
         
         df = d.generate_seqs(num_complete_iterations=1, aux_pools=[a, b, c])
         
@@ -1180,14 +1180,14 @@ class TestPoolStateMinusOneReturnsNone:
                 for col in op_b_key_cols:
                     assert pd.notna(row[col]), f"Row {i}: {col} should not be None when op_B is active"
     
-    def test_inactive_mutagenize_using_num_keys_are_none(self):
-        """Test that mutagenize_using_num design card keys are None when parent is inactive."""
+    def test_inactive_mutagenize_keys_are_none(self):
+        """Test that mutagenize design card keys are None when parent is inactive."""
         import pandas as pd
         with pp.Party() as party:
             a = pp.from_seqs(['AAAAA'], name='A', op_name='op_A', mode='sequential')
             b = pp.from_seqs(['CCCCC'], name='B', op_name='op_B', mode='sequential')
             c = (a + b).named('C')
-            d = pp.mutagenize_using_num(c, num_mutations=1, name='D', op_name='op_D', mode='sequential')
+            d = pp.mutagenize(c, num_mutations=1, name='D', op_name='op_D', mode='sequential')
         
         df = d.generate_seqs(num_complete_iterations=1, aux_pools=[a, b, c])
         

@@ -251,11 +251,11 @@ class TestJoinChaining:
 class TestJoinWithOtherOperations:
     """Test join with other operation types."""
     
-    def test_with_mutagenize_using_num(self):
+    def test_with_mutagenize(self):
         """Test joining with mutation scan output."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], mode='sequential')
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1, mode='sequential')
+            mutants = pp.mutagenize(seq, num_mutations=1, mode='sequential')
             barcode = pp.from_seqs(['NNNN'], mode='sequential')
             combined = join([mutants, '.', barcode]).named('seq')
         

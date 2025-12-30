@@ -125,7 +125,7 @@ class Operation:
             # Source operation: pool counter IS the operation counter
             return sc.passthrough(self.counter)
         else: 
-            return sc.ordered_product(parent_counters + [self.counter])
+            return sc.ordered_product(counters=parent_counters + [self.counter])
 
     
     def compute_design_card(

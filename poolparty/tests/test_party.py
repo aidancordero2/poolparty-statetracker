@@ -80,7 +80,7 @@ class TestMutationScan:
     def test_single_mutation_sequential(self):
         """Test single mutation in sequential mode."""
         with pp.Party() as party:
-            mutants = pp.mutagenize_using_num('ACGT', num_mutations=1, mode='sequential').named('mutant')
+            mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
         
         df = mutants.generate_seqs(num_complete_iterations=1)
         # 4 positions * 3 mutations each = 12 mutants
@@ -95,16 +95,16 @@ class TestMutationScan:
     def test_double_mutation_sequential(self):
         """Test double mutation in sequential mode."""
         with pp.Party() as party:
-            mutants = pp.mutagenize_using_num('ACGT', num_mutations=2, mode='sequential').named('mutant')
+            mutants = pp.mutagenize('ACGT', num_mutations=2, mode='sequential').named('mutant')
         
         df = mutants.generate_seqs(num_complete_iterations=1)
         # C(4,2) * 3^2 = 6 * 9 = 54 mutants
         assert len(df) == 54
     
-    def test_mutagenize_using_num_random(self):
+    def test_mutagenize_random(self):
         """Test mutation scan in random mode."""
         with pp.Party() as party:
-            mutants = pp.mutagenize_using_num('ACGTACGT', num_mutations=1, mode='random').named('mutant')
+            mutants = pp.mutagenize('ACGTACGT', num_mutations=1, mode='random').named('mutant')
         
         df = mutants.generate_seqs(num_seqs=10, seed=42)
         assert len(df) == 10
@@ -153,7 +153,7 @@ class TestBreakpointScan:
         with pp.Party() as party:
             left, right = pp.breakpoint_scan('ACGTACGT', num_breakpoints=1, 
                                               mode='sequential')
-            mutated_right = pp.mutagenize_using_num(right, num_mutations=1, mode='sequential')
+            mutated_right = pp.mutagenize(right, num_mutations=1, mode='sequential')
             oligo = join([left, mutated_right]).named('oligo')
         
         with pytest.raises(sc.ConflictingStateAssignmentError):
@@ -200,7 +200,7 @@ class TestMixedModes:
     def test_sequential_with_random_barcode(self):
         """Test sequential mutations with random barcodes."""
         with pp.Party() as party:
-            mutants = pp.mutagenize_using_num('ACGT', num_mutations=1, mode='sequential')
+            mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential')
             barcode = pp.get_kmers(length=4, alphabet='dna', mode='random')
             oligo = join([mutants, '.', barcode]).named('oligo')
         
@@ -215,10 +215,10 @@ class TestMixedModes:
 class TestDesignCards:
     """Test design card metadata."""
     
-    def test_mutagenize_using_num_metadata(self):
+    def test_mutagenize_metadata(self):
         """Test that mutation scan includes position and char metadata."""
         with pp.Party() as party:
-            mutants = pp.mutagenize_using_num('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
+            mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
         df = mutants.generate_seqs(num_seqs=3)
         
@@ -282,7 +282,7 @@ class TestSeqSliceOp:
         with pp.Party() as party:
             pool = pp.from_seqs(['ACGTACGT'])
             first_half = seq_slice(pool, slice(0, 4))
-            mutated = pp.mutagenize_using_num(first_half, num_mutations=1, mode='sequential').named('mutated')
+            mutated = pp.mutagenize(first_half, num_mutations=1, mode='sequential').named('mutated')
         
         df = mutated.generate_seqs(num_seqs=3)
         # All should be 4 characters
@@ -407,10 +407,10 @@ class TestCounterManagerIntegration:
             names = party.counter_manager.get_all_names()
             assert len(names) > 0
     
-    def test_counters_registered_mutagenize_using_num(self):
-        """Test that mutagenize_using_num counters are registered."""
+    def test_counters_registered_mutagenize(self):
+        """Test that mutagenize counters are registered."""
         with pp.Party() as party:
-            mutants = pp.mutagenize_using_num('ACGT', num_mutations=1, mode='sequential').named('mutant')
+            mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
             
             # Should have multiple counters registered
             names = party.counter_manager.get_all_names()
@@ -455,13 +455,13 @@ class TestCounterManagerIntegration:
         """Test that counters from a complex DAG are all registered."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], mode='sequential')
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1, mode='sequential')
+            mutants = pp.mutagenize(seq, num_mutations=1, mode='sequential')
             barcode = pp.get_kmers(length=4, alphabet='dna', mode='random')
             oligo = pp.join([mutants, '---', barcode]).named('oligo')
             
             # Should have multiple counters registered
             names = party.counter_manager.get_all_names()
-            # At minimum: from_seqs counter, mutagenize_using_num counter, get_kmers counter,
+            # At minimum: from_seqs counter, mutagenize counter, get_kmers counter,
             # join counter, and their pool counters
             assert len(names) >= 4
 
@@ -516,7 +516,7 @@ class TestPrintGraph:
         """Test print_graph() with a chain of pools."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], name='seq', mode='sequential')
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1, mode='sequential', name='mutants')
+            mutants = pp.mutagenize(seq, num_mutations=1, mode='sequential', name='mutants')
         
         party.print_graph()
         captured = capsys.readouterr()
@@ -561,7 +561,7 @@ class TestPrintGraph:
         """Test print_graph() shows operation mode."""
         with pp.Party() as party:
             seq_pool = pp.from_seqs(['ACGT'], name='seq', mode='sequential')
-            mutants = pp.mutagenize_using_num(seq_pool, num_mutations=1, mode='sequential', name='mutants')
+            mutants = pp.mutagenize(seq_pool, num_mutations=1, mode='sequential', name='mutants')
         
         party.print_graph()
         captured = capsys.readouterr()
@@ -573,14 +573,14 @@ class TestPrintGraph:
         """Test print_graph() shows operation factory_name."""
         with pp.Party() as party:
             seq_pool = pp.from_seqs(['ACGT'], name='seq', mode='sequential')
-            mutants = pp.mutagenize_using_num(seq_pool, num_mutations=1, mode='sequential', name='mutants')
+            mutants = pp.mutagenize(seq_pool, num_mutations=1, mode='sequential', name='mutants')
         
         party.print_graph()
         captured = capsys.readouterr()
         
         # Should show factory names in clean mode
         assert 'op=from_seqs' in captured.out
-        assert 'op=mutagenize_using_num' in captured.out
+        assert 'op=mutagenize' in captured.out
     
     def test_print_graph_no_pools(self, capsys):
         """Test print_graph() with no pools registered."""

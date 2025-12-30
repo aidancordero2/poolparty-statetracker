@@ -40,7 +40,7 @@ class TestOperationIdCounter:
         """Test that IDs are unique across different operation types."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])  # id=0
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)  # id=1
+            mutants = pp.mutagenize(seq, num_mutations=1)  # id=1
             barcode = pp.get_kmers(length=4)  # id=2
             
             assert seq.operation.id == 0
@@ -55,7 +55,7 @@ class TestOperationAttributes:
         """Test parent_pools attribute."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)
+            mutants = pp.mutagenize(seq, num_mutations=1)
             
             assert len(seq.operation.parent_pools) == 0
             assert len(mutants.operation.parent_pools) == 1
@@ -365,11 +365,11 @@ class TestOperationCopy:
             result = copied_op.compute_seq_from_card([], card)
             assert result['seq_0'] == 'A'
     
-    def test_copy_mutagenize_using_num_op(self):
-        """Test copying MutagenizeUsingNumOp."""
+    def test_copy_mutagenize_op(self):
+        """Test copying MutagenizeOp."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)
+            mutants = pp.mutagenize(seq, num_mutations=1)
             copied_op = mutants.operation.copy()
             
             assert copied_op.parent_pools == mutants.operation.parent_pools
@@ -468,7 +468,7 @@ class TestOperationDeepCopy:
         """Test that deepcopy() creates a new operation instance."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)
+            mutants = pp.mutagenize(seq, num_mutations=1)
             copied_op = mutants.operation.deepcopy()
             
             assert copied_op is not mutants.operation
@@ -478,7 +478,7 @@ class TestOperationDeepCopy:
         """Test that deepcopied operation gets a new ID."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)
+            mutants = pp.mutagenize(seq, num_mutations=1)
             copied_op = mutants.operation.deepcopy()
             
             assert copied_op.id != mutants.operation.id
@@ -487,7 +487,7 @@ class TestOperationDeepCopy:
         """Test that deepcopy() creates new parent pools (not same references)."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)
+            mutants = pp.mutagenize(seq, num_mutations=1)
             copied_op = mutants.operation.deepcopy()
             
             # The parent pools should be different objects
@@ -497,7 +497,7 @@ class TestOperationDeepCopy:
         """Test that deepcopy() accepts custom name."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1)
+            mutants = pp.mutagenize(seq, num_mutations=1)
             copied_op = mutants.operation.deepcopy(name='my_deepcopy')
             
             assert copied_op.name == 'my_deepcopy'
@@ -506,7 +506,7 @@ class TestOperationDeepCopy:
         """Test that deepcopy() uses self.name + '.copy' as default name."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=1, op_name='my_mutants')
+            mutants = pp.mutagenize(seq, num_mutations=1, op_name='my_mutants')
             copied_op = mutants.operation.deepcopy()
             
             assert copied_op.name == 'my_mutants.copy'
@@ -515,7 +515,7 @@ class TestOperationDeepCopy:
         """Test that deepcopy() preserves operation parameters."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize_using_num(seq, num_mutations=2, mode='sequential')
+            mutants = pp.mutagenize(seq, num_mutations=2, mode='sequential')
             copied_op = mutants.operation.deepcopy()
             
             assert copied_op.num_states == mutants.operation.num_states
@@ -525,8 +525,8 @@ class TestOperationDeepCopy:
         """Test deepcopy on a chain of operations."""
         with pp.Party() as party:
             a = pp.from_seqs(['ACGT'])
-            b = pp.mutagenize_using_num(a, num_mutations=1)
-            c = pp.mutagenize_using_num(b, num_mutations=1)
+            b = pp.mutagenize(a, num_mutations=1)
+            c = pp.mutagenize(b, num_mutations=1)
             
             copied_op = c.operation.deepcopy()
             
