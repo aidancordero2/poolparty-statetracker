@@ -113,40 +113,40 @@ def get_kmers(
     alphabet: AlphabetType = 'dna',
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
-    iter_order: Real = 0,
-    op_iter_order: Real = 0,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
+    iter_order: Real = 0,
+    op_iter_order: Real = 0,
 ) -> Pool_type:
     """
-    Create a Pool that generates k-mers (length-k sequences) over a specified alphabet.
+    Create a Pool that generates k-mers from an alphabet.
 
     Parameters
     ----------
     length : int
-        Length of each k-mer to be generated.
+        Length of k-mers to generate.
     alphabet : AlphabetType, default='dna'
-        Alphabet to use for generating k-mers (e.g., 'dna', 'rna', 'protein', or custom list).
+        Alphabet to use for generating k-mers ('dna', 'rna', 'protein', or a custom iterable/list).
     mode : ModeType, default='random'
-        Sequence generation mode: 'sequential', 'random', or 'hybrid'.
+        Sequence selection mode: 'sequential', 'random', or 'hybrid'.
     num_hybrid_states : Optional[int], default=None
-        Number of unique k-mers to produce when mode is 'hybrid'.
-    iter_order : Real, default=0
-        Iteration priority for the Pool in combinatorial design.
-    op_iter_order : Real, default=0
-        Iteration priority for the internal Operation (no practical effect for most users).
+        Number of pool states if mode is 'hybrid'. Ignored for other modes.
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
-        Name for the internal Operation.
+        Name for the underlying Operation.
+    iter_order : Real, default=0
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Real, default=0
+        Iteration order priority for the internal Operation (typically unused).
 
     Returns
     -------
     Pool_type
-        A Pool object whose states yield k-mers of the specified length and alphabet.
+        A Pool whose states yield k-mers of the specified length and alphabet.
     """
     op = GetKmersOp(length, alphabet=alphabet, mode=mode, 
                     num_hybrid_states=num_hybrid_states, name=op_name,
                     iter_order=op_iter_order)
-    pool = Pool(operation=op, output_index=0, iter_order=iter_order, name=name)
+    pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool

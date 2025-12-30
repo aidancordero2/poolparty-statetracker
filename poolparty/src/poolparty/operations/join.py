@@ -19,14 +19,7 @@ class JoinOp(Operation):
         name: Optional[str] = None,
         op_iteration_order: Real = 0,
     ) -> None:
-        """Initialize JoinOp.
-        
-        Args:
-            parent_pools: List of parent pools to join.
-            spacer_str: String to insert between joined sequences.
-            name: Optional operation name.
-            op_iteration_order: Iteration order for this operation's counter.
-        """
+        """Initialize JoinOp."""
         self.spacer_str = spacer_str
         
         # Compute seq_length as sum of parent lengths plus spacers if all are known
@@ -74,39 +67,40 @@ class JoinOp(Operation):
 
 @beartype
 def join(
-    items: list[Union[Pool_type, str]],
+    segment_pools: Sequence[Union[Pool_type, str]],
     spacer_str: str = '',
-    pool_iteration_order: Real = 0,
-    op_iteration_order: Real = 0,
-    op_name: Optional[str] = None,
     name: Optional[str] = None,
+    op_name: Optional[str] = None,
+    iter_order: Real = 0,
+    op_iter_order: Real = 0,
 ) -> Pool_type:
-    """Join multiple pools and/or strings.
-    
-    Args:
-        items: List of pools and/or strings to join.
-        spacer_str: String to insert between joined sequences.
-        pool_iteration_order: Sort key for the result pool (default 0).
-        op_iteration_order: Sort key for this operation's counter (default 0).
-        op_name: Optional operation name.
-        name: Optional pool name.
-    
-    Returns:
-        A pool that joins all input sequences.
     """
-    from .from_seqs import from_seqs
-    parent_pools = []
-    for item in items:
-        if isinstance(item, str):
-            pool = from_seqs([item], mode='fixed')
-            parent_pools.append(pool)
-        else:
-            parent_pools.append(item)
-    op = JoinOp(parent_pools, spacer_str=spacer_str, name=op_name,
-                op_iteration_order=op_iteration_order)
-    pool = Pool(operation=op, output_index=0)
-    pool.iter_order = pool_iteration_order
-    if name is not None:
-        pool.name = name
-    return pool
+    Concatenate multiple Pools or string sequences into a single Pool.
 
+    Parameters
+    ----------
+    segment_pools : Sequence[Union[Pool_type, str]]
+        List of Pool objects and/or strings to be joined in order.
+        Any provided string is automatically converted to a constant Pool.
+    spacer_str : str, default=''
+        String to insert between joined sequences.
+    name : Optional[str], default=None
+        Name to assign to the resulting Pool.
+    op_name : Optional[str], default=None
+        Name to assign to the internal JoinOp operation.
+    iter_order : Real, default=0
+        Iteration priority for the resulting Pool.
+    op_iter_order : Real, default=0
+        Iteration priority for the internal JoinOp operation (typically unused).
+
+    Returns
+    -------
+    Pool_type
+        A Pool whose states yield joined sequences from the specified inputs.
+    """
+    from .from_seq import from_seq
+    parent_pools = [from_seq(item) if isinstance(item, str) else item for item in segment_pools]
+    op = JoinOp(parent_pools, spacer_str=spacer_str, name=op_name,
+                op_iteration_order=op_iter_order)
+    pool = Pool(operation=op, name=name, iter_order=iter_order)
+    return pool
