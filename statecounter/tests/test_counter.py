@@ -556,5 +556,22 @@ class TestConflictDetection:
             B.name = 'B'
             C = sync([A, B], name='C')
             
+            # With A defaulting to 0, C.reset() would cause immediate conflict
+            # So we manually set C to state 0 (which will raise conflict)
+            # But to test advance(), we need to set up a non-conflicting state first
+            # Since sync([A, A[::-1]]) always conflicts, we test that reset() raises
+            # and then test advance() on a counter that's already active
             with pytest.raises(ConflictingStateAssignmentError):
-                C.advance()  # advance() calls state setter
+                C.reset()  # reset() causes conflict because A defaults to 0
+            
+            # For advance() test, manually set C to a state that would work
+            # if A were at the right state, then advance should cause conflict
+            # Actually, any state assignment to C will conflict, so we test that
+            # advance() on an already-active counter also detects conflicts
+            # But C can't be active without conflict, so we test a different scenario:
+            # Set A to a specific state, then try to advance C
+            A.state = 2  # Set A to state 2
+            C.state = 2  # This should work: A=2, B=2 means A[::-1]=2 means A=2 (no conflict)
+            # Now advance C: C.state = 3 means A=3, B=3 means A[::-1]=3 means A=1 (conflict!)
+            with pytest.raises(ConflictingStateAssignmentError):
+                C.advance()  # advance() calls state setter, detects conflict

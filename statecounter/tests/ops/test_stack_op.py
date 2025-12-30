@@ -19,7 +19,7 @@ class TestStackOperation:
             A = Counter(num_states=2, name='A')
             B = Counter(num_states=4, name='B')
             C = stack([A,B])
-            assert C.state == 0
+            assert C.state is None  # Derived counter defaults to inactive
     
     def test_stack_propagation_a_branch(self):
         """Sum in A's branch propagates correctly, B is inactive."""

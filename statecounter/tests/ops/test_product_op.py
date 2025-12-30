@@ -17,9 +17,9 @@ class TestProductOperation:
             A = Counter(num_states=2, name='A')
             B = Counter(num_states=3, name='B')
             C = product([A, B])
-            assert A.state == 0
-            assert B.state == 0
-            assert C.state == 0
+            assert A.state == 0  # Leaf counter defaults to 0
+            assert B.state == 0  # Leaf counter defaults to 0
+            assert C.state is None  # Derived counter defaults to inactive
     
     def test_product_state_propagation_down(self):
         """Setting product state propagates to parents."""

@@ -180,12 +180,15 @@ class TestSliceOperation:
             ]
             assert results == expected
     
-    def test_slice_integer_raises(self):
-        """Indexing with integer raises TypeError."""
+    def test_slice_integer(self):
+        """Indexing with integer creates single-state slice."""
         with Manager():
             A = Counter(num_states=8, name='A')
-            with pytest.raises(TypeError, match="Counter indices must be slices"):
-                A[3]
+            B = A[3]
+            assert B.num_states == 1
+            B.state = 0
+            assert B.state == 0  # B's state is 0, which maps to A's state 3
+            assert A.state == 3
     
     def test_slice_empty_result(self):
         """Empty slice returns counter with 0 states."""
@@ -200,7 +203,10 @@ class TestSliceOperation:
             A = Counter(num_states=8, name='A')
             B = A[1:5]
             B.state = None
-            assert A.state is None
+            # Setting derived counter to None doesn't propagate to parent
+            # A remains at its default state (0 for leaf counter)
+            assert A.state == 0
+            assert B.state is None
 
 
 class TestSliceOp:

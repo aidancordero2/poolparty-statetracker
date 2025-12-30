@@ -1,5 +1,5 @@
 """Counter class for composable iteration."""
-from .imports import beartype, Sequence, Optional, Real, Integral, Operation_type, Counter_type
+from .imports import beartype, Sequence, Optional, Real, Integral, Operation_type, Counter_type, Union
 from .manager import Manager
 
 @beartype
@@ -15,6 +15,7 @@ class Counter:
     def __init__(self, 
                  num_states: Optional[Integral] = None, 
                  name: Optional[str] = None, 
+                 state: Optional[Integral] = None,
                  iter_order: Optional[Real] = None, *, 
                  _parents: Optional[Sequence[Counter_type]] = None, 
                  _op: Optional[Operation_type] = None):
@@ -25,7 +26,6 @@ class Counter:
         
         self._id = None
         self._name = name
-        self._state = 0
         self._parents = tuple(_parents) if _parents else ()
         self._op = _op
         
@@ -48,6 +48,16 @@ class Counter:
         # Register with Manager
         self._manager = Manager._active_manager
         self._manager.register(self)
+        
+        # Set state
+        if state is not None:
+            self.state = state
+        elif not self._parents:
+            # Leaf counter: default to active at state 0
+            self.state = 0
+        else:
+            # Derived counter: default to inactive (no propagation to parents)
+            self._state = None
     
     @property
     def iter_order(self):
@@ -55,7 +65,7 @@ class Counter:
         return self._iter_order
     
     @iter_order.setter
-    def iter_order(self, value):
+    def iter_order(self, value: Real):
         """Set iteration order for this counter."""
         self._iter_order = value
         
@@ -89,19 +99,21 @@ class Counter:
         return self._state
     
     @state.setter
-    def state(self, value):
+    def state(self, value: Optional[Integral]):
         """Set state and propagate to parents with conflict detection."""
-        self._inactivate_tree()
-        if value is not None:
+        if value is None:
+            self._state = None
+        else:
+            self._inactivate_tree()
             self._set_inactivated_states_in_tree(value)
     
-    def _set_inactivated_states_in_tree(self, value):
+    def _set_inactivated_states_in_tree(self, value: Optional[Integral]):
         """Set state in pre-inactivated tree with conflict detection."""
         match (self._state, value):
             case (None, None):
                 # Both inactive - nothing to do
                 pass
-            case (None, int()):
+            case (None, Integral()):
                 # Setting active state on inactive counter - normal case
                 self._state = value
                 if self._parents:
@@ -109,16 +121,16 @@ class Counter:
                     parent_values = self._op.decompose(self._state, parent_num_states)
                     for parent, pv in zip(self._parents, parent_values):
                         parent._set_inactivated_states_in_tree(pv)
-            case (int(), int()) if self._state == value:
+            case (Integral(), Integral()) if self._state == value:
                 # Already set to same value - no conflict, do nothing
                 pass
-            case (int(), int()):
+            case (Integral(), Integral()):
                 # Different values - CONFLICT
                 raise ConflictingStateAssignmentError(
                     f"Counter '{self.name}' received conflicting state assignments: "
                     f"already set to {self._state}, now attempting to set to {value}."
                 )
-            case (int(), None):
+            case (Integral(), None):
                 # Counter already set by another path, this path doesn't need it
                 # (happens with StackOp where inactive branches return None)
                 pass
@@ -129,7 +141,7 @@ class Counter:
             raise RuntimeError("Cannot advance an inactive counter (state=None)")
         self.state = (self._state + 1) % self._num_states
     
-    def reset(self, state: int = 0):
+    def reset(self, state: Integral = 0):
         """Reset to specified state (default 0)."""
         self.state = state
     
@@ -151,34 +163,31 @@ class Counter:
             self.advance()
         self.reset()
     
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[Integral, slice]):
         """Create sliced counter: B = A[1:5] or A[::2] or A[::-1]."""
         from .ops import SliceOp
-        if not isinstance(key, slice):
-            raise TypeError("Counter indices must be slices, not integers")
+        # If key is an int, convert it to a slice for that single state
+        if isinstance(key, int):
+            key = slice(key, key + 1, 1)
         start, stop, step = key.indices(self._num_states)
         return Counter(_parents=(self,), _op=SliceOp(start, stop, step))
     
-    def copy(self, name=None):
+    def copy(self, name: Optional[str] = None):
         """Create a shallow copy with the same parents but a new Counter object."""
         if self._parents:
-            new_counter = Counter(_parents=self._parents, _op=self._op)
+            new_counter = Counter(_parents=self._parents, _op=self._op, name=name)
         else:
-            new_counter = Counter(self._num_states)
-        if name is not None:
-            new_counter._name = name
+            new_counter = Counter(self._num_states, name=name)
         new_counter.state = self._state
         return new_counter
     
-    def deepcopy(self, name=None):
+    def deepcopy(self, name: Optional[str] = None):
         """Create a deep copy with all ancestors also copied."""
         if not self._parents:
-            new_counter = Counter(self._num_states)
+            new_counter = Counter(self._num_states, name=name)
         else:
             new_parents = tuple(p.deepcopy() for p in self._parents)
-            new_counter = Counter(_parents=new_parents, _op=self._op)
-        if name is not None:
-            new_counter._name = name
+            new_counter = Counter(_parents=new_parents, _op=self._op, name=name)
         new_counter.state = self._state
         return new_counter
     
