@@ -33,7 +33,7 @@ class BreakpointScanOp(Operation):
         step_size: int = 1,
         min_spacing: int | None = None,
         max_spacing: int | None = None,
-        mode: ModeType = 'sequential',
+        mode: ModeType = 'random',
         name: str = 'breakpoint_scan',
     ) -> None:
         """Initialize BreakpointScanOp.
@@ -198,7 +198,7 @@ def breakpoint_scan(
     step_size: int = 1,
     min_spacing: int | None = None,
     max_spacing: int | None = None,
-    mode: ModeType = 'sequential',
+    mode: ModeType = 'random',
     name: str = 'breakpoint_scan',
 ) -> tuple[Pool, ...]:
     """Split a sequence at breakpoint positions.

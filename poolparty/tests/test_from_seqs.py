@@ -25,7 +25,7 @@ class TestFromSeqsFactory:
     def test_with_names(self):
         """Test from_seqs with custom names."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA', 'TTT'], seq_names=['seq_a', 'seq_b'], op_name='seqs').named('mypool')
+            pool = from_seqs(['AAA', 'TTT'], seq_names=['seq_a', 'seq_b'], op_name='seqs', mode='sequential').named('mypool')
         
         df = pool.generate_seqs(num_seqs=2)
         assert list(df['mypool.op.key.seq_name']) == ['seq_a', 'seq_b']
@@ -118,7 +118,7 @@ class TestFromSeqsNames:
     def test_default_names(self):
         """Test default names are seq_0, seq_1, etc."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA', 'TTT', 'GGG'], op_name='seqs').named('mypool')
+            pool = from_seqs(['AAA', 'TTT', 'GGG'], op_name='seqs', mode='sequential').named('mypool')
         
         df = pool.generate_seqs(num_seqs=3)
         assert list(df['mypool.op.key.seq_name']) == ['seq_0', 'seq_1', 'seq_2']
@@ -126,7 +126,7 @@ class TestFromSeqsNames:
     def test_custom_names(self):
         """Test custom names."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA', 'TTT'], seq_names=['first', 'second'], op_name='seqs').named('mypool')
+            pool = from_seqs(['AAA', 'TTT'], seq_names=['first', 'second'], op_name='seqs', mode='sequential').named('mypool')
         
         df = pool.generate_seqs(num_seqs=2)
         assert list(df['mypool.op.key.seq_name']) == ['first', 'second']
@@ -147,7 +147,7 @@ class TestFromSeqsDesignCards:
     def test_seq_index_in_output(self):
         """Test seq_index is in output."""
         with pp.Party() as party:
-            pool = from_seqs(['A', 'B', 'C'], op_name='seqs').named('mypool')
+            pool = from_seqs(['A', 'B', 'C'], op_name='seqs', mode='sequential').named('mypool')
         
         df = pool.generate_seqs(num_seqs=3)
         assert 'mypool.op.key.seq_index' in df.columns

@@ -18,8 +18,8 @@ class TestDeletionScanBasics:
     def test_sequential_mode_default(self):
         """Test deletion_scan defaults to sequential mode."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
-            result = deletion_scan(bg, deletion_length=3).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
+            result = deletion_scan(bg, deletion_length=3, mode='sequential').named('result')
         
         # Default: start=0, end=7, step_size=1 => 8 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -28,8 +28,8 @@ class TestDeletionScanBasics:
     def test_preserves_total_length_with_marker(self):
         """Test that output length equals background length when marker is used."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
-            result = deletion_scan(bg, deletion_length=3, deletion_marker='-').named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
+            result = deletion_scan(bg, deletion_length=3, deletion_marker='-', mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         for seq in df['seq']:
@@ -38,8 +38,8 @@ class TestDeletionScanBasics:
     def test_reduces_length_without_marker(self):
         """Test that output length is reduced when no marker is used."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
-            result = deletion_scan(bg, deletion_length=3, deletion_marker=None).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
+            result = deletion_scan(bg, deletion_length=3, deletion_marker=None, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         for seq in df['seq']:
@@ -48,8 +48,8 @@ class TestDeletionScanBasics:
     def test_marker_appears_in_output(self):
         """Test that deletion marker appears in output."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            result = deletion_scan(bg, deletion_length=3, deletion_marker='-').named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
+            result = deletion_scan(bg, deletion_length=3, deletion_marker='-', mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         for seq in df['seq']:
@@ -76,8 +76,8 @@ class TestDeletionScanStartEndStep:
     def test_custom_start(self):
         """Test custom start position."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
-            result = deletion_scan(bg, deletion_length=3, start=3).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
+            result = deletion_scan(bg, deletion_length=3, start=3, mode='sequential').named('result')
         
         # start=3, end=7 (default), step_size=1 => 5 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -91,8 +91,8 @@ class TestDeletionScanStartEndStep:
     def test_custom_end(self):
         """Test custom end position."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
-            result = deletion_scan(bg, deletion_length=3, end=4).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
+            result = deletion_scan(bg, deletion_length=3, end=4, mode='sequential').named('result')
         
         # start=0 (default), end=4, step_size=1 => 5 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -106,8 +106,8 @@ class TestDeletionScanStartEndStep:
     def test_custom_step_size(self):
         """Test custom step_size."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
-            result = deletion_scan(bg, deletion_length=3, step_size=2).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
+            result = deletion_scan(bg, deletion_length=3, step_size=2, mode='sequential').named('result')
         
         # start=0, end=7, step_size=2 => positions 0, 2, 4, 6 = 4 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -116,8 +116,8 @@ class TestDeletionScanStartEndStep:
     def test_combined_start_end_step(self):
         """Test combining start, end, and step_size."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
-            result = deletion_scan(bg, deletion_length=3, start=2, end=6, step_size=2).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
+            result = deletion_scan(bg, deletion_length=3, start=2, end=6, step_size=2, mode='sequential').named('result')
         
         # positions 2, 4, 6 = 3 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -189,8 +189,8 @@ class TestDeletionScanMarkerOptions:
     def test_none_marker_removes_segment(self):
         """Test that None marker removes segment without replacement."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            result = deletion_scan(bg, deletion_length=3, deletion_marker=None).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
+            result = deletion_scan(bg, deletion_length=3, deletion_marker=None, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         for seq in df['seq']:
@@ -298,8 +298,8 @@ class TestDeletionScanWithMultipleSeqs:
     def test_multiple_backgrounds(self):
         """Test with multiple background sequences."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA', 'CCCCCCCCCC'])
-            result = deletion_scan(bg, deletion_length=3).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA', 'CCCCCCCCCC'], mode='sequential')
+            result = deletion_scan(bg, deletion_length=3, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         # 2 backgrounds * 8 positions = 16 sequences
@@ -316,8 +316,8 @@ class TestDeletionScanEdgeCases:
     def test_delete_at_start(self):
         """Test deletion at position 0."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            result = deletion_scan(bg, deletion_length=3, start=0, end=0).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
+            result = deletion_scan(bg, deletion_length=3, start=0, end=0, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1
@@ -326,9 +326,9 @@ class TestDeletionScanEdgeCases:
     def test_delete_at_end(self):
         """Test deletion at maximum position."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
             # max_end = 7
-            result = deletion_scan(bg, deletion_length=3, start=7, end=7).named('result')
+            result = deletion_scan(bg, deletion_length=3, start=7, end=7, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1
@@ -337,8 +337,8 @@ class TestDeletionScanEdgeCases:
     def test_delete_single_char(self):
         """Test deleting single character."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            result = deletion_scan(bg, deletion_length=1).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
+            result = deletion_scan(bg, deletion_length=1, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         # 10 - 1 = 9 positions
@@ -351,8 +351,8 @@ class TestDeletionScanEdgeCases:
     def test_delete_almost_entire_sequence(self):
         """Test deleting almost the entire sequence."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
-            result = deletion_scan(bg, deletion_length=9).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
+            result = deletion_scan(bg, deletion_length=9, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         # 10 - 9 = 1 position
@@ -369,13 +369,13 @@ class TestDeletionVsReplacement:
     def test_equivalent_to_replacement_scan(self):
         """Test that deletion with marker is equivalent to replacement_scan."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
             
             # deletion_scan with marker
-            del_result = deletion_scan(bg, deletion_length=3, deletion_marker='-').named('del')
+            del_result = deletion_scan(bg, deletion_length=3, deletion_marker='-', mode='sequential').named('del')
             
             # equivalent replacement_scan
-            rep_result = pp.replacement_scan(bg, '---').named('rep')
+            rep_result = pp.replacement_scan(bg, '---', mode='sequential').named('rep')
         
         del_df = del_result.generate_seqs(num_complete_iterations=1)
         rep_df = rep_result.generate_seqs(num_complete_iterations=1)

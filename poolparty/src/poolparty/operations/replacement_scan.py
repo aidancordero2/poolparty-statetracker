@@ -11,7 +11,7 @@ def replacement_scan(
     start: Optional[int] = None,
     end: Optional[int] = None,
     step_size: int = 1,
-    mode: ModeType = 'sequential',
+    mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     pool_iteration_order: Real = 0,
     op_iteration_order: Real = 0,

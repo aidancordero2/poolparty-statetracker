@@ -23,7 +23,7 @@ class FromSeqsOp(Operation):
         seqs: Sequence[str],
         names: Sequence[str] | None = None,
         probs: Sequence[float] | None = None,
-        mode: ModeType = 'sequential',
+        mode: ModeType = 'random',
         name: str = 'from_seqs',
     ) -> None:
         """Initialize FromSeqsOp.
@@ -97,7 +97,7 @@ def from_seqs(
     seqs: Sequence[str],
     names: Sequence[str] | None = None,
     probs: Sequence[float] | None = None,
-    mode: ModeType = 'sequential',
+    mode: ModeType = 'random',
     name: str = 'from_seqs',
 ) -> Pool:
     """Create a Pool from a list of sequences.

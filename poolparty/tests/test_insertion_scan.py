@@ -19,9 +19,9 @@ class TestInsertionScanBasics:
     def test_sequential_mode_default(self):
         """Test insertion_scan defaults to sequential mode."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
-            ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = insertion_scan(bg, ins).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
+            ins = pp.from_seqs(['TTT'], mode='sequential')  # 3 chars
+            result = insertion_scan(bg, ins, mode='sequential').named('result')
         
         # Default: start=0, end=10, step_size=1 => 11 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -41,9 +41,9 @@ class TestInsertionScanBasics:
     def test_insert_appears_in_output(self):
         """Test that insert sequence appears in output."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            ins = pp.from_seqs(['TTT'])
-            result = insertion_scan(bg, ins).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
+            ins = pp.from_seqs(['TTT'], mode='sequential')
+            result = insertion_scan(bg, ins, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         for seq in df['seq']:
@@ -52,9 +52,9 @@ class TestInsertionScanBasics:
     def test_background_fully_preserved(self):
         """Test that entire background sequence is preserved."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            ins = pp.from_seqs(['TTT'])
-            result = insertion_scan(bg, ins).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
+            ins = pp.from_seqs(['TTT'], mode='sequential')
+            result = insertion_scan(bg, ins, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         for seq in df['seq']:
@@ -105,7 +105,7 @@ class TestInsertionScanStartEndStep:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = insertion_scan(bg, ins, start=3).named('result')
+            result = insertion_scan(bg, ins, start=3, mode='sequential').named('result')
         
         # start=3, end=10 (default), step_size=1 => 8 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -121,7 +121,7 @@ class TestInsertionScanStartEndStep:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = insertion_scan(bg, ins, end=4).named('result')
+            result = insertion_scan(bg, ins, end=4, mode='sequential').named('result')
         
         # start=0 (default), end=4, step_size=1 => 5 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -137,7 +137,7 @@ class TestInsertionScanStartEndStep:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = insertion_scan(bg, ins, step_size=2).named('result')
+            result = insertion_scan(bg, ins, step_size=2, mode='sequential').named('result')
         
         # start=0, end=10, step_size=2 => positions 0, 2, 4, 6, 8, 10 = 6 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -148,7 +148,7 @@ class TestInsertionScanStartEndStep:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = insertion_scan(bg, ins, start=2, end=8, step_size=2).named('result')
+            result = insertion_scan(bg, ins, start=2, end=8, step_size=2, mode='sequential').named('result')
         
         # positions 2, 4, 6, 8 = 4 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -279,9 +279,9 @@ class TestInsertionScanWithMultipleSeqs:
     def test_multiple_backgrounds(self):
         """Test with multiple background sequences."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA', 'CCCCCCCCCC'])
-            ins = pp.from_seqs(['TTT'])
-            result = insertion_scan(bg, ins).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA', 'CCCCCCCCCC'], mode='sequential')
+            ins = pp.from_seqs(['TTT'], mode='sequential')
+            result = insertion_scan(bg, ins, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         # 2 backgrounds * 11 positions = 22 sequences
@@ -295,8 +295,8 @@ class TestInsertionScanWithMultipleSeqs:
         """Test with multiple insert sequences."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
-            ins = pp.from_seqs(['TTT', 'GGG'])
-            result = insertion_scan(bg, ins).named('result')
+            ins = pp.from_seqs(['TTT', 'GGG'], mode='sequential')
+            result = insertion_scan(bg, ins, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         # 11 positions * 2 inserts = 22 sequences
@@ -309,9 +309,9 @@ class TestInsertionScanWithMultipleSeqs:
     def test_multiple_backgrounds_and_inserts(self):
         """Test with multiple backgrounds and inserts."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA', 'CCCCCCCCCC'])
-            ins = pp.from_seqs(['TTT', 'GGG'])
-            result = insertion_scan(bg, ins).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA', 'CCCCCCCCCC'], mode='sequential')
+            ins = pp.from_seqs(['TTT', 'GGG'], mode='sequential')
+            result = insertion_scan(bg, ins, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         # 2 backgrounds * 11 positions * 2 inserts = 44 sequences
@@ -326,7 +326,7 @@ class TestInsertionScanEdgeCases:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             ins = pp.from_seqs(['TTT'])
-            result = insertion_scan(bg, ins, start=0, end=0).named('result')
+            result = insertion_scan(bg, ins, start=0, end=0, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1
@@ -338,7 +338,7 @@ class TestInsertionScanEdgeCases:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
             # max_end = 10
-            result = insertion_scan(bg, ins, start=10, end=10).named('result')
+            result = insertion_scan(bg, ins, start=10, end=10, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1
@@ -349,7 +349,7 @@ class TestInsertionScanEdgeCases:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = insertion_scan(bg, ins, start=5, end=5).named('result')
+            result = insertion_scan(bg, ins, start=5, end=5, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1

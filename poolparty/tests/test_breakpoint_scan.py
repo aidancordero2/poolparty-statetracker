@@ -325,7 +325,7 @@ class TestBreakpointScanErrors:
         with pp.Party() as party:
             with pytest.raises(ValueError, match="Not enough valid positions"):
                 # Only 3 positions available, but need 5 breakpoints
-                breakpoint_scan('ACGT', num_breakpoints=5)
+                breakpoint_scan('ACGT', num_breakpoints=5, mode='sequential')
 
 
 class TestBreakpointScanMultiOutput:
@@ -527,7 +527,7 @@ class TestBreakpointScanSpacing:
         # Short sequence with impossible spacing constraints
         with pp.Party() as party:
             with pytest.raises(ValueError, match="No valid breakpoint combinations"):
-                breakpoint_scan('ABCD', num_breakpoints=2, min_spacing=5)
+                breakpoint_scan('ABCD', num_breakpoints=2, min_spacing=5, mode='sequential')
     
     def test_single_breakpoint_ignores_spacing(self):
         """Test that spacing constraints have no effect with single breakpoint."""

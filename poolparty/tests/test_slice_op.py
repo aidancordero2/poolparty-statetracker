@@ -203,14 +203,14 @@ class TestStateSliceNumStates:
     def test_slice_reduces_num_states(self):
         """Test that state slicing reduces num_states."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'])  # 5 states
+            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')  # 5 states
             sliced = state_slice(pool, slice(1, 4))  # 3 states
             assert sliced.num_states == 3
     
     def test_slice_with_step(self):
         """Test state slicing with step."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E', 'F'])  # 6 states
+            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E', 'F'], mode='sequential')  # 6 states
             sliced = state_slice(pool, slice(None, None, 2))  # Every other: A, C, E -> 3 states
             assert sliced.num_states == 3
 
@@ -221,7 +221,7 @@ class TestStateSliceOutput:
     def test_correct_states_selected(self):
         """Test that correct states are selected."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'])
+            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sliced = state_slice(pool, slice(1, 4)).named('sl')  # B, C, D
         
         df = sliced.generate_seqs(num_complete_iterations=1)
@@ -230,7 +230,7 @@ class TestStateSliceOutput:
     def test_from_start(self):
         """Test state slice from start."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'])
+            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sliced = state_slice(pool, slice(None, 3)).named('sl')  # A, B, C
         
         df = sliced.generate_seqs(num_complete_iterations=1)
@@ -239,7 +239,7 @@ class TestStateSliceOutput:
     def test_to_end(self):
         """Test state slice to end."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'])
+            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sliced = state_slice(pool, slice(2, None)).named('sl')  # C, D, E
         
         df = sliced.generate_seqs(num_complete_iterations=1)
@@ -252,7 +252,7 @@ class TestStateSliceCustomName:
     def test_default_name(self):
         """Test default operation name."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'])
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
             sliced = state_slice(pool, slice(0, 2))
             assert sliced.operation.name.startswith('op[')
             assert ':state_slice' in sliced.operation.name
@@ -260,7 +260,7 @@ class TestStateSliceCustomName:
     def test_custom_name(self):
         """Test custom operation name."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'])
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
             sliced = state_slice(pool, slice(0, 2), op_name='my_state_slice')
             assert sliced.operation.name == 'my_state_slice'
 
@@ -275,14 +275,14 @@ class TestPoolGetitemOperator:
     def test_getitem_does_state_slice(self):
         """Test that pool[key] does state slicing, not sequence slicing."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AA', 'BB', 'CC', 'DD', 'EE'])  # 5 states
+            pool = pp.from_seqs(['AA', 'BB', 'CC', 'DD', 'EE'], mode='sequential')  # 5 states
             sliced = pool[1:4]  # Should select states 1, 2, 3
             assert sliced.num_states == 3
     
     def test_getitem_with_slice(self):
         """Test pool[start:stop] for state slicing."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AA', 'BB', 'CC', 'DD', 'EE'])
+            pool = pp.from_seqs(['AA', 'BB', 'CC', 'DD', 'EE'], mode='sequential')
             sliced = pool[1:4].named('sl')  # States 1, 2, 3 -> BB, CC, DD
         
         df = sliced.generate_seqs(num_complete_iterations=1)
@@ -291,7 +291,7 @@ class TestPoolGetitemOperator:
     def test_getitem_with_int(self):
         """Test pool[index] for single state selection."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AA', 'BB', 'CC'])
+            pool = pp.from_seqs(['AA', 'BB', 'CC'], mode='sequential')
             sliced = pool[1].named('sl')  # State 1 -> BB
         
         df = sliced.generate_seqs(num_seqs=1)
@@ -300,7 +300,7 @@ class TestPoolGetitemOperator:
     def test_getitem_negative_index(self):
         """Test pool[-1] for last state."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AA', 'BB', 'CC'])
+            pool = pp.from_seqs(['AA', 'BB', 'CC'], mode='sequential')
             sliced = pool[-1].named('sl')  # Last state -> CC
         
         df = sliced.generate_seqs(num_seqs=1)
@@ -309,14 +309,14 @@ class TestPoolGetitemOperator:
     def test_getitem_uses_state_slice_op(self):
         """Test that Pool.__getitem__ creates StateSliceOp."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'])
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
             sliced = pool[0:2]
             assert isinstance(sliced.operation, StateSliceOp)
     
     def test_getitem_default_name(self):
         """Test that Pool.__getitem__ uses default state_slice name."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'])
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
             sliced = pool[0:2]
             assert sliced.operation.name.startswith('op[')
             assert ':state_slice' in sliced.operation.name

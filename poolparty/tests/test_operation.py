@@ -63,7 +63,7 @@ class TestOperationAttributes:
     def test_num_states_attribute(self):
         """Test num_states attribute."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'])
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
             assert pool.operation.num_states == 3
     
     def test_mode_attribute(self):
@@ -189,7 +189,7 @@ class TestOperationCompute:
     def test_subclass_compute_works(self):
         """Test that subclass compute_design_card and compute_seq_from_card work."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'])
+            pool = pp.from_seqs(['AAA', 'TTT'], mode='sequential')
         
         # Set counter state and compute
         pool.operation.counter._state = 0
@@ -209,7 +209,7 @@ class TestOperationRepr:
     def test_repr_format(self):
         """Test repr format."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], op_name='test_op')
+            pool = pp.from_seqs(['AAA'], op_name='test_op', mode='sequential')
             repr_str = repr(pool.operation)
             
             assert 'FromSeqsOp' in repr_str
@@ -378,7 +378,7 @@ class TestOperationCopy:
     def test_copy_get_kmers_op(self):
         """Test copying GetKmersOp."""
         with pp.Party() as party:
-            kmers = pp.get_kmers(length=3, alphabet='dna')
+            kmers = pp.get_kmers(length=3, alphabet='dna', mode='sequential')
             copied_op = kmers.operation.copy()
             
             assert copied_op.num_states == kmers.operation.num_states

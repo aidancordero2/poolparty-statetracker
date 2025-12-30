@@ -130,8 +130,8 @@ class TestJoinVsStack:
     def test_stack_unions_states(self):
         """Test that + (stack) unions states."""
         with pp.Party() as party:
-            left = pp.from_seqs(['AAA'])
-            right = pp.from_seqs(['TTT'])
+            left = pp.from_seqs(['AAA'], mode='sequential')
+            right = pp.from_seqs(['TTT'], mode='sequential')
             
             stacked = (left + right).named('seq')
         
@@ -254,9 +254,9 @@ class TestJoinWithOtherOperations:
     def test_with_mutation_scan(self):
         """Test joining with mutation scan output."""
         with pp.Party() as party:
-            seq = pp.from_seqs(['ACGT'])
+            seq = pp.from_seqs(['ACGT'], mode='sequential')
             mutants = pp.mutation_scan(seq, k=1, mode='sequential')
-            barcode = pp.from_seqs(['NNNN'])
+            barcode = pp.from_seqs(['NNNN'], mode='sequential')
             combined = join([mutants, '.', barcode]).named('seq')
         
         df = combined.generate_seqs(num_seqs=3)

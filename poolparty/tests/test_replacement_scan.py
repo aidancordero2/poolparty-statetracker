@@ -19,9 +19,9 @@ class TestReplacementScanBasics:
     def test_sequential_mode_default(self):
         """Test replacement_scan defaults to sequential mode."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
-            ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = replacement_scan(bg, ins).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
+            ins = pp.from_seqs(['TTT'], mode='sequential')  # 3 chars
+            result = replacement_scan(bg, ins, mode='sequential').named('result')
         
         # Default: start=0, end=7, step_size=1 => 8 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -41,9 +41,9 @@ class TestReplacementScanBasics:
     def test_insert_appears_in_output(self):
         """Test that insert sequence appears in output."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            ins = pp.from_seqs(['TTT'])
-            result = replacement_scan(bg, ins).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
+            ins = pp.from_seqs(['TTT'], mode='sequential')
+            result = replacement_scan(bg, ins, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         for seq in df['seq']:
@@ -92,7 +92,7 @@ class TestReplacementScanStartEndStep:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = replacement_scan(bg, ins, start=3).named('result')
+            result = replacement_scan(bg, ins, start=3, mode='sequential').named('result')
         
         # start=3, end=7 (default), step_size=1 => 5 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -108,7 +108,7 @@ class TestReplacementScanStartEndStep:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = replacement_scan(bg, ins, end=4).named('result')
+            result = replacement_scan(bg, ins, end=4, mode='sequential').named('result')
         
         # start=0 (default), end=4, step_size=1 => 5 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -124,7 +124,7 @@ class TestReplacementScanStartEndStep:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = replacement_scan(bg, ins, step_size=2).named('result')
+            result = replacement_scan(bg, ins, step_size=2, mode='sequential').named('result')
         
         # start=0, end=7, step_size=2 => positions 0, 2, 4, 6 = 4 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -135,7 +135,7 @@ class TestReplacementScanStartEndStep:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = replacement_scan(bg, ins, start=2, end=6, step_size=2).named('result')
+            result = replacement_scan(bg, ins, start=2, end=6, step_size=2, mode='sequential').named('result')
         
         # positions 2, 4, 6 = 3 positions
         df = result.generate_seqs(num_complete_iterations=1)
@@ -266,9 +266,9 @@ class TestReplacementScanWithMultipleSeqs:
     def test_multiple_backgrounds(self):
         """Test with multiple background sequences."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA', 'CCCCCCCCCC'])
-            ins = pp.from_seqs(['TTT'])
-            result = replacement_scan(bg, ins).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA', 'CCCCCCCCCC'], mode='sequential')
+            ins = pp.from_seqs(['TTT'], mode='sequential')
+            result = replacement_scan(bg, ins, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         # 2 backgrounds * 8 positions = 16 sequences
@@ -282,8 +282,8 @@ class TestReplacementScanWithMultipleSeqs:
         """Test with multiple insert sequences."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
-            ins = pp.from_seqs(['TTT', 'GGG'])
-            result = replacement_scan(bg, ins).named('result')
+            ins = pp.from_seqs(['TTT', 'GGG'], mode='sequential')
+            result = replacement_scan(bg, ins, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         # 8 positions * 2 inserts = 16 sequences
@@ -296,9 +296,9 @@ class TestReplacementScanWithMultipleSeqs:
     def test_multiple_backgrounds_and_inserts(self):
         """Test with multiple backgrounds and inserts."""
         with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA', 'CCCCCCCCCC'])
-            ins = pp.from_seqs(['TTT', 'GGG'])
-            result = replacement_scan(bg, ins).named('result')
+            bg = pp.from_seqs(['AAAAAAAAAA', 'CCCCCCCCCC'], mode='sequential')
+            ins = pp.from_seqs(['TTT', 'GGG'], mode='sequential')
+            result = replacement_scan(bg, ins, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         # 2 backgrounds * 8 positions * 2 inserts = 32 sequences
@@ -313,7 +313,7 @@ class TestReplacementScanEdgeCases:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             ins = pp.from_seqs(['TTT'])
-            result = replacement_scan(bg, ins, start=0, end=0).named('result')
+            result = replacement_scan(bg, ins, start=0, end=0, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1
@@ -325,7 +325,7 @@ class TestReplacementScanEdgeCases:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
             # max_end = 7
-            result = replacement_scan(bg, ins, start=7, end=7).named('result')
+            result = replacement_scan(bg, ins, start=7, end=7, mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1

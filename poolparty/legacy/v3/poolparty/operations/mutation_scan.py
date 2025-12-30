@@ -26,7 +26,7 @@ class MutationScanOp(Operation):
         parent_pool: Pool,
         k: int = 1,
         alphabet: AlphabetType = 'dna',
-        mode: ModeType = 'sequential',
+        mode: ModeType = 'random',
         name: str = 'mutation_scan',
     ) -> None:
         """Initialize MutationScanOp.
@@ -171,7 +171,7 @@ def mutation_scan(
     parent: Union[Pool, str],
     k: int = 1,
     alphabet: AlphabetType = 'dna',
-    mode: ModeType = 'sequential',
+    mode: ModeType = 'random',
     name: str = 'mutation_scan',
 ) -> Pool:
     """Create a Pool that applies k mutations to a sequence.

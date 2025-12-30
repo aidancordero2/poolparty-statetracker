@@ -16,7 +16,7 @@ class FromSeqsOp(Operation):
         self,
         seqs: Sequence[str],
         seq_names: Optional[Sequence[str]] = None,
-        mode: ModeType = 'sequential',
+        mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Real = 0,
@@ -95,7 +95,7 @@ class FromSeqsOp(Operation):
 def from_seqs(
     seqs: Sequence[str],
     seq_names: Optional[Sequence[str]] = None,
-    mode: ModeType = 'sequential',
+    mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,

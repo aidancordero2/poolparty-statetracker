@@ -205,7 +205,7 @@ class TestIntegrationWithGenerate:
     def test_generate_uses_df_format_functions(self):
         """Test that generate() produces correctly formatted output."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT', 'GGG'])
+            pool = pp.from_seqs(['AAA', 'TTT', 'GGG'], mode='sequential')
             pool.name = "test_pool"
             
             df = pool.generate_seqs(num_complete_iterations=1)
