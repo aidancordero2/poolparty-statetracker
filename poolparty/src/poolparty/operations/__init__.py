@@ -3,7 +3,7 @@ from .from_seq import from_seq, FromSeqOp
 from .from_seqs import from_seqs, FromSeqsOp
 from .get_kmers import get_kmers, GetKmersOp
 from .join import join, JoinOp
-from .mutation_scan import mutation_scan, MutationScanOp
+from .mutagenize_using_num import mutagenize_using_num, MutagenizeUsingNumOp
 from .breakpoint_scan import breakpoint_scan, BreakpointScanOp
 from .insertion_scan import insertion_scan
 from .replacement_scan import replacement_scan
@@ -20,7 +20,7 @@ __all__ = [
     'get_kmers', 'GetKmersOp',
     'join', 'JoinOp',
     'seq_slice', 'SeqSliceOp',
-    'mutation_scan', 'MutationScanOp',
+    'mutagenize_using_num', 'MutagenizeUsingNumOp',
     'breakpoint_scan', 'BreakpointScanOp',
     'insertion_scan',
     'replacement_scan',

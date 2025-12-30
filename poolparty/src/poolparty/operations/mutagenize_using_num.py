@@ -9,9 +9,9 @@ import numpy as np
 
 
 @beartype
-class MutationScanOp(Operation):
-    """Apply k mutations to a parent sequence."""
-    factory_name = "mutation_scan"
+class MutagenizeUsingNumOp(Operation):
+    """Apply a fixed number of mutations to a parent sequence."""
+    factory_name = "mutagenize_using_num"
     design_card_keys = ['positions', 'wt_chars', 'mut_chars']
     
     def __init__(
@@ -24,7 +24,7 @@ class MutationScanOp(Operation):
         name: Optional[str] = None,
         iter_order: Real = 0,
     ) -> None:
-        """Initialize MutationScanOp."""
+        """Initialize MutagenizeUsingNumOp."""
         if num_mutations < 1:
             raise ValueError(f"num_mutations must be >= 1, got {num_mutations}")
         if mode == 'hybrid' and num_hybrid_states is None:
@@ -162,7 +162,7 @@ class MutationScanOp(Operation):
 
 
 @beartype
-def mutation_scan(
+def mutagenize_using_num(
     pool: Union[Pool, str],
     num_mutations: Integral = 1,
     alphabet: AlphabetType = 'dna',
@@ -176,7 +176,7 @@ def mutation_scan(
     """Create a Pool that applies num_mutations mutations to a sequence."""
     from .from_seq import from_seq
     pool = from_seq(pool) if isinstance(pool, str) else pool
-    op = MutationScanOp(parent_pool=pool, num_mutations=num_mutations, alphabet=alphabet, mode=mode, 
+    op = MutagenizeUsingNumOp(parent_pool=pool, num_mutations=num_mutations, alphabet=alphabet, mode=mode, 
                         num_hybrid_states=num_hybrid_states, name=op_name,
                         iter_order=op_iter_order)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
