@@ -17,7 +17,7 @@ class JoinOp(Operation):
         parent_pools: list,
         spacer_str: str = '',
         name: Optional[str] = None,
-        op_iteration_order: Real = 0,
+        iter_order: Real = 0,
     ) -> None:
         """Initialize JoinOp."""
         self.spacer_str = spacer_str
@@ -34,7 +34,7 @@ class JoinOp(Operation):
             num_states=1,
             seq_length=seq_length,
             name=name,
-            iter_order=op_iteration_order,
+            iter_order=iter_order,
         )
     
     @beartype
@@ -61,7 +61,7 @@ class JoinOp(Operation):
             'parent_pools': self.parent_pools,
             'spacer_str': self.spacer_str,
             'name': None,
-            'op_iteration_order': self.iter_order,
+            'iter_order': self.iter_order,
         }
 
 
@@ -101,6 +101,6 @@ def join(
     from .from_seq import from_seq
     parent_pools = [from_seq(item) if isinstance(item, str) else item for item in segment_pools]
     op = JoinOp(parent_pools, spacer_str=spacer_str, name=op_name,
-                op_iteration_order=op_iter_order)
+                iter_order=op_iter_order)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool
