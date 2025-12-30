@@ -118,12 +118,35 @@ def get_kmers(
     name: Optional[str] = None,
     op_name: Optional[str] = None,
 ) -> Pool_type:
-    """Create a Pool that generates k-mers."""
+    """
+    Create a Pool that generates k-mers (length-k sequences) over a specified alphabet.
+
+    Parameters
+    ----------
+    length : int
+        Length of each k-mer to be generated.
+    alphabet : AlphabetType, default='dna'
+        Alphabet to use for generating k-mers (e.g., 'dna', 'rna', 'protein', or custom list).
+    mode : ModeType, default='random'
+        Sequence generation mode: 'sequential', 'random', or 'hybrid'.
+    num_hybrid_states : Optional[int], default=None
+        Number of unique k-mers to produce when mode is 'hybrid'.
+    iter_order : Real, default=0
+        Iteration priority for the Pool in combinatorial design.
+    op_iter_order : Real, default=0
+        Iteration priority for the internal Operation (no practical effect for most users).
+    name : Optional[str], default=None
+        Name for the resulting Pool.
+    op_name : Optional[str], default=None
+        Name for the internal Operation.
+
+    Returns
+    -------
+    Pool_type
+        A Pool object whose states yield k-mers of the specified length and alphabet.
+    """
     op = GetKmersOp(length, alphabet=alphabet, mode=mode, 
                     num_hybrid_states=num_hybrid_states, name=op_name,
                     iter_order=op_iter_order)
-    pool = Pool(operation=op, output_index=0)
-    pool.iter_order = iter_order
-    if name is not None:
-        pool.name = name
+    pool = Pool(operation=op, output_index=0, iter_order=iter_order, name=name)
     return pool

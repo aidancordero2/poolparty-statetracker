@@ -111,7 +111,7 @@ def from_seqs(
         List of sequences to be included in the pool.
     seq_names : Optional[Sequence[str]], default=None
         Optional names for each sequence provided.
-    mode : ModeType, default='sequential'
+    mode : ModeType, default='random'
         Mode for sequence selection ('sequential', 'random', or 'hybrid').
     num_hybrid_states : Optional[int], default=None
         Number of states for 'hybrid' mode; ignored otherwise.
