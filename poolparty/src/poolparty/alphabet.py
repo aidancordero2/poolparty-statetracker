@@ -149,9 +149,11 @@ class Alphabet:
         return self.mutation_map[char]
     
     def get_complement(self, char: str) -> str:
-        """Get complement of a character."""
+        """Get complement of a character. Ignore chars return themselves."""
         if self.complement is None:
             raise ValueError("This alphabet has no complement mapping defined")
+        if char in self.ignore_chars:
+            return char
         if char not in self.complement:
             raise ValueError(f"Character '{char}' not in alphabet")
         return self.complement[char]

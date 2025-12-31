@@ -16,6 +16,7 @@ from .state_sample import state_sample, StateSampleOp
 from .stack import stack, StackOp
 from .repeat import repeat, RepeatOp
 from .seq_shuffle import seq_shuffle, SeqShuffleOp
+from .reverse_complement import reverse_complement, ReverseComplementOp
 from .sync import sync
 
 __all__ = [
@@ -33,6 +34,7 @@ __all__ = [
     'stack', 'StackOp',
     'repeat', 'RepeatOp',
     'seq_shuffle', 'SeqShuffleOp',
+    'reverse_complement', 'ReverseComplementOp',
     'state_slice', 'StateSliceOp',
     'state_shuffle', 'StateShuffleOp',
     'state_sample', 'StateSampleOp',
