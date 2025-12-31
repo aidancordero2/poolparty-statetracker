@@ -6,6 +6,40 @@ from ..pool import Pool
 
 
 @beartype
+def from_seq(
+    seq: str,
+    op_name: Optional[str] = None,
+    name: Optional[str] = None,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
+) -> Pool_type:
+    """
+    Create a Pool containing a single, fixed sequence.
+
+    Parameters
+    ----------
+    seq : str
+        The sequence to include in the pool.
+    op_name : Optional[str], default=None
+        Name for the internal Operation (if None, a default is used).
+    name : Optional[str], default=None
+        Name for the resulting Pool (if None, a default is used).
+    iter_order : Real, default=0
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Real, default=0
+        Iteration order priority for the internal Operation (has no real effect).
+        
+    Returns
+    -------
+    Pool_type
+        A Pool object yielding the provided sequence as its only state.
+    """
+    op = FromSeqOp(seq, name=op_name, iter_order=op_iter_order)
+    pool = Pool(operation=op, output_index=0, iter_order=iter_order, name=name)
+    return pool
+
+
+@beartype
 class FromSeqOp(Operation):
     """Create a pool from a single sequence."""
     factory_name = "from_seq"
@@ -43,37 +77,3 @@ class FromSeqOp(Operation):
             'name': None,
             'iter_order': self.iter_order,
         }
-
-
-@beartype
-def from_seq(
-    seq: str,
-    op_name: Optional[str] = None,
-    name: Optional[str] = None,
-    iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
-) -> Pool_type:
-    """
-    Create a Pool containing a single, fixed sequence.
-
-    Parameters
-    ----------
-    seq : str
-        The sequence to include in the pool.
-    op_name : Optional[str], default=None
-        Name for the internal Operation (if None, a default is used).
-    name : Optional[str], default=None
-        Name for the resulting Pool (if None, a default is used).
-    iter_order : Real, default=0
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Real, default=0
-        Iteration order priority for the internal Operation (has no real effect).
-        
-    Returns
-    -------
-    Pool_type
-        A Pool object yielding the provided sequence as its only state.
-    """
-    op = FromSeqOp(seq, name=op_name, iter_order=op_iter_order)
-    pool = Pool(operation=op, output_index=0, iter_order=iter_order, name=name)
-    return pool

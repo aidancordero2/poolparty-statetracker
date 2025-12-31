@@ -8,6 +8,60 @@ import numpy as np
 
 
 @beartype
+def state_sample(
+    pool: Pool,
+    num_states: Optional[Integral] = None,
+    sampled_states: Optional[Sequence[Integral]] = None,
+    seed: Optional[Integral] = None,
+    with_replacement: bool = True,
+    name: Optional[str] = None,
+    op_name: Optional[str] = None,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
+) -> Pool:
+    """
+    Create a Pool with sampled states from the input Pool.
+
+    Parameters
+    ----------
+    pool : Pool
+        The Pool to sample states from.
+    num_states : Optional[Integral], default=None
+        Number of states to sample. Mutually exclusive with sampled_states.
+    sampled_states : Optional[Sequence[Integral]], default=None
+        Explicit list of states to sample. Mutually exclusive with num_states.
+    seed : Optional[Integral], default=None
+        Random seed for deterministic sampling. Only used with num_states.
+    with_replacement : bool, default=True
+        If False, num_states must be <= pool.num_states (no duplicates).
+    name : Optional[str], default=None
+        Name for the resulting Pool.
+    op_name : Optional[str], default=None
+        Name for the underlying state sample Operation.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Optional[Real], default=None
+        Iteration order priority for the underlying Operation.
+
+    Returns
+    -------
+    Pool
+        A Pool containing the sampled states from the input Pool.
+    """
+    op = StateSampleOp(
+        pool,
+        num_states=num_states,
+        sampled_states=sampled_states,
+        seed=seed,
+        with_replacement=with_replacement,
+        name=op_name,
+        iter_order=op_iter_order,
+    )
+    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
+    return result_pool
+
+
+@beartype
 class StateSampleOp(Operation):
     """Sample states from a pool."""
     factory_name = "state_sample"
@@ -75,57 +129,3 @@ class StateSampleOp(Operation):
             'name': None,
             'iter_order': self.iter_order,
         }
-
-
-@beartype
-def state_sample(
-    pool: Pool,
-    num_states: Optional[Integral] = None,
-    sampled_states: Optional[Sequence[Integral]] = None,
-    seed: Optional[Integral] = None,
-    with_replacement: bool = True,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
-    iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
-) -> Pool:
-    """
-    Create a Pool with sampled states from the input Pool.
-
-    Parameters
-    ----------
-    pool : Pool
-        The Pool to sample states from.
-    num_states : Optional[Integral], default=None
-        Number of states to sample. Mutually exclusive with sampled_states.
-    sampled_states : Optional[Sequence[Integral]], default=None
-        Explicit list of states to sample. Mutually exclusive with num_states.
-    seed : Optional[Integral], default=None
-        Random seed for deterministic sampling. Only used with num_states.
-    with_replacement : bool, default=True
-        If False, num_states must be <= pool.num_states (no duplicates).
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying state sample Operation.
-    iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
-
-    Returns
-    -------
-    Pool
-        A Pool containing the sampled states from the input Pool.
-    """
-    op = StateSampleOp(
-        pool,
-        num_states=num_states,
-        sampled_states=sampled_states,
-        seed=seed,
-        with_replacement=with_replacement,
-        name=op_name,
-        iter_order=op_iter_order,
-    )
-    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
-    return result_pool

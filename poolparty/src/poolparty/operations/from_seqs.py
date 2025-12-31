@@ -7,6 +7,51 @@ import numpy as np
 
 
 @beartype
+def from_seqs(
+    seqs: Sequence[str],
+    seq_names: Optional[Sequence[str]] = None,
+    mode: ModeType = 'random',
+    num_hybrid_states: Optional[int] = None,
+    name: Optional[str] = None,
+    op_name: Optional[str] = None,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
+) -> Pool_type:
+    """
+    Create a Pool containing the specified sequences.
+
+    Parameters
+    ----------
+    seqs : Sequence[str]
+        Sequence of string sequences to include in the pool.
+    seq_names : Optional[Sequence[str]], default=None
+        Optional sequence of names for each sequence. If not provided, names are auto-generated.
+    mode : ModeType, default='random'
+        Sequence selection mode: 'sequential', 'random', or 'hybrid'.
+    num_hybrid_states : Optional[int], default=None
+        Number of pool states when using 'hybrid' mode (ignored for other modes).
+    name : Optional[str], default=None
+        Name for the resulting Pool.
+    op_name : Optional[str], default=None
+        Name for the underlying Operation.
+    iter_order : Real, default=0
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Optional[Real], default=None
+        Iteration order priority for the underlying Operation.
+
+    Returns
+    -------
+    Pool_type
+        A Pool object yielding the provided sequences using the specified selection mode.
+    """
+    op = FromSeqsOp(seqs, seq_names=seq_names, mode=mode, 
+                    num_hybrid_states=num_hybrid_states, name=op_name,
+                    iter_order=op_iter_order)
+    pool = Pool(operation=op, name=name, iter_order=iter_order)
+    return pool
+
+
+@beartype
 class FromSeqsOp(Operation):
     """Create a pool from a list of sequences."""
     factory_name = "from_seqs"
@@ -87,48 +132,3 @@ class FromSeqsOp(Operation):
             'name': None,
             'iter_order': self.iter_order,
         }
-
-
-@beartype
-def from_seqs(
-    seqs: Sequence[str],
-    seq_names: Optional[Sequence[str]] = None,
-    mode: ModeType = 'random',
-    num_hybrid_states: Optional[int] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
-    iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
-) -> Pool_type:
-    """
-    Create a Pool containing the specified sequences.
-
-    Parameters
-    ----------
-    seqs : Sequence[str]
-        Sequence of string sequences to include in the pool.
-    seq_names : Optional[Sequence[str]], default=None
-        Optional sequence of names for each sequence. If not provided, names are auto-generated.
-    mode : ModeType, default='random'
-        Sequence selection mode: 'sequential', 'random', or 'hybrid'.
-    num_hybrid_states : Optional[int], default=None
-        Number of pool states when using 'hybrid' mode (ignored for other modes).
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
-    iter_order : Real, default=0
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
-
-    Returns
-    -------
-    Pool_type
-        A Pool object yielding the provided sequences using the specified selection mode.
-    """
-    op = FromSeqsOp(seqs, seq_names=seq_names, mode=mode, 
-                    num_hybrid_states=num_hybrid_states, name=op_name,
-                    iter_order=op_iter_order)
-    pool = Pool(operation=op, name=name, iter_order=iter_order)
-    return pool

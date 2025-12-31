@@ -7,6 +7,44 @@ import numpy as np
 
 
 @beartype
+def repeat(
+    pool: Pool_type,
+    times: int,
+    name: Optional[str] = None,
+    op_name: Optional[str] = None,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
+) -> Pool_type:
+    """
+    Repeat the states of a pool a specified number of times, producing a new pool with
+    `times` as many states as the input pool has.
+
+    Parameters
+    ----------
+    pool : Pool_type
+        The Pool whose state(s) are to be repeated.
+    times : int
+        The number of times to repeat the pool's state(s).
+    name : Optional[str], default=None
+        Name to assign to the resulting Pool.
+    op_name : Optional[str], default=None
+        Name to assign to the internal RepeatOp operation.
+    iter_order : Real, default=0
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Real, default=0
+        Iteration order priority for the internal RepeatOp operation (typically unused).
+
+    Returns
+    -------
+    Pool_type
+        A new Pool with `times` as many states as the input pool has.
+    """
+    op = RepeatOp(pool, times=times, name=op_name, iter_order=op_iter_order)
+    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
+    return result_pool
+
+
+@beartype
 class RepeatOp(Operation):
     """Repeat a pool's states n times."""
     factory_name = "repeat"
@@ -58,41 +96,3 @@ class RepeatOp(Operation):
             'name': None,
             'iter_order': self.iter_order,
         }
-
-
-@beartype
-def repeat(
-    pool: Pool_type,
-    times: int,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
-    iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
-) -> Pool_type:
-    """
-    Repeat the states of a pool a specified number of times, producing a new pool with
-    `times` as many states as the input pool has.
-
-    Parameters
-    ----------
-    pool : Pool_type
-        The Pool whose state(s) are to be repeated.
-    times : int
-        The number of times to repeat the pool's state(s).
-    name : Optional[str], default=None
-        Name to assign to the resulting Pool.
-    op_name : Optional[str], default=None
-        Name to assign to the internal RepeatOp operation.
-    iter_order : Real, default=0
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Real, default=0
-        Iteration order priority for the internal RepeatOp operation (typically unused).
-
-    Returns
-    -------
-    Pool_type
-        A new Pool with `times` as many states as the input pool has.
-    """
-    op = RepeatOp(pool, times=times, name=op_name, iter_order=op_iter_order)
-    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
-    return result_pool

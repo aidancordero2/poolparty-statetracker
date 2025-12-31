@@ -8,6 +8,41 @@ import numpy as np
 
 
 @beartype
+def stack(
+    pools: Sequence[Pool],
+    name: Optional[str] = None,
+    op_name: Optional[str] = None,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
+) -> Pool:
+    """
+    Create a Pool by stacking multiple input Pools state-wise.
+
+    Parameters
+    ----------
+    pools : Sequence[Pool]
+        Sequence of Pool objects to stack into a single Pool.
+    name : Optional[str], default=None
+        Name for the resulting Pool.
+    op_name : Optional[str], default=None
+        Name for the underlying Stack operation.
+    iter_order : Real, default=0
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Real, default=0
+        Iteration order priority for the underlying Stack operation.
+
+    Returns
+    -------
+    Pool
+        A Pool object representing the state-wise stacking of all provided input Pools. 
+        Each state corresponds to a sequence from one of the input Pools.
+    """
+    op = StackOp(pools, name=op_name, iter_order=op_iter_order)
+    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
+    return result_pool
+
+
+@beartype
 class StackOp(Operation):
     """Stack multiple pools sequentially (disjoint union)."""
     factory_name = "stack"
@@ -73,38 +108,3 @@ class StackOp(Operation):
             'name': None,
             'iter_order': self.iter_order,
         }
-
-
-@beartype
-def stack(
-    pools: Sequence[Pool],
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
-    iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
-) -> Pool:
-    """
-    Create a Pool by stacking multiple input Pools state-wise.
-
-    Parameters
-    ----------
-    pools : Sequence[Pool]
-        Sequence of Pool objects to stack into a single Pool.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Stack operation.
-    iter_order : Real, default=0
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Real, default=0
-        Iteration order priority for the underlying Stack operation.
-
-    Returns
-    -------
-    Pool
-        A Pool object representing the state-wise stacking of all provided input Pools. 
-        Each state corresponds to a sequence from one of the input Pools.
-    """
-    op = StackOp(pools, name=op_name, iter_order=op_iter_order)
-    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
-    return result_pool

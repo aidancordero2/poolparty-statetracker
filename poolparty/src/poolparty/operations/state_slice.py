@@ -8,6 +8,56 @@ import numpy as np
 
 
 @beartype
+def state_slice(
+    pool: Pool,
+    key: Union[Integral, slice],
+    name: Optional[str] = None,
+    op_name: Optional[str] = None,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,    
+) -> Pool:
+    """
+    Create a Pool containing a slice of states from the input Pool.
+
+    Parameters
+    ----------
+    pool : Pool
+        The Pool whose states will be sliced.
+    key : Union[Integral, slice]
+        Integer index or slice specifying which states to include from the input Pool.
+    name : Optional[str], default=None
+        Name for the resulting Pool.
+    op_name : Optional[str], default=None
+        Name for the underlying state slice Operation.
+    iter_order : Real, default=0
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Real, default=0
+        Iteration order priority for the underlying Operation.
+
+    Returns
+    -------
+    Pool
+        A Pool containing states selected by applying the provided index or slice to the input Pool's state space.
+    """
+    if isinstance(key, Integral):
+        if key < 0:
+            start = key
+            stop = key + 1 if key != -1 else None
+        else:
+            start = key
+            stop = key + 1
+        step = 1
+    else:
+        start = key.start
+        stop = key.stop
+        step = key.step
+    op = StateSliceOp(pool, start=start, stop=stop, step=step, name=op_name,
+                      iter_order=op_iter_order)
+    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
+    return result_pool
+
+
+@beartype
 class StateSliceOp(Operation):
     """Slice a pool's states to select a subset."""
     factory_name = "state_slice"
@@ -71,53 +121,3 @@ class StateSliceOp(Operation):
             'name': None,
             'iter_order': self.iter_order,
         }
-
-
-@beartype
-def state_slice(
-    pool: Pool,
-    key: Union[Integral, slice],
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
-    iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,    
-) -> Pool:
-    """
-    Create a Pool containing a slice of states from the input Pool.
-
-    Parameters
-    ----------
-    pool : Pool
-        The Pool whose states will be sliced.
-    key : Union[Integral, slice]
-        Integer index or slice specifying which states to include from the input Pool.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying state slice Operation.
-    iter_order : Real, default=0
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Real, default=0
-        Iteration order priority for the underlying Operation.
-
-    Returns
-    -------
-    Pool
-        A Pool containing states selected by applying the provided index or slice to the input Pool's state space.
-    """
-    if isinstance(key, Integral):
-        if key < 0:
-            start = key
-            stop = key + 1 if key != -1 else None
-        else:
-            start = key
-            stop = key + 1
-        step = 1
-    else:
-        start = key.start
-        stop = key.stop
-        step = key.step
-    op = StateSliceOp(pool, start=start, stop=stop, step=step, name=op_name,
-                      iter_order=op_iter_order)
-    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
-    return result_pool
