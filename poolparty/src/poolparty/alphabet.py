@@ -1,5 +1,9 @@
 """Alphabet utilities for poolparty."""
+import re
 from .types import beartype, Optional, Sequence, Union
+
+# Regex pattern for detecting marker tags like {marker_name}
+MARKER_PATTERN = re.compile(r'\{[^}]+\}')
 
 # Named alphabet character lists
 NAMED_ALPHABETS: dict[str, list[str]] = {
@@ -172,21 +176,31 @@ class Alphabet:
     def get_seq_length(self, seq: str) -> int:
         """Get the number of valid alphabet characters in a sequence.
         
-        Counts only characters in the alphabet, ignoring any ignore_chars.
+        Counts only characters in the alphabet, ignoring any ignore_chars
+        and marker tags (e.g., {marker_name}).
         Useful for determining the effective length of a gapped alignment.
         """
+        # Remove all marker tags first
+        seq_no_markers = MARKER_PATTERN.sub('', seq)
         char_set = set(self.all_chars)
-        return sum(1 for c in seq if c in char_set)
+        return sum(1 for c in seq_no_markers if c in char_set)
     
     def get_valid_seq_positions(self, seq: str) -> list[int]:
         """Get the indices of valid alphabet characters in a sequence.
         
         Returns positions of characters that are in the alphabet,
-        skipping any ignore_chars (gaps, spaces, etc.).
+        skipping any ignore_chars (gaps, spaces, etc.) and positions
+        that overlap with marker tags (e.g., {marker_name}).
         Useful for determining which positions are eligible for mutagenesis.
         """
+        # Find all marker spans (start, end positions)
+        marker_spans: set[int] = set()
+        for match in MARKER_PATTERN.finditer(seq):
+            for i in range(match.start(), match.end()):
+                marker_spans.add(i)
+        
         char_set = set(self.all_chars)
-        return [i for i, c in enumerate(seq) if c in char_set]
+        return [i for i, c in enumerate(seq) if c in char_set and i not in marker_spans]
     
     def __repr__(self) -> str:
         return f"Alphabet({''.join(self.chars)})"

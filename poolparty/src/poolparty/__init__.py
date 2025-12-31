@@ -7,6 +7,7 @@ import statecounter as sc
 from .party import Party, get_active_party
 from .pool import Pool
 from .operation import Operation
+from .marker import Marker
 from .generate_seqs import generate_seqs
 from .alphabet import get_alphabet, NAMED_ALPHABETS
 from .operations import (
@@ -20,6 +21,7 @@ from .operations import (
     mutagenize, MutagenizeOp,
     mutagenize_orf, MutagenizeOrfOp,
     breakpoint_scan, BreakpointScanOp,
+    marker_scan, MarkerScanOp,
     insertion_scan,
     replacement_scan,
     deletion_scan,
@@ -36,7 +38,7 @@ from .operations import (
 __all__ = [
     '__version__',
     'Party', 'get_active_party',
-    'Pool', 'Operation', 'Counter', 'CounterManager', 'generate_seqs',
+    'Pool', 'Operation', 'Marker', 'Counter', 'CounterManager', 'generate_seqs',
     'get_alphabet', 'NAMED_ALPHABETS',
     'from_seq', 'FromSeqOp',
     'from_seqs', 'FromSeqsOp',
@@ -48,6 +50,7 @@ __all__ = [
     'mutagenize', 'MutagenizeOp',
     'mutagenize_orf', 'MutagenizeOrfOp',
     'breakpoint_scan', 'BreakpointScanOp',
+    'marker_scan', 'MarkerScanOp',
     'insertion_scan',
     'replacement_scan',
     'deletion_scan',

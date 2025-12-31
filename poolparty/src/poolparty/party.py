@@ -1,7 +1,7 @@
 """Party class - context manager for building and executing sequence libraries."""
 from typing import Union
 import statecounter as sc
-from .types import Pool_type, Operation_type, Optional, beartype
+from .types import Pool_type, Operation_type, Marker_type, Optional, beartype
 from .codon_table import CodonTable
 from .alphabet import Alphabet, get_alphabet
 
@@ -28,11 +28,14 @@ class Party:
         self._counter_manager: sc.Manager = sc.Manager()
         self._next_pool_id: int = 0
         self._next_op_id: int = 0
-        # Track pools and operations by ID (list) and name (dict)
+        self._next_marker_id: int = 0
+        # Track pools, operations, and markers by ID (list) and name (dict)
         self._pools_by_id: list[Pool_type] = []
         self._ops_by_id: list[Operation_type] = []
+        self._markers_by_id: list[Marker_type] = []
         self._pools_by_name: dict[str, Pool_type] = {}
         self._ops_by_name: dict[str, Operation_type] = {}
+        self._markers_by_name: dict[str, Marker_type] = {}
         # Build alphabet for sequence operations
         if isinstance(alphabet, str):
             self._alphabet: Alphabet = get_alphabet(alphabet)
@@ -51,6 +54,12 @@ class Party:
         """Get the next unique operation ID."""
         id_ = self._next_op_id
         self._next_op_id += 1
+        return id_
+
+    def _get_next_marker_id(self) -> int:
+        """Get the next unique marker ID."""
+        id_ = self._next_marker_id
+        self._next_marker_id += 1
         return id_
     
     @property
@@ -110,6 +119,13 @@ class Party:
             raise ValueError(f"Operation name '{name}' already exists")
         return name
     
+    def _validate_marker_name(self, name: str, marker: Optional[Marker_type] = None) -> str:
+        """Validate that a marker name is unique."""
+        existing = self._markers_by_name.get(name)
+        if existing is not None and existing is not marker:
+            raise ValueError(f"Marker name '{name}' already exists")
+        return name
+    
     def _register_pool(self, pool: Pool_type) -> None:
         """Register a pool with this party."""
         self._pools_by_id.append(pool)
@@ -134,6 +150,17 @@ class Party:
             del self._ops_by_name[old_name]
         self._ops_by_name[new_name] = op
     
+    def _register_marker(self, marker: Marker_type) -> None:
+        """Register a marker with this party."""
+        self._markers_by_id.append(marker)
+        self._markers_by_name[marker.name] = marker
+    
+    def _update_marker_name(self, marker: Marker_type, old_name: str, new_name: str) -> None:
+        """Update a marker's name in the tracking dict."""
+        if old_name in self._markers_by_name:
+            del self._markers_by_name[old_name]
+        self._markers_by_name[new_name] = marker
+    
     def get_pool_by_id(self, id_: int) -> Pool_type:
         """Get a pool by its ID."""
         return self._pools_by_id[id_]
@@ -149,6 +176,14 @@ class Party:
     def get_op_by_name(self, name: str) -> Operation_type:
         """Get an operation by its name."""
         return self._ops_by_name[name]
+    
+    def get_marker_by_id(self, id_: int) -> Marker_type:
+        """Get a marker by its ID."""
+        return self._markers_by_id[id_]
+    
+    def get_marker_by_name(self, name: str) -> Marker_type:
+        """Get a marker by its name."""
+        return self._markers_by_name[name]
     
     def output(self, pool: Pool_type, name: Optional[str] = None) -> None:
         """Mark a pool as an output of this library."""

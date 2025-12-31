@@ -8,6 +8,7 @@ from numbers import Real, Integral
 Pool_type: TypeAlias = "poolparty.pool.Pool"
 Operation_type: TypeAlias = "poolparty.operation.Operation"
 Counter_type: TypeAlias = "poolparty.counter.Counter"
+Marker_type: TypeAlias = "poolparty.marker.Marker"
 
 # Mode type for operations
 ModeType: TypeAlias = Literal['random', 'sequential', 'fixed', 'hybrid']
@@ -33,6 +34,7 @@ __all__ = [
     'Pool_type',
     'Operation_type',
     'Counter_type',
+    'Marker_type',
     'ModeType',
     'AlphabetType',
     'FilterFunc',
