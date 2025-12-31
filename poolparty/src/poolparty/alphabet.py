@@ -14,6 +14,17 @@ DNA_COMPLEMENT: dict[str, str] = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G'}
 RNA_COMPLEMENT: dict[str, str] = {'A': 'U', 'U': 'A', 'G': 'C', 'C': 'G'}
 BINARY_COMPLEMENT: dict[str, str] = {'0': '1', '1': '0'}
 
+# IUPAC nucleotide codes to DNA bases mapping
+IUPAC_TO_DNA: dict[str, list[str]] = {
+    "A": ["A"], "C": ["C"], "G": ["G"], "T": ["T"],
+    "U": ["T"],  # U = T in DNA context
+    "R": ["A", "G"], "Y": ["C", "T"], "S": ["G", "C"], "W": ["A", "T"],
+    "K": ["G", "T"], "M": ["A", "C"],
+    "B": ["C", "G", "T"], "D": ["A", "G", "T"],
+    "H": ["A", "C", "T"], "V": ["A", "C", "G"],
+    "N": ["A", "C", "G", "T"],
+}
+
 # Default ignore characters for sequence validation
 DEFAULT_IGNORE_CHARS: tuple[str, ...] = ('-', '.', ' ')
 

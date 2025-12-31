@@ -12,6 +12,7 @@ from .alphabet import get_alphabet, NAMED_ALPHABETS
 from .operations import (
     from_seq, FromSeqOp,
     from_seqs, FromSeqsOp,
+    from_iupac_motif, FromIupacMotifOp,
     get_kmers, GetKmersOp,
     join, JoinOp,
     seq_slice, SeqSliceOp,
@@ -38,6 +39,7 @@ __all__ = [
     'get_alphabet', 'NAMED_ALPHABETS',
     'from_seq', 'FromSeqOp',
     'from_seqs', 'FromSeqsOp',
+    'from_iupac_motif', 'FromIupacMotifOp',
     'get_kmers', 'GetKmersOp',
     'join', 'JoinOp',
     'seq_slice', 'SeqSliceOp',

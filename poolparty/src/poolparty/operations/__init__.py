@@ -1,6 +1,7 @@
 """Operations for poolparty."""
 from .from_seq import from_seq, FromSeqOp
 from .from_seqs import from_seqs, FromSeqsOp
+from .from_iupac_motif import from_iupac_motif, FromIupacMotifOp
 from .get_kmers import get_kmers, GetKmersOp
 from .join import join, JoinOp
 from .mutagenize import mutagenize, MutagenizeOp
@@ -22,6 +23,7 @@ from .sync import sync
 __all__ = [
     'from_seq', 'FromSeqOp',
     'from_seqs', 'FromSeqsOp',
+    'from_iupac_motif', 'FromIupacMotifOp',
     'get_kmers', 'GetKmersOp',
     'join', 'JoinOp',
     'seq_slice', 'SeqSliceOp',
