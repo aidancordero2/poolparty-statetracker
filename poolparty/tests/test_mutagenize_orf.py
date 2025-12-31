@@ -164,19 +164,19 @@ class TestMutagenizeOrfParameterValidation:
     def test_num_mutations_exceeds_eligible(self):
         """Error when num_mutations > number of eligible positions."""
         with pp.Party() as party:
-            with pytest.raises(ValueError, match="num_mutations.*exceeds number of eligible positions"):
+            with pytest.raises(ValueError, match="num_mutations.*exceeds.*eligible"):
                 mutagenize_orf('ATGAAA', num_mutations=3)  # Only 2 codons
 
 
 class TestMutagenizeOrfORFBoundaries:
     """Test ORF boundary handling."""
     
-    def test_orf_start_end(self):
-        """Test orf_start and orf_end parameters."""
+    def test_orf_extent(self):
+        """Test orf_extent parameter."""
         # Sequence with 5' UTR (GGG) + ORF (ATGAAA) + 3' UTR (CCC)
         seq = 'GGGATGAAACCC'
         with pp.Party() as party:
-            pool = mutagenize_orf(seq, num_mutations=1, orf_start=3, orf_end=9).named('mutant')
+            pool = mutagenize_orf(seq, num_mutations=1, orf_extent=(3, 9)).named('mutant')
         
         df = pool.generate_seqs(num_seqs=10, seed=42)
         for mutant in df['seq']:
@@ -186,20 +186,24 @@ class TestMutagenizeOrfORFBoundaries:
             # Total length preserved
             assert len(mutant) == 12
     
-    def test_orf_boundaries_validation(self):
-        """Test ORF boundary validation."""
+    def test_orf_extent_validation(self):
+        """Test orf_extent validation."""
         with pp.Party() as party:
-            # orf_start out of range
-            with pytest.raises(ValueError, match="orf_start must be >= 0"):
-                mutagenize_orf('ATGAAA', num_mutations=1, orf_start=-1)
+            # orf_extent start out of range
+            with pytest.raises(ValueError, match="orf_extent start must be >= 0"):
+                mutagenize_orf('ATGAAA', num_mutations=1, orf_extent=(-1, 6))
             
-            # orf_end exceeds length
-            with pytest.raises(ValueError, match="orf_end.*cannot exceed sequence length"):
-                mutagenize_orf('ATGAAA', num_mutations=1, orf_end=10)
+            # orf_extent end exceeds length
+            with pytest.raises(ValueError, match="orf_extent end.*cannot exceed sequence length"):
+                mutagenize_orf('ATGAAA', num_mutations=1, orf_extent=(0, 10))
             
-            # orf_start >= orf_end
-            with pytest.raises(ValueError, match="orf_start.*must be < orf_end"):
-                mutagenize_orf('ATGAAATTT', num_mutations=1, orf_start=6, orf_end=3)
+            # orf_extent start >= end
+            with pytest.raises(ValueError, match="orf_extent start.*must be < end"):
+                mutagenize_orf('ATGAAATTT', num_mutations=1, orf_extent=(6, 3))
+            
+            # orf_extent must have exactly 2 elements
+            with pytest.raises(ValueError, match="orf_extent must have exactly 2 elements"):
+                mutagenize_orf('ATGAAATTT', num_mutations=1, orf_extent=(0, 3, 6))
 
 
 class TestMutagenizeOrfCodonPositions:
@@ -223,17 +227,18 @@ class TestMutagenizeOrfCodonPositions:
             # Last codon (GGG) should be unchanged
             assert mutant[-3:] == 'GGG'
     
-    def test_codon_start_end_step(self):
-        """Test codon_start, codon_end, codon_step_size parameters."""
+    def test_codon_positions_slice(self):
+        """Test codon_positions with slice parameter."""
         # 6 codons
         seq = 'ATGAAATTTGGGCCCAAA'
         with pp.Party() as party:
-            # Only codons 0, 2, 4 (step_size=2)
+            # Only codons 0, 2, 4 (using slice with step=2)
             pool = mutagenize_orf(
-                seq, num_mutations=1, codon_start=0, codon_end=6, codon_step_size=2
+                seq, num_mutations=1, codon_positions=slice(0, 6, 2)
             ).named('mutant')
             # Should have 3 eligible positions
             assert pool.operation.num_eligible == 3
+            assert pool.operation.eligible_positions == [0, 2, 4]
     
     def test_codon_positions_validation(self):
         """Test codon position validation."""
@@ -499,7 +504,7 @@ class TestMutagenizeOrfPreservesLength:
         seq = 'GGGATGAAACCC'  # 3bp UTR + 6bp ORF + 3bp UTR
         with pp.Party() as party:
             pool = mutagenize_orf(
-                seq, num_mutations=1, orf_start=3, orf_end=9
+                seq, num_mutations=1, orf_extent=(3, 9)
             ).named('mutant')
         
         df = pool.generate_seqs(num_seqs=10, seed=42)
