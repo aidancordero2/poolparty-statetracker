@@ -19,7 +19,41 @@ def insertion_scan(
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
 ) -> Pool:
-    """Insert a sequence into background at scanning positions."""
+    """
+    Insert a sequence into a background sequence at specified scanning positions.
+
+    Parameters
+    ----------
+    bg_pool : Pool or str
+        The background Pool or sequence string in which to insert.
+    ins_pool : Pool or str
+        The insert Pool or sequence string to be inserted.
+    positions : PositionsType, default=None
+        Positions to consider for the start of the insertion (0-based, inclusive). If None, all valid positions are considered.
+    min_spacing : Optional[Integral], default=None
+        Minimum spacing required between breakpoints (not commonly used for single insertions).
+    max_spacing : Optional[Integral], default=None
+        Maximum spacing allowed between breakpoints (not commonly used for single insertions).
+    mode : ModeType, default='random'
+        Selection mode for insert positions: 'random', 'sequential', or 'hybrid'.
+    num_hybrid_states : Optional[Integral], default=None
+        Number of pool states when using 'hybrid' mode (ignored by other modes).
+    spacer_str : str, default=''
+        String to insert as a spacer between pool segments (optional, placed between left, insert, and right).
+    name : Optional[str], default=None
+        Name for the resulting Pool.
+    op_name : Optional[str], default=None
+        Name for the underlying Operation.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Optional[Real], default=None
+        Iteration order priority for the underlying Operation.
+
+    Returns
+    -------
+    Pool
+        A Pool yielding sequences where the insert is placed at the selected position(s) in the background.
+    """
     from .from_seq import from_seq
     from .join import join
     from .breakpoint_scan import breakpoint_scan

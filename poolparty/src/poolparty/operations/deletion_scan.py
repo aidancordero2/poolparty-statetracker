@@ -20,7 +20,47 @@ def deletion_scan(
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
 ) -> Pool:
-    """Delete a segment from the background at scanning positions."""
+    """
+    Scan a pool for all possible single deletions of a fixed length, returning pools
+    with the specified segment removed (optionally replaced with a marker).
+
+    Parameters
+    ----------
+    bg_pool : Pool or str
+        Source pool or sequence string to delete from.
+    deletion_length : Integral
+        Number of characters to delete at each valid position.
+    deletion_marker : Optional[str], default='-'
+        String to insert at the deletion site (i.e., a gap marker). If None, deleted segment
+        is removed with no marker.
+    spacer_str : str, default=''
+        String to insert as a spacer between pool segments after deletion.
+    positions : PositionsType, default=None
+        Positions to consider for the start of the deletion (0-based). If None, all
+        valid positions are used.
+    min_spacing : Optional[Integral], default=None
+        Minimum spacing required between breakpoints (not commonly used for single deletions).
+    max_spacing : Optional[Integral], default=None
+        Maximum spacing allowed between breakpoints (not commonly used for single deletions).
+    mode : ModeType, default='random'
+        Deletion mode. 'random', 'sequential', or 'hybrid'.
+    num_hybrid_states : Optional[Integral], default=None
+        Number of pool states when using 'hybrid' mode (ignored by other modes).
+    name : Optional[str], default=None
+        Name for the resulting Pool.
+    op_name : Optional[str], default=None
+        Name for the underlying Operation.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Optional[Real], default=None
+        Iteration order priority for the underlying Operation.
+
+    Returns
+    -------
+    Pool
+        A Pool yielding sequences where a segment of the specified length is removed
+        from the source at each allowed position, optionally with a marker or spacer inserted.
+    """
     from .from_seqs import from_seqs
     from .seq_slice import seq_slice
     from .join import join

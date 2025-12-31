@@ -17,7 +17,38 @@ def replacement_scan(
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
 ) -> Pool:
-    """Replace a segment of background with insert at scanning positions."""
+    """
+    Replace a segment of the background sequence with an insert at specified scanning positions.
+
+    Parameters
+    ----------
+    bg_pool : Pool or str
+        Background Pool or sequence string in which the replacement will occur.
+    ins_pool : Pool or str
+        Insert Pool or sequence string to replace the segment in the background.
+    positions : PositionsType, default=None
+        Positions at which to place the start of the replacement (0-based, inclusive). If None, all valid positions are considered.
+    spacer_str : str, default=''
+        String to insert as a spacer between segments when joining (optional).
+    mode : ModeType, default='random'
+        Selection mode for replacement positions: 'sequential', 'random', or 'hybrid'.
+    num_hybrid_states : Optional[Integral], default=None
+        Number of pool states to use when mode is 'hybrid' (ignored for other modes).
+    name : Optional[str], default=None
+        Name for the resulting Pool.
+    op_name : Optional[str], default=None
+        Name for the underlying Operation.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Optional[Real], default=None
+        Iteration order priority for the underlying Operation.
+
+    Returns
+    -------
+    Pool
+        A Pool yielding sequences where a segment of the background is replaced by the insert sequence
+        at the specified scanning positions, using the defined selection mode.
+    """
     from .from_seq import from_seq
     from .seq_slice import seq_slice
     from .join import join
