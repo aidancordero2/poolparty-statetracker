@@ -5,7 +5,23 @@ from .slice_op import SliceOp
 
 @beartype
 def split(counter: Counter_type, split_spec: Union[Integral, Sequence[Real]], names: Optional[Sequence[str]] = None):
-    """Split a counter into multiple counters."""
+    """
+    Split a Counter into multiple sub-Counters according to equal or proportional partitioning.
+
+    Parameters
+    ----------
+    counter : Counter_type
+        The Counter object to be split.
+    split_spec : Union[Integral, Sequence[Real]]
+        If an integer N, split into N roughly equal parts. If a sequence of proportions, split according to these proportions (sequence length = number of parts).
+    names : Optional[Sequence[str]], default=None
+        Optional sequence of names for each resulting sub-Counter. If provided, must match the number of parts.
+
+    Returns
+    -------
+    Tuple[Counter_type, ...]
+        Tuple of new Counter objects corresponding to each partition of the original states.
+    """
     from ..counter import Counter
     num_states = counter.num_states
     if isinstance(split_spec, Integral):

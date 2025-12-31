@@ -4,6 +4,31 @@ from ..operation import Operation
 
 
 @beartype
+def sync(counters: Sequence[Counter_type], name: Optional[str] = None):
+    """
+    Create a Counter that synchronizes the states of multiple parent Counters.
+
+    Parameters
+    ----------
+    counters : Sequence[Counter_type]
+        Sequence of parent Counters to synchronize.
+    name : Optional[str], default=None
+        Optional name for the resulting synchronized Counter.
+
+    Returns
+    -------
+    Counter_type
+        A Counter whose states are the same as all parent Counters' states.
+    """
+    from ..counter import Counter
+    if len(counters) == 0:
+        result = Counter(1)
+    else:
+        result = Counter(_parents=counters, _op=SyncOp(), name=name)
+    return result
+
+
+@beartype
 class SyncOp(Operation):
     """Keep N counters in lockstep."""
     
@@ -18,14 +43,3 @@ class SyncOp(Operation):
     
     def decompose(self, state, parent_num_states):
         return tuple(state for _ in parent_num_states)
-
-
-@beartype
-def sync(counters: Sequence[Counter_type], name: Optional[str] = None):
-    """Create sync counter from 0 or more counters."""
-    from ..counter import Counter
-    if len(counters) == 0:
-        result = Counter(1)
-    else:
-        result = Counter(_parents=counters, _op=SyncOp(), name=name)
-    return result

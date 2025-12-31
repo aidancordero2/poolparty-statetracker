@@ -5,6 +5,41 @@ import random
 
 
 @beartype
+def shuffle(
+    counter: Counter_type,
+    seed: Optional[Integral] = None,
+    permutation: Optional[Sequence[Integral]] = None,
+    name: Optional[str] = None,
+):
+    """
+    Create a Counter with the states of a parent Counter randomly shuffled.
+
+    Parameters
+    ----------
+    counter : Counter_type
+        The Counter whose states will be shuffled.
+    seed : Optional[Integral], default=None
+        Random seed to generate the shuffle permutation. Cannot be provided with 'permutation'.
+    permutation : Optional[Sequence[Integral]], default=None
+        Explicit permutation of parent state indices, as a sequence of length parent.num_states. Cannot be provided with 'seed'.
+    name : Optional[str], default=None
+        Name for the resulting shuffled Counter.
+
+    Returns
+    -------
+    Counter_type
+        A Counter whose state order corresponds to a permutation of the parent's states.
+    """
+    from ..counter import Counter
+    result = Counter(
+        _parents=(counter,),
+        _op=ShuffleOp(counter.num_states, seed=seed, permutation=permutation),
+        name=name,
+    )
+    return result
+
+
+@beartype
 class ShuffleOp(Operation):
     """Randomly shuffle counter states using a deterministic seed."""
     
@@ -46,20 +81,3 @@ class ShuffleOp(Operation):
         if state is None:
             return (None,)
         return (self.permutation[state],)
-
-
-@beartype
-def shuffle(
-    counter: Counter_type,
-    seed: Optional[Integral] = None,
-    permutation: Optional[Sequence[Integral]] = None,
-    name: Optional[str] = None,
-):
-    """Create a shuffled counter with randomized state order."""
-    from ..counter import Counter
-    result = Counter(
-        _parents=(counter,),
-        _op=ShuffleOp(counter.num_states, seed=seed, permutation=permutation),
-        name=name,
-    )
-    return result

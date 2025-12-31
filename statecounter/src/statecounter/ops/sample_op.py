@@ -5,6 +5,52 @@ import random
 
 
 @beartype
+def sample(
+    counter: Counter_type,
+    num_states: Optional[Integral] = None,
+    sampled_states: Optional[Sequence[Integral]] = None,
+    seed: Optional[Integral] = None,
+    with_replacement: bool = True,
+    name: Optional[str] = None,
+):
+    """
+    Create a Counter that samples states from the provided parent Counter.
+
+    Parameters
+    ----------
+    counter : Counter_type
+        Parent Counter whose states will be sampled.
+    num_states : Optional[Integral], default=None
+        Number of states to sample from the parent. Mutually exclusive with 'sampled_states'.
+    sampled_states : Optional[Sequence[Integral]], default=None
+        Explicit sequence of parent state indices to use as samples. Mutually exclusive with 'num_states'.
+    seed : Optional[Integral], default=None
+        Random seed for sampling. Only relevant if sampling with 'num_states' and not supplying 'sampled_states'.
+    with_replacement : bool, default=True
+        Whether to sample with replacement (True) or without replacement (False).
+    name : Optional[str], default=None
+        Name for the resulting sampled Counter.
+
+    Returns
+    -------
+    Counter_type
+        A Counter whose states are a sampled subset of those of the parent Counter.
+    """
+    from ..counter import Counter
+    return Counter(
+        _parents=(counter,),
+        _op=SampleOp(
+            counter.num_states,
+            num_states=num_states,
+            sampled_states=sampled_states,
+            seed=seed,
+            with_replacement=with_replacement,
+        ),
+        name=name,
+    )
+
+
+@beartype
 class SampleOp(Operation):
     """Sample states from parent counter."""
     
@@ -53,39 +99,3 @@ class SampleOp(Operation):
         if state is None:
             return (None,)
         return (self.sampled_states[state],)
-
-
-@beartype
-def sample(
-    counter: Counter_type,
-    num_states: Optional[Integral] = None,
-    sampled_states: Optional[Sequence[Integral]] = None,
-    seed: Optional[Integral] = None,
-    with_replacement: bool = True,
-    name: Optional[str] = None,
-):
-    """Sample states from a counter.
-    
-    Args:
-        counter: The parent counter to sample from.
-        num_states: Number of states to sample (mutually exclusive with sampled_states).
-        sampled_states: Explicit list of states to sample (mutually exclusive with num_states).
-        seed: Random seed for reproducibility (only used with num_states).
-        with_replacement: If False, num_states must be <= parent.num_states. Default True.
-        name: Optional name for the new counter.
-    
-    Returns:
-        A new Counter with sampled states from the parent.
-    """
-    from ..counter import Counter
-    return Counter(
-        _parents=(counter,),
-        _op=SampleOp(
-            counter.num_states,
-            num_states=num_states,
-            sampled_states=sampled_states,
-            seed=seed,
-            with_replacement=with_replacement,
-        ),
-        name=name,
-    )
