@@ -700,3 +700,65 @@ class TestMutagenizeHybridModeWithNum:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=100)
             assert pool.operation.num_states == 100
+
+
+class TestMutagenizeMarkChanges:
+    """Test mark_changes parameter."""
+    
+    def test_mark_changes_false_by_default(self):
+        """Default mark_changes is False."""
+        with pp.Party() as party:
+            pool = mutagenize('ACGT', num_mutations=1)
+            assert pool.operation.mark_changes is False
+    
+    def test_mark_changes_true_swaps_case(self):
+        """mark_changes=True swaps case of mutated positions."""
+        with pp.Party() as party:
+            pool = mutagenize('ACGT', num_mutations=1, mark_changes=True, mode='sequential').named('mutant')
+        
+        df = pool.generate_seqs(num_seqs=1)
+        seq = df['seq'].iloc[0]
+        # With mark_changes=True, mutated chars should be lowercase (swapped from uppercase)
+        lowercase_count = sum(1 for c in seq if c.islower())
+        assert lowercase_count == 1
+    
+    def test_mark_changes_false_preserves_case(self):
+        """mark_changes=False preserves original case."""
+        with pp.Party() as party:
+            pool = mutagenize('ACGT', num_mutations=1, mark_changes=False, mode='sequential').named('mutant')
+        
+        df = pool.generate_seqs(num_seqs=1)
+        seq = df['seq'].iloc[0]
+        # All chars should be uppercase
+        assert seq == seq.upper()
+    
+    def test_mark_changes_with_lowercase_input(self):
+        """mark_changes=True swaps lowercase to uppercase."""
+        with pp.Party() as party:
+            pool = mutagenize('acgt', num_mutations=1, mark_changes=True, mode='sequential').named('mutant')
+        
+        df = pool.generate_seqs(num_seqs=1)
+        seq = df['seq'].iloc[0]
+        # Mutated position should be uppercase (swapped from lowercase)
+        uppercase_count = sum(1 for c in seq if c.isupper())
+        assert uppercase_count == 1
+    
+    def test_mark_changes_with_rate(self):
+        """mark_changes works with mutation_rate."""
+        with pp.Party() as party:
+            pool = mutagenize('ACGTACGT', mutation_rate=0.5, mark_changes=True).named('mutant')
+        
+        df = pool.generate_seqs(num_seqs=50, seed=42)
+        # Check that mutations produce lowercase chars
+        for _, row in df.iterrows():
+            seq = row['seq']
+            positions = row['mutant.op.key.positions']
+            lowercase_count = sum(1 for c in seq if c.islower())
+            assert lowercase_count == len(positions)
+    
+    def test_mark_changes_in_copy_params(self):
+        """mark_changes is included in _get_copy_params."""
+        with pp.Party() as party:
+            pool = mutagenize('ACGT', num_mutations=1, mark_changes=True)
+            params = pool.operation._get_copy_params()
+        assert params['mark_changes'] is True

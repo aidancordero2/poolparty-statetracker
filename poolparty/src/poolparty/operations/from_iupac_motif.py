@@ -10,6 +10,7 @@ import numpy as np
 @beartype
 def from_iupac_motif(
     iupac_seq: str,
+    mark_changes: bool = False,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -25,6 +26,8 @@ def from_iupac_motif(
     iupac_seq : str
         IUPAC sequence string (e.g., 'RN' for purine + any base).
         Valid characters: A, C, G, T, U, R, Y, S, W, K, M, B, D, H, V, N.
+    mark_changes : bool, default=False
+        If True, apply swapcase() to degenerate positions for visualization.
     mode : ModeType, default='random'
         Sequence selection mode: 'sequential', 'random', or 'hybrid'.
     num_hybrid_states : Optional[int], default=None
@@ -45,6 +48,7 @@ def from_iupac_motif(
     """
     op = FromIupacMotifOp(
         iupac_seq=iupac_seq,
+        mark_changes=mark_changes,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         name=op_name,
@@ -63,6 +67,7 @@ class FromIupacMotifOp(Operation):
     def __init__(
         self,
         iupac_seq: str,
+        mark_changes: bool = False,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -82,23 +87,38 @@ class FromIupacMotifOp(Operation):
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
 
         # Validate and build position options
-        iupac_seq = iupac_seq.upper()
+        # Handle ignore chars (e.g., '.', '-', ' ') as pass-through positions
+        ignore_chars = party._alphabet.ignore_chars
+        iupac_seq_upper = iupac_seq.upper()
         invalid_chars = set()
         position_options = []
-        for char in iupac_seq:
-            if char not in IUPAC_TO_DNA:
-                invalid_chars.add(char)
+        degenerate_positions = []
+        pos_idx = 0  # Track position in position_options
+        for char, char_upper in zip(iupac_seq, iupac_seq_upper):
+            if char in ignore_chars:
+                # Pass through ignore chars unchanged
+                position_options.append([char])
+                pos_idx += 1
+            elif char_upper in IUPAC_TO_DNA:
+                opts = IUPAC_TO_DNA[char_upper]
+                position_options.append(opts)
+                if len(opts) > 1:
+                    degenerate_positions.append(pos_idx)
+                pos_idx += 1
             else:
-                position_options.append(IUPAC_TO_DNA[char])
+                invalid_chars.add(char)
 
         if invalid_chars:
             raise ValueError(
                 f"iupac_seq contains invalid IUPAC character(s): {sorted(invalid_chars)}. "
-                f"Valid IUPAC characters are: {sorted(IUPAC_TO_DNA.keys())}"
+                f"Valid IUPAC characters are: {sorted(IUPAC_TO_DNA.keys())} "
+                f"(plus ignore characters: {sorted(ignore_chars)})"
             )
 
         self.iupac_seq = iupac_seq
         self.position_options = position_options
+        self.mark_changes = mark_changes
+        self.degenerate_positions = set(degenerate_positions)
 
         # Compute total states as product of possibilities at each position
         total_states = 1
@@ -153,13 +173,21 @@ class FromIupacMotifOp(Operation):
         for position_opts in reversed(self.position_options):
             result.append(position_opts[remaining % len(position_opts)])
             remaining //= len(position_opts)
-        seq = ''.join(reversed(result))
+        result = list(reversed(result))
+        
+        # Apply swapcase to degenerate positions if mark_changes is True
+        if self.mark_changes:
+            for i in self.degenerate_positions:
+                result[i] = result[i].swapcase()
+        
+        seq = ''.join(result)
         return {'seq_0': seq}
 
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
             'iupac_seq': self.iupac_seq,
+            'mark_changes': self.mark_changes,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,

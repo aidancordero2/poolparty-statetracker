@@ -13,6 +13,7 @@ def mutagenize(
     pool: Union[Pool, str],
     num_mutations: Optional[Integral] = None,
     mutation_rate: Optional[Real] = None,
+    mark_changes: bool = False,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -31,6 +32,8 @@ def mutagenize(
         Fixed number of mutations to apply (mutually exclusive with mutation_rate).
     mutation_rate : Optional[Real], default=None
         Probability of mutation at each position (mutually exclusive with num_mutations).
+    mark_changes : bool, default=False
+        If True, apply swapcase() to mutated positions for visualization.
     mode : ModeType, default='random'
         Selection mode: 'random', 'sequential', or 'hybrid'. Sequential only available with num_mutations.
     num_hybrid_states : Optional[int], default=None
@@ -56,6 +59,7 @@ def mutagenize(
         parent_pool=pool,
         num_mutations=num_mutations,
         mutation_rate=mutation_rate,
+        mark_changes=mark_changes,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         name=op_name,
@@ -84,6 +88,7 @@ class MutagenizeOp(Operation):
         parent_pool: Pool,
         num_mutations: Optional[Integral] = None,
         mutation_rate: Optional[Real] = None,
+        mark_changes: bool = False,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -119,14 +124,16 @@ class MutagenizeOp(Operation):
         
         self.num_mutations = num_mutations
         self.mutation_rate = mutation_rate
+        self.mark_changes = mark_changes
         self.alphabet = party.alphabet
         self.alpha_size = self.alphabet.size
         self._mode = mode
         
         # Build mutation map: (wt_char, index) -> mut_char
         # Uses alphabet.mutation_map which maps char -> list of mutation targets
+        # Include all_chars to support both uppercase and lowercase sequences
         self._mutation_map = {}
-        for wt in self.alphabet.chars:
+        for wt in self.alphabet.all_chars:
             for i, mut in enumerate(self.alphabet.mutation_map[wt]):
                 self._mutation_map[(wt, i)] = mut
         
@@ -246,6 +253,11 @@ class MutagenizeOp(Operation):
             wt_chars = tuple(wt_chars)
             mut_chars = tuple(mut_chars)
         
+        # Apply case swap to mut_chars if mark_changes is True
+        # This ensures design card reflects what appears in the sequence
+        if self.mark_changes:
+            mut_chars = tuple(c.swapcase() for c in mut_chars)
+        
         return {
             'positions': positions,
             'wt_chars': wt_chars,
@@ -275,6 +287,7 @@ class MutagenizeOp(Operation):
             'parent_pool': self.parent_pools[0],
             'num_mutations': self.num_mutations,
             'mutation_rate': self.mutation_rate,
+            'mark_changes': self.mark_changes,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
