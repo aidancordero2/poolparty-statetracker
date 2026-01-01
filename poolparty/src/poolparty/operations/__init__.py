@@ -20,6 +20,8 @@ from .repeat import repeat, RepeatOp
 from .seq_shuffle import seq_shuffle, SeqShuffleOp
 from .reverse_complement import reverse_complement, ReverseComplementOp
 from .marker_scan import marker_scan, MarkerScanOp
+from .marker_multiscan import marker_multiscan, MarkerMultiScanOp
+from .replace_marker import replace_marker, ReplaceMarkerOp
 from .sync import sync
 
 __all__ = [
@@ -34,6 +36,8 @@ __all__ = [
     'mutagenize_orf', 'MutagenizeOrfOp',
     'breakpoint_scan', 'BreakpointScanOp',
     'marker_scan', 'MarkerScanOp',
+    'marker_multiscan', 'MarkerMultiScanOp',
+    'replace_marker', 'ReplaceMarkerOp',
     'insertion_scan',
     'replacement_scan',
     'deletion_scan',
