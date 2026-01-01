@@ -28,6 +28,11 @@ IUPAC_TO_DNA: dict[str, list[str]] = {
     "H": ["A", "C", "T"], "V": ["A", "C", "G"],
     "N": ["A", "C", "G", "T"],
 }
+# Add lowercase versions (lowercase keys -> lowercase values)
+IUPAC_TO_DNA.update({
+    k.lower(): [v.lower() for v in vals]
+    for k, vals in list(IUPAC_TO_DNA.items())
+})
 
 # Default ignore characters for sequence validation
 DEFAULT_IGNORE_CHARS: tuple[str, ...] = ('-', '.', ' ')

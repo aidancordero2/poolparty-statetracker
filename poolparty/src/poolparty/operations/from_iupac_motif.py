@@ -100,7 +100,7 @@ class FromIupacMotifOp(Operation):
                 position_options.append([char])
                 pos_idx += 1
             elif char_upper in IUPAC_TO_DNA:
-                opts = IUPAC_TO_DNA[char_upper]
+                opts = IUPAC_TO_DNA[char]
                 position_options.append(opts)
                 if len(opts) > 1:
                     degenerate_positions.append(pos_idx)

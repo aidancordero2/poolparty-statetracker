@@ -129,14 +129,34 @@ class TestFromIupacMotifMarkChanges:
             assert seq[2] == 'T'
             assert seq[1].islower()
     
-    def test_mark_changes_false_preserves_case(self):
-        """mark_changes=False preserves uppercase."""
+    def test_mark_changes_false_preserves_uppercase(self):
+        """mark_changes=False preserves uppercase input."""
         with pp.Party() as party:
             pool = from_iupac_motif('ANT', mark_changes=False, mode='random').named('iupac')
         
         df = pool.generate_seqs(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert seq == seq.upper()
+    
+    def test_mark_changes_false_preserves_lowercase(self):
+        """mark_changes=False preserves lowercase input."""
+        with pp.Party() as party:
+            pool = from_iupac_motif('ant', mark_changes=False, mode='random').named('iupac')
+        
+        df = pool.generate_seqs(num_seqs=10, seed=42)
+        for seq in df['seq']:
+            assert seq == seq.lower()
+    
+    def test_mark_changes_false_preserves_mixed_case(self):
+        """mark_changes=False preserves mixed case input."""
+        with pp.Party() as party:
+            pool = from_iupac_motif('AnT', mark_changes=False, mode='random').named('iupac')
+        
+        df = pool.generate_seqs(num_seqs=10, seed=42)
+        for seq in df['seq']:
+            assert seq[0] == 'A'
+            assert seq[1].islower()
+            assert seq[2] == 'T'
     
     def test_mark_changes_multiple_degenerate(self):
         """mark_changes works with multiple degenerate positions."""
