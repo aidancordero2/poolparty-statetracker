@@ -160,11 +160,12 @@ class TestFromProbMotifValidation:
             with pytest.raises(ValueError, match="must not sum to zero"):
                 from_prob_motif(prob_df)
     
-    def test_requires_party_context(self):
-        """Test that from_prob_motif requires Party context."""
+    def test_works_with_default_party(self):
+        """Test that from_prob_motif works with default party context."""
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
-        with pytest.raises(RuntimeError, match="Party context"):
-            from_prob_motif(prob_df)
+        pool = from_prob_motif(prob_df)
+        assert pool is not None
+        assert hasattr(pool, 'operation')
 
 
 class TestFromProbMotifNormalization:

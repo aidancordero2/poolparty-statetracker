@@ -22,10 +22,11 @@ class TestFromIupacMotifFactory:
             pool = from_iupac_motif('ACGT')
             assert isinstance(pool.operation, FromIupacMotifOp)
     
-    def test_requires_party_context(self):
-        """from_iupac_motif requires Party context."""
-        with pytest.raises(RuntimeError, match="Party context"):
-            from_iupac_motif('ACGT')
+    def test_works_with_default_party(self):
+        """from_iupac_motif works with default party context (no explicit context needed)."""
+        pool = from_iupac_motif('ACGT')
+        assert pool is not None
+        assert hasattr(pool, 'operation')
 
 
 class TestFromIupacMotifValidation:

@@ -368,12 +368,16 @@ class TestRepeatOp:
 class TestErrors:
     """Test error handling."""
     
-    def test_nested_party_error(self):
-        """Test error for nested Party contexts."""
-        with pp.Party():
-            with pytest.raises(RuntimeError, match="Nested Party contexts"):
-                with pp.Party():
-                    pass
+    def test_nested_party_allowed(self):
+        """Test that nested Party contexts are now allowed (they stack)."""
+        with pp.Party(alphabet='dna') as outer:
+            pool1 = pp.from_seqs(['AAA'])
+            with pp.Party(alphabet='rna') as inner:
+                # Inner party is now active
+                assert pp.get_active_party() is inner
+                pool2 = pp.from_seqs(['AAA'])
+            # Outer party restored after exiting inner
+            assert pp.get_active_party() is outer
     
     def test_num_seqs_required(self):
         """Test error when neither num_seqs nor num_complete_iterations given."""

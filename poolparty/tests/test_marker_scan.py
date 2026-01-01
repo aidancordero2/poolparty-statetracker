@@ -11,10 +11,11 @@ from poolparty.alphabet import get_alphabet, MARKER_PATTERN
 class TestMarkerClass:
     """Test Marker class creation and registration."""
     
-    def test_marker_requires_party_context(self):
-        """Test that Marker requires active Party context."""
-        with pytest.raises(RuntimeError, match="Markers must be created inside a Party context"):
-            Marker()
+    def test_marker_works_with_default_party(self):
+        """Test that Marker works with default party context."""
+        m = Marker()
+        assert m is not None
+        assert hasattr(m, 'name')
     
     def test_marker_default_name(self):
         """Test default marker naming."""

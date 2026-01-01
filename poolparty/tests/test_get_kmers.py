@@ -232,10 +232,11 @@ class TestGetKmersErrors:
             with pytest.raises(ValueError, match="length must be >= 1"):
                 get_kmers(length=-1)
     
-    def test_requires_party_context(self):
-        """Test error when called outside Party context."""
-        with pytest.raises(RuntimeError, match="requires an active Party context"):
-            get_kmers(length=4)
+    def test_works_with_default_party(self):
+        """Test that get_kmers works with default party context."""
+        pool = get_kmers(length=4, mode='random')
+        assert pool is not None
+        assert hasattr(pool, 'operation')
 
 
 class TestGetKmersLargeSpace:

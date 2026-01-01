@@ -4,7 +4,7 @@ __version__ = "0.3.0"
 
 import statecounter as sc
 
-from .party import Party, get_active_party
+from .party import Party, get_active_party, reset_default_party, _init_default_party
 from .pool import Pool
 from .operation import Operation
 from .marker import Marker
@@ -39,7 +39,7 @@ from .operations import (
 
 __all__ = [
     '__version__',
-    'Party', 'get_active_party',
+    'Party', 'get_active_party', 'reset_default_party',
     'Pool', 'Operation', 'Marker', 'Counter', 'CounterManager', 'generate_seqs',
     'get_alphabet', 'NAMED_ALPHABETS',
     'from_seq', 'FromSeqOp',
@@ -71,3 +71,6 @@ __all__ = [
 # Re-export statecounter primitives for backward compatibility
 Counter = sc.Counter
 CounterManager = sc.Manager
+
+# Initialize default Party context on import
+_init_default_party()

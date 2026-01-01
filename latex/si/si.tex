@@ -115,30 +115,33 @@ Here is an example of PoolParty code that uses \inpy{'random'} and \inpy{'fixed'
 import poolparty as pp
 
 # Define sequences (lowercase wild-type so changes appear uppercase)
-wt_seq = 'ATCGATCGATCGATCGATCG'.lower()          # 20 nt wild-type
-adapter_5_seq = 'GAATTC'                          # 6 nt 5' adapter
-adapter_3_iupac = 'GGATCC.NNNNNNNNNN.CTGCAG'      # 6 + 10N barcode + 6
+wt_seq = 'ATCGATCGAT'                  # 10 nt wild-type
+adapter_5_seq = 'GAA'                  # 3 nt 5' adapter
+adapter_3_iupac = 'GGA.NNNNN.CAG'      # 3 + 5N barcode + 3
 
-# Create pools
+# Create pool of randomly mutagenized wt_seq sequences
 mut_pool = pp.mutagenize(
     wt_seq, 
     mutation_rate=0.10, 
     mark_changes=True, 
-    op_name='mut')
+    op_name='op1')
+
+# Create pool of 3' adaptors with random barcodes
 adapter_3_pool = pp.from_iupac_motif(
     adapter_3_iupac, 
-    mark_degenerate=True, 
-    op_name='iupac')
+    mark_changes=True, 
+    op_name='op2')
 
-# Join into final oligo
-oligo_pool_1 = pp.join(
+# Join into final oligo pool
+oligo_pool = pp.join(
     [adapter_5_seq, mut_pool, adapter_3_pool], 
-    spacer_str='.',
-    op_name='join')
+    spacer_str=' ',
+    op_name='op3')
 
 # Sample 5 sequences
-df = oligo_pool_1.generate_seqs(num_seqs=5, seed=42)
-print(df['seq'].tolist())
+df = oligo_pool.generate_seqs(num_seqs=5, seed=42)
+cols = ['seq','op2.key.iupac_state','op1.key.positions','op1.key.wt_chars', 'op1.key.mut_chars']
+display(df[cols])
 \end{minted}
 
 \noindent\textbf{Example output} (mutations in UPPERCASE, degenerate positions in lowercase):

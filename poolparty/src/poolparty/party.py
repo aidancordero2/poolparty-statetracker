@@ -6,12 +6,39 @@ from .codon_table import CodonTable
 from .alphabet import Alphabet, get_alphabet
 
 _active_party: Optional["Party"] = None
+_default_party: Optional["Party"] = None
 
 
 @beartype
 def get_active_party() -> Optional["Party"]:
     """Get the currently active Party context, or None if not in a context."""
     return _active_party
+
+
+@beartype
+def reset_default_party(
+    alphabet: Union[str, Alphabet] = 'dna',
+    genetic_code: Union[str, dict] = 'standard',
+) -> "Party":
+    """Reset and return the default Party, clearing all registered pools/operations/markers."""
+    global _active_party, _default_party
+    # Exit current default party if active
+    if _default_party is not None and _default_party._is_active:
+        _default_party._counter_manager.__exit__(None, None, None)
+        _default_party._is_active = False
+    # Create new default party
+    _default_party = Party(alphabet=alphabet, genetic_code=genetic_code)
+    _default_party._counter_manager.__enter__()
+    _default_party._is_active = True
+    _active_party = _default_party
+    return _default_party
+
+
+def _init_default_party() -> None:
+    """Initialize the default party on module import (called from __init__.py)."""
+    global _default_party
+    if _default_party is None:
+        reset_default_party()
 
 @beartype
 class Party:
@@ -25,6 +52,7 @@ class Party:
         self._operations: list = []
         self._outputs: dict[str, Pool_type] = {}
         self._is_active: bool = False
+        self._previous_party: Optional["Party"] = None
         self._counter_manager: sc.Manager = sc.Manager()
         self._next_pool_id: int = 0
         self._next_op_id: int = 0
@@ -101,21 +129,23 @@ class Party:
         return self._alphabet.get_valid_seq_positions(seq)
     
     def __enter__(self) -> "Party":
-        """Enter the Party context."""
+        """Enter the Party context, saving any previous active party."""
         global _active_party
-        if _active_party is not None:
-            raise RuntimeError("Nested Party contexts are not supported")
+        # Save previous party to restore on exit
+        self._previous_party = _active_party
         _active_party = self
         self._is_active = True
         self._counter_manager.__enter__()
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Exit the Party context."""
+        """Exit the Party context, restoring the previous party."""
         global _active_party
         self._counter_manager.__exit__(exc_type, exc_val, exc_tb)
-        _active_party = None
         self._is_active = False
+        # Restore previous party (could be default or another explicit party)
+        _active_party = self._previous_party
+        self._previous_party = None
     
     def _validate_pool_name(self, name: str, pool: Optional[Pool_type] = None) -> str:
         """Validate that a pool name is unique."""
