@@ -44,3 +44,6 @@ Thumbs.db
 *.toc
 *.lof
 *.lot
+*.pygtex
+*.pygstyle
+_minted-*/
