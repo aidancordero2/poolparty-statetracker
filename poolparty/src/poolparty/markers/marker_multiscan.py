@@ -3,7 +3,7 @@ from poolparty.types import Union, Optional, Sequence
 from numbers import Integral, Real
 import numpy as np
 
-from .parsing import build_marker_tag, get_positions_without_markers
+from .parsing import build_marker_tag, get_nonmarker_positions, nonmarker_pos_to_literal_pos
 from ..operation import Operation
 
 # Type aliases
@@ -124,7 +124,7 @@ class MarkerMultiScanOp(Operation):
     """Insert multiple XML markers at selected positions."""
 
     factory_name = "marker_multiscan"
-    design_card_keys = ['positions', 'strands', 'marker_tags']
+    design_card_keys = ['indices', 'strands', 'marker_tags']
 
     def __init__(
         self,
@@ -194,18 +194,26 @@ class MarkerMultiScanOp(Operation):
                 "insertion_mode='unordered' requires len(markers) >= num_insertions"
             )
 
-    def _get_valid_marker_positions(self, seq: str) -> list[int]:
-        """Valid insertion positions excluding marker interiors."""
-        valid_raw_positions = get_positions_without_markers(seq)
+    def _get_valid_marker_indices(self, seq: str) -> list[int]:
+        """Return valid nonmarker indices (0 to n-1) for marker insertion.
+        
+        Returns logical indices into the non-marker character positions,
+        not literal string positions. This allows proper handling of
+        multiple marker insertions without position corruption.
+        """
+        nonmarker_positions = get_nonmarker_positions(seq)
+        num_nonmarker = len(nonmarker_positions)
         
         if self._marker_length > 0:
             # For region markers, ensure room for content
-            all_valid = []
-            for i, raw_pos in enumerate(valid_raw_positions):
-                if i + self._marker_length <= len(valid_raw_positions):
-                    all_valid.append(raw_pos)
+            # Valid indices are 0 to (num_nonmarker - marker_length)
+            max_valid_idx = num_nonmarker - self._marker_length
+            if max_valid_idx < 0:
+                return []
+            all_valid = list(range(max_valid_idx + 1))
         else:
-            all_valid = valid_raw_positions + [len(seq)]
+            # For zero-length markers, can insert at any position including end
+            all_valid = list(range(num_nonmarker + 1))
 
         if self._positions is not None:
             indices = _validate_positions(
@@ -217,20 +225,54 @@ class MarkerMultiScanOp(Operation):
 
         return all_valid
 
-    def _select_positions(
-        self, valid_positions: list[int], rng: np.random.Generator
+    def _select_indices(
+        self, valid_indices: list[int], rng: np.random.Generator
     ) -> list[int]:
-        if len(valid_positions) < self.num_insertions:
+        """Select nonmarker indices for marker insertion.
+        
+        For region markers (marker_length > 0), ensures selected indices
+        are at least marker_length apart to prevent overlapping regions.
+        """
+        if len(valid_indices) < self.num_insertions:
             raise ValueError(
-                f"Not enough valid positions ({len(valid_positions)}) "
+                f"Not enough valid positions ({len(valid_indices)}) "
                 f"for {self.num_insertions} insertions"
             )
-        chosen = rng.choice(
-            valid_positions,
-            size=self.num_insertions,
-            replace=False,
-        )
-        return sorted(int(x) for x in chosen)
+        
+        if self._marker_length > 0:
+            # For region markers, need non-overlapping selection
+            # Use greedy algorithm with random shuffling
+            shuffled = list(valid_indices)
+            rng.shuffle(shuffled)
+            
+            chosen = []
+            for idx in shuffled:
+                # Check if this idx overlaps with any already chosen
+                overlaps = False
+                for c in chosen:
+                    if abs(idx - c) < self._marker_length:
+                        overlaps = True
+                        break
+                if not overlaps:
+                    chosen.append(idx)
+                    if len(chosen) == self.num_insertions:
+                        break
+            
+            if len(chosen) < self.num_insertions:
+                raise ValueError(
+                    f"Cannot select {self.num_insertions} non-overlapping positions "
+                    f"with marker_length={self._marker_length} from "
+                    f"{len(valid_indices)} valid positions"
+                )
+            return sorted(chosen)
+        else:
+            # Zero-length markers don't overlap
+            chosen = rng.choice(
+                valid_indices,
+                size=self.num_insertions,
+                replace=False,
+            )
+            return sorted(int(x) for x in chosen)
 
     def _select_strands(self, rng: np.random.Generator) -> list[str]:
         """Select strands for each insertion."""
@@ -240,9 +282,19 @@ class MarkerMultiScanOp(Operation):
             return [self._strand] * self.num_insertions
 
     def _select_marker_tags(
-        self, seq: str, positions: list[int], strands: list[str], rng: np.random.Generator
+        self, seq: str, indices: list[int], strands: list[str], rng: np.random.Generator
     ) -> list[str]:
-        """Build marker tags for each position."""
+        """Build marker tags for each nonmarker index.
+        
+        Args:
+            seq: The original sequence string.
+            indices: Nonmarker indices (logical positions, not literal).
+            strands: Strand for each marker.
+            rng: Random number generator.
+        
+        Returns:
+            List of marker tag strings.
+        """
         if self.insertion_mode == 'ordered':
             names = self._marker_names
         else:
@@ -251,9 +303,15 @@ class MarkerMultiScanOp(Operation):
             names = [self._marker_names[int(i)] for i in idxs]
         
         tags = []
-        for i, (pos, strand, name) in enumerate(zip(positions, strands, names)):
+        for idx, strand, name in zip(indices, strands, names):
             if self._marker_length > 0:
-                content = seq[pos:pos + self._marker_length]
+                # Convert nonmarker index to literal positions for content extraction
+                literal_start = nonmarker_pos_to_literal_pos(seq, idx)
+                literal_end = nonmarker_pos_to_literal_pos(seq, idx + self._marker_length)
+                content = seq[literal_start:literal_end]
+                # Strip any existing marker tags from content (keep only actual characters)
+                from .parsing import strip_all_markers
+                content = strip_all_markers(content)
             else:
                 content = ''
             tags.append(build_marker_tag(name, content, strand))
@@ -268,13 +326,13 @@ class MarkerMultiScanOp(Operation):
         if rng is None:
             raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
 
-        valid_positions = self._get_valid_marker_positions(seq)
-        positions = self._select_positions(valid_positions, rng)
+        valid_indices = self._get_valid_marker_indices(seq)
+        indices = self._select_indices(valid_indices, rng)
         strands = self._select_strands(rng)
-        marker_tags = self._select_marker_tags(seq, positions, strands, rng)
+        marker_tags = self._select_marker_tags(seq, indices, strands, rng)
 
         return {
-            'positions': positions,
+            'indices': indices,  # nonmarker indices, not literal positions
             'strands': strands,
             'marker_tags': marker_tags,
         }
@@ -284,20 +342,53 @@ class MarkerMultiScanOp(Operation):
         parent_seqs: list[str],
         card: dict,
     ) -> dict:
+        """Build result sequence with markers inserted at nonmarker indices.
+        
+        Uses single-pass construction to avoid position corruption issues
+        when inserting multiple overlapping markers.
+        """
         seq = parent_seqs[0]
-        positions = list(card['positions'])
+        indices = list(card['indices'])
         marker_tags = list(card['marker_tags'])
-
-        # Insert markers from right to left to preserve positions
-        inserts = sorted(zip(positions, marker_tags), key=lambda x: x[0], reverse=True)
-        for pos, tag in inserts:
+        
+        # Sort by index ascending for left-to-right processing
+        inserts = sorted(zip(indices, marker_tags), key=lambda x: x[0])
+        
+        # Build result string from left to right
+        result_parts = []
+        prev_end_idx = 0  # Next nonmarker index to copy from
+        
+        for nm_idx, tag in inserts:
+            # Copy characters from prev_end_idx to nm_idx (exclusive)
+            if prev_end_idx < nm_idx:
+                start_literal = nonmarker_pos_to_literal_pos(seq, prev_end_idx)
+                end_literal = nonmarker_pos_to_literal_pos(seq, nm_idx)
+                result_parts.append(seq[start_literal:end_literal])
+            
+            # Add the marker tag (which contains content for region markers)
+            result_parts.append(tag)
+            
+            # Update prev_end_idx based on marker type
             if self._marker_length > 0:
-                # Region marker: replace content
-                seq = seq[:pos] + tag + seq[pos + self._marker_length:]
+                # Region marker: skip the characters that are now inside the tag
+                prev_end_idx = nm_idx + self._marker_length
             else:
-                # Zero-length marker: insert
-                seq = seq[:pos] + tag + seq[pos:]
-        return {'seq_0': seq}
+                # Zero-length marker: don't skip any characters
+                prev_end_idx = nm_idx
+        
+        # Add remaining characters after the last marker
+        nonmarker_positions = get_nonmarker_positions(seq)
+        if prev_end_idx < len(nonmarker_positions):
+            start_literal = nonmarker_pos_to_literal_pos(seq, prev_end_idx)
+            result_parts.append(seq[start_literal:])
+        elif prev_end_idx == len(nonmarker_positions):
+            # Edge case: last marker ends exactly at end of sequence
+            # There might be trailing marker tags to preserve
+            last_nonmarker_literal = nonmarker_positions[-1] if nonmarker_positions else 0
+            if last_nonmarker_literal + 1 < len(seq):
+                result_parts.append(seq[last_nonmarker_literal + 1:])
+        
+        return {'seq_0': ''.join(result_parts)}
 
     def _get_copy_params(self) -> dict:
         return {

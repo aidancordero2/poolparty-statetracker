@@ -3,7 +3,7 @@ from poolparty.types import Union, Optional, Literal
 from numbers import Integral, Real
 import numpy as np
 
-from .parsing import build_marker_tag, MARKER_PATTERN, get_positions_without_markers
+from .parsing import build_marker_tag, MARKER_PATTERN, get_nonmarker_positions
 from ..operation import Operation
 
 # Type aliases
@@ -221,7 +221,7 @@ class MarkerScanOp(Operation):
     def _get_valid_marker_positions(self, seq: str) -> list[int]:
         """Get valid marker insertion positions, excluding marker interiors."""
         # Get positions not inside existing markers
-        valid_raw_positions = get_positions_without_markers(seq)
+        valid_raw_positions = get_nonmarker_positions(seq)
         
         # For region markers, ensure there's room for marker_length bases
         if self._marker_length > 0:

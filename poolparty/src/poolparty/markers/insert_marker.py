@@ -2,7 +2,7 @@
 from numbers import Real
 from poolparty.types import Union, Optional
 
-from .parsing import build_marker_tag, get_length_without_markers
+from .parsing import build_marker_tag, get_nonmarker_positions, nonmarker_pos_to_literal_pos
 
 
 def insert_marker(
@@ -81,29 +81,22 @@ def insert_marker(
     
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         seq = seqs[0]
-        seq_len = get_length_without_markers(seq)
+        seq_len = len(get_nonmarker_positions(seq))
         
-        # Validate positions against sequence length
+        # Validate against non-marker length
         if start > seq_len:
-            raise ValueError(
-                f"start ({start}) exceeds sequence length ({seq_len})"
-            )
+            raise ValueError(f"start ({start}) exceeds sequence length ({seq_len})")
         actual_stop = stop if stop is not None else start
+        marker_length = actual_stop - start
         if actual_stop > seq_len:
-            raise ValueError(
-                f"stop ({actual_stop}) exceeds sequence length ({seq_len})"
-            )
+            raise ValueError(f"stop ({actual_stop}) exceeds sequence length ({seq_len})")
         
-        # Build the marker tag
-        if stop is None or stop == start:
-            # Zero-length marker
-            marker_tag = build_marker_tag(marker_name, '', strand)
-            return seq[:start] + marker_tag + seq[start:]
-        else:
-            # Region marker
-            content = seq[start:stop]
-            marker_tag = build_marker_tag(marker_name, content, strand)
-            return seq[:start] + marker_tag + seq[stop:]
+        # Convert to literal positions and build marker
+        literal_start = nonmarker_pos_to_literal_pos(seq, start)
+        literal_stop = nonmarker_pos_to_literal_pos(seq, actual_stop)
+        content = seq[literal_start:literal_stop] if marker_length > 0 else ''
+        marker_tag = build_marker_tag(marker_name, content, strand)
+        return seq[:literal_start] + marker_tag + seq[literal_stop:]
     
     # Sequence length changes due to marker tags (unknown statically)
     def seq_length_fn(pools) -> Optional[int]:

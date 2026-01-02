@@ -256,7 +256,7 @@ def get_length_without_markers(seq: str) -> int:
     return len(strip_all_markers(seq))
 
 
-def get_positions_without_markers(seq: str) -> list[int]:
+def get_nonmarker_positions(seq: str) -> list[int]:
     """Get raw string positions of all characters excluding marker tag interiors.
     
     Returns positions of characters that are NOT part of marker tags.
@@ -286,6 +286,43 @@ def get_positions_without_markers(seq: str) -> list[int]:
             tag_spans.add(i)
     
     return [i for i in range(len(seq)) if i not in tag_spans]
+
+
+def get_literal_positions(seq: str) -> list[int]:
+    """Get all raw string positions in a sequence.
+    
+    Returns list(range(len(seq))). Provided for API completeness
+    alongside get_nonmarker_positions and get_biological_positions.
+    """
+    return list(range(len(seq)))
+
+
+def nonmarker_pos_to_literal_pos(seq: str, nonmarker_pos: int) -> int:
+    """Convert a non-marker position to a literal string position.
+    
+    Args:
+        seq: Sequence string possibly containing markers.
+        nonmarker_pos: Position in non-marker coordinate space (0-indexed).
+            Can be 0 to len(nonmarker_positions) inclusive, where the
+            maximum value represents "one past the end" for slicing.
+    
+    Returns:
+        The corresponding literal string position.
+    
+    Raises:
+        ValueError: If nonmarker_pos is out of range.
+    """
+    nonmarker_positions = get_nonmarker_positions(seq)
+    seq_len = len(nonmarker_positions)
+    
+    if nonmarker_pos < 0 or nonmarker_pos > seq_len:
+        raise ValueError(
+            f"nonmarker_pos ({nonmarker_pos}) out of range [0, {seq_len}]"
+        )
+    
+    if nonmarker_pos == seq_len:
+        return len(seq)  # One past the end
+    return nonmarker_positions[nonmarker_pos]
 
 
 def build_marker_tag(

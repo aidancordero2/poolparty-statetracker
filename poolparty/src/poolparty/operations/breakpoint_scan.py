@@ -227,8 +227,8 @@ class BreakpointScanOp(Operation):
         seq = parent_seqs[0]
         raw_len = len(seq)
         logical_breakpoints = card['breakpoints']  # Logical positions (in marker-free seq)
-        positions_without_markers = self._get_positions_without_markers(seq)
-        seq_len = len(positions_without_markers)
+        nonmarker_positions = self._get_nonmarker_positions(seq)
+        seq_len = len(nonmarker_positions)
         
         # Translate logical breakpoints to raw positions
         # Logical position k means "split before the k-th char in marker-free sequence"
@@ -237,7 +237,7 @@ class BreakpointScanOp(Operation):
             if logical_pos >= seq_len:
                 raw_breakpoints.append(raw_len)
             else:
-                raw_breakpoints.append(positions_without_markers[logical_pos])
+                raw_breakpoints.append(nonmarker_positions[logical_pos])
         
         boundaries = [0] + raw_breakpoints + [raw_len]
         segments = [seq[boundaries[i]:boundaries[i+1]] for i in range(self.num_outputs)]

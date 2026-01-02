@@ -5,7 +5,7 @@ from .types import beartype, Optional, Sequence, Union
 from .markers.parsing import (
     MARKER_PATTERN,
     get_length_without_markers as _get_length_without_markers,
-    get_positions_without_markers as _get_positions_without_markers,
+    get_nonmarker_positions as _get_nonmarker_positions,
 )
 
 # Named alphabet character lists
@@ -202,15 +202,15 @@ class Alphabet:
         """
         return _get_length_without_markers(seq)
     
-    def get_positions_without_markers(self, seq: str) -> list[int]:
+    def get_nonmarker_positions(self, seq: str) -> list[int]:
         """Get raw string positions of all characters excluding marker interiors.
         
         Returns positions of all characters that are not inside marker tags.
         Use for operations that work on the full sequence (like breakpoint_scan).
         """
-        return _get_positions_without_markers(seq)
+        return _get_nonmarker_positions(seq)
     
-    def get_valid_seq_positions(self, seq: str) -> list[int]:
+    def get_biological_positions(self, seq: str) -> list[int]:
         """Get the indices of valid alphabet characters in a sequence.
         
         Returns positions of characters that are in the alphabet,
@@ -219,10 +219,10 @@ class Alphabet:
         Useful for determining which positions are eligible for mutagenesis.
         """
         # Get positions that are not inside marker tags
-        positions_without_markers = set(_get_positions_without_markers(seq))
+        nonmarker_positions = set(_get_nonmarker_positions(seq))
         
         char_set = set(self.all_chars)
-        return [i for i, c in enumerate(seq) if c in char_set and i in positions_without_markers]
+        return [i for i, c in enumerate(seq) if c in char_set and i in nonmarker_positions]
     
     def __repr__(self) -> str:
         return f"Alphabet({''.join(self.chars)})"

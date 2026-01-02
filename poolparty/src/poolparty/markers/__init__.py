@@ -10,7 +10,9 @@ from .parsing import (
     validate_single_marker,
     strip_all_markers,
     get_length_without_markers,
-    get_positions_without_markers,
+    get_nonmarker_positions,
+    get_literal_positions,
+    nonmarker_pos_to_literal_pos,
     build_marker_tag,
 )
 
@@ -33,7 +35,9 @@ __all__ = [
     'validate_single_marker',
     'strip_all_markers',
     'get_length_without_markers',
-    'get_positions_without_markers',
+    'get_nonmarker_positions',
+    'get_literal_positions',
+    'nonmarker_pos_to_literal_pos',
     'build_marker_tag',
     # Operations
     'insert_marker',

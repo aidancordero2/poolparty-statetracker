@@ -12,7 +12,9 @@ from poolparty.markers import (
     validate_single_marker,
     strip_all_markers,
     get_length_without_markers,
-    get_positions_without_markers,
+    get_nonmarker_positions,
+    get_literal_positions,
+    nonmarker_pos_to_literal_pos,
     build_marker_tag,
 )
 
@@ -111,16 +113,45 @@ class TestMarkerParsing:
         assert get_length_without_markers('AC<region>TG</region>AA') == 6
         assert get_length_without_markers('AC<ins/>GT') == 4
     
-    def test_get_positions_without_markers(self):
-        """Test get_positions_without_markers function."""
+    def test_get_nonmarker_positions(self):
+        """Test get_nonmarker_positions function."""
         # Without markers
-        assert get_positions_without_markers('ACGT') == [0, 1, 2, 3]
+        assert get_nonmarker_positions('ACGT') == [0, 1, 2, 3]
         
         # With marker - should skip tag positions
         seq = 'AC<ins/>GT'
-        positions = get_positions_without_markers(seq)
+        positions = get_nonmarker_positions(seq)
         # A=0, C=1, <ins/>=2-7, G=8, T=9
         assert positions == [0, 1, 8, 9]
+    
+    def test_get_literal_positions(self):
+        """Test get_literal_positions function."""
+        assert get_literal_positions('ACGT') == [0, 1, 2, 3]
+        assert get_literal_positions('AC<ins/>GT') == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        assert get_literal_positions('') == []
+    
+    def test_nonmarker_pos_to_literal_pos(self):
+        """Test nonmarker_pos_to_literal_pos function."""
+        # Without markers - should be identity
+        assert nonmarker_pos_to_literal_pos('ACGT', 0) == 0
+        assert nonmarker_pos_to_literal_pos('ACGT', 2) == 2
+        assert nonmarker_pos_to_literal_pos('ACGT', 4) == 4  # One past end
+        
+        # With marker - should skip marker tag positions
+        seq = 'AC<ins/>GT'
+        # nonmarker positions: 0->0, 1->1, 2->8, 3->9, 4->10 (one past end)
+        assert nonmarker_pos_to_literal_pos(seq, 0) == 0
+        assert nonmarker_pos_to_literal_pos(seq, 1) == 1
+        assert nonmarker_pos_to_literal_pos(seq, 2) == 8  # G is at literal position 8
+        assert nonmarker_pos_to_literal_pos(seq, 3) == 9  # T is at literal position 9
+        assert nonmarker_pos_to_literal_pos(seq, 4) == 10  # One past end
+    
+    def test_nonmarker_pos_to_literal_pos_out_of_range(self):
+        """Test nonmarker_pos_to_literal_pos raises on invalid positions."""
+        with pytest.raises(ValueError):
+            nonmarker_pos_to_literal_pos('ACGT', -1)
+        with pytest.raises(ValueError):
+            nonmarker_pos_to_literal_pos('ACGT', 5)
 
 
 class TestMarkerPattern:
@@ -165,6 +196,31 @@ class TestInsertMarker:
             result = pp.insert_marker('ACGT', 'region', start=1, stop=3, strand='-')
         df = result.generate_seqs(num_seqs=1)
         assert df['seq'].iloc[0] == "A<region strand='-'>CG</region>T"
+    
+    def test_insert_marker_into_sequence_with_existing_marker(self):
+        """Test inserting marker into sequence that already has markers.
+        
+        This tests the fix for the bug where positions were interpreted
+        as literal string positions instead of non-marker positions.
+        """
+        with pp.Party():
+            # Start with a sequence that already has a marker
+            bg = pp.from_seq('AC<a/>GT')
+            # Insert marker 'b' at positions 2-4 (should be 'GT', not inside <a/>)
+            marked = pp.insert_marker(bg, 'b', start=2, stop=4)
+        df = marked.generate_seqs(num_complete_iterations=1)
+        # Should get 'AC<a/><b>GT</b>', not 'AC<b><a</b>/>GT'
+        assert df['seq'].iloc[0] == 'AC<a/><b>GT</b>'
+    
+    def test_insert_zero_length_marker_into_sequence_with_existing_marker(self):
+        """Test inserting zero-length marker into sequence with existing markers."""
+        with pp.Party():
+            bg = pp.from_seq('AC<a/>GT')
+            # Insert zero-length marker at position 2 (after <a/>)
+            marked = pp.insert_marker(bg, 'b', start=2)
+        df = marked.generate_seqs(num_complete_iterations=1)
+        # Should get 'AC<a/><b/>GT'
+        assert df['seq'].iloc[0] == 'AC<a/><b/>GT'
 
 
 class TestMarkerScan:
@@ -350,16 +406,16 @@ class TestAlphabetWithXMLMarkers:
         assert alpha.get_length_without_markers('ACGT') == 4
         assert alpha.get_length_without_markers('AC<region>TG</region>GT') == 6
     
-    def test_get_positions_without_markers(self):
-        """Test get_positions_without_markers on Alphabet."""
+    def test_get_nonmarker_positions(self):
+        """Test get_nonmarker_positions on Alphabet."""
         from poolparty.alphabet import get_alphabet
         alpha = get_alphabet('dna')
         
         # Without marker
-        assert alpha.get_positions_without_markers('ACGT') == [0, 1, 2, 3]
+        assert alpha.get_nonmarker_positions('ACGT') == [0, 1, 2, 3]
         
         # With marker - should skip tag positions
-        positions = alpha.get_positions_without_markers('A<m/>CG')
+        positions = alpha.get_nonmarker_positions('A<m/>CG')
         # A=0, <m/>=1-4, C=5, G=6
         assert positions == [0, 5, 6]
 
@@ -395,12 +451,12 @@ class TestPartyMethodsWithXMLMarkers:
             assert party.get_effective_seq_length(seq_with_marker) == 6
             assert party.get_effective_seq_length('ACGT') == 4
     
-    def test_get_valid_char_positions(self):
-        """Test Party.get_valid_char_positions method."""
+    def test_get_biological_positions(self):
+        """Test Party.get_biological_positions method."""
         with pp.Party() as party:
             # With marker
             seq = 'AC<marker/>GT'
-            positions = party.get_valid_char_positions(seq)
+            positions = party.get_biological_positions(seq)
             # A=0, C=1, <marker/>=2-10, G=11, T=12
             assert 0 in positions
             assert 1 in positions

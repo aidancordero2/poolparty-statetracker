@@ -170,8 +170,8 @@ class SeqShuffleOp(Operation):
             return {'seq_0': seq}
         
         # Get raw positions corresponding to the logical region
-        positions_without_markers = self._get_positions_without_markers(seq)
-        region_raw_positions = positions_without_markers[start:end]
+        nonmarker_positions = self._get_nonmarker_positions(seq)
+        region_raw_positions = nonmarker_positions[start:end]
         
         # Extract chars at those positions
         region_chars = [seq[pos] for pos in region_raw_positions]
