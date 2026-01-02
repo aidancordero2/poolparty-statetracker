@@ -6,7 +6,8 @@ Use join() for sequence joining.
 
 import pytest
 import poolparty as pp
-from poolparty.operations.join import JoinOp, join
+from poolparty.operations.join import join
+from poolparty.operations.fixed import FixedOp
 
 
 class TestJoinFactory:
@@ -21,13 +22,13 @@ class TestJoinFactory:
             assert combined is not None
             assert hasattr(combined, 'operation')
     
-    def test_creates_join_op(self):
-        """Test that join creates a JoinOp."""
+    def test_creates_fixed_op(self):
+        """Test that join creates a FixedOp."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA'])
             b = pp.from_seqs(['TTT'])
             combined = join([a, b])
-            assert isinstance(combined.operation, JoinOp)
+            assert isinstance(combined.operation, FixedOp)
 
 
 class TestJoinPools:
@@ -140,7 +141,7 @@ class TestJoinVsStack:
 
 
 class TestJoinFixedMode:
-    """Test that JoinOp is always fixed mode."""
+    """Test that join is always fixed mode."""
     
     def test_mode_is_fixed(self):
         """Test that join creates fixed mode operation."""
@@ -173,7 +174,7 @@ class TestJoinFixedMode:
 
 
 class TestJoinDesignCards:
-    """Test JoinOp design cards."""
+    """Test join design cards."""
     
     def test_no_design_card_keys(self):
         """Test that join has no design card keys."""
@@ -196,7 +197,7 @@ class TestJoinDesignCards:
 
 
 class TestJoinCompute:
-    """Test JoinOp compute methods directly."""
+    """Test join compute methods directly."""
     
     def test_compute_joins_sequences(self):
         """Test compute method joins parent sequences."""
@@ -294,7 +295,7 @@ class TestJoinWithOtherOperations:
 
 
 class TestJoinCustomName:
-    """Test JoinOp name parameter."""
+    """Test join name parameter."""
     
     def test_default_name(self):
         """Test default operation name."""
@@ -303,7 +304,7 @@ class TestJoinCustomName:
             b = pp.from_seqs(['TTT'])
             combined = join([a, b])
             assert combined.operation.name.startswith('op[')
-            assert ':join' in combined.operation.name
+            assert ':fixed' in combined.operation.name
     
     def test_custom_name(self):
         """Test custom operation name."""
@@ -316,14 +317,6 @@ class TestJoinCustomName:
 
 class TestJoinSpacerStr:
     """Test spacer_str parameter for join."""
-    
-    def test_default_spacer_is_empty(self):
-        """Test that default spacer is empty string."""
-        with pp.Party() as party:
-            a = pp.from_seqs(['AAA'])
-            b = pp.from_seqs(['TTT'])
-            combined = join([a, b])
-            assert combined.operation.spacer_str == ''
     
     def test_spacer_str_basic(self):
         """Test basic spacer_str usage."""
@@ -375,14 +368,6 @@ class TestJoinSpacerStr:
             # Total should be 2 + 2 + 2 + 1 + 1 = 8
             assert combined.seq_length == 8
     
-    def test_spacer_str_stored_on_op(self):
-        """Test that spacer_str is stored on operation."""
-        with pp.Party() as party:
-            a = pp.from_seqs(['A'])
-            b = pp.from_seqs(['B'])
-            combined = join([a, b], spacer_str='---')
-            assert combined.operation.spacer_str == '---'
-    
     def test_spacer_str_with_strings(self):
         """Test spacer_str when joining strings."""
         with pp.Party() as party:
@@ -410,14 +395,3 @@ class TestJoinSpacerStr:
         
         df = combined.generate_seqs(num_seqs=1)
         assert df['seq'].iloc[0] == 'AAA'  # No spacer for single item
-    
-    def test_spacer_str_copy_params(self):
-        """Test that _get_copy_params includes spacer_str."""
-        with pp.Party() as party:
-            a = pp.from_seqs(['AAA'])
-            b = pp.from_seqs(['TTT'])
-            combined = join([a, b], spacer_str='...')
-        
-        params = combined.operation._get_copy_params()
-        assert params['spacer_str'] == '...'
-

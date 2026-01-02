@@ -74,8 +74,9 @@
 %% DOCUMENT METADATA
 %% ============================================================================
 
-\title{Supplemental Information for ``PoolParty:\\Declartive design of commplex oligonucleotide libraries''}
-\author{[Author Names]}
+\title{PoolParty: Declartive design of complex oligonucleotide libraries\\
+(Supplemental Information)}
+\author{Zhihan Liu and Justin B. Kinney}
 \date{\today}
 
 %% ============================================================================
@@ -104,7 +105,7 @@ Poolparty has two core types of objects: Pools and Operations. A Pool object rep
 
 The following two examples illustrate PoolParty's core capabilities.
 
-\subsection{Example 1: Fixed and Random Mode Operations}
+\subsection{Example 1: Random Mode Operations}
 \label{subsec:example-random}
 
 Each component Operation of the computation graph can be in one of four modes: \inpy{'fixed'}, \inpy{'random'}, \inpy{'sequential'}, or \inpy{'hybrid'}.  Fixed mode operations are deterministic: for a given input they always produce the same output. Random mode operation, on the other hand, will generally produce a different output each time they are called due to them having an internal state that changes unpredictably. 
@@ -172,13 +173,15 @@ PoolParty addresses this challenge using an underlying library called StateCount
 The following example demonstrates these concepts. We perform a replacement scan (inserting either \inpy{'AAAAA'} or \inpy{'TTTTT'} at each of 4 positions) and a deletion scan (deleting 5 nucleotides at each of the same 4 positions), then stack these two scanning operations together.
 
 \begin{minted}{python}
+# ... continued from Example 1 ...
+
 # Create pool of two insert variants (2 states)
 ins_pool = pp.from_seqs(['AAAAA', 'TTTTT'], mode='sequential')
 
 # Replacement scan: 2 inserts x 4 positions = 8 states (Cartesian product)
 rep_pool = pp.replacement_scan(
     wt_seq, ins_pool, 
-    positions=range(0, 20, 5),  # [0, 5, 10, 15]
+    positions=slice(None,None,5),  
     mode='sequential'
 )
 
@@ -186,7 +189,7 @@ rep_pool = pp.replacement_scan(
 del_pool = pp.deletion_scan(
     wt_seq, 
     deletion_length=5,
-    positions=range(0, 20, 5),
+    positions=slice(None,None,5),
     mode='sequential'
 )
 
@@ -201,43 +204,30 @@ df = oligo_pool_2.generate_seqs(num_complete_iterations=1, seed=42)
 print(df['seq'])
 \end{minted}
 
+This produces the resulting output sequences:
+\begin{center}
+    \includegraphics[width=\textwidth]{example2_seqs.png}
+\end{center}
+
 Key points:
 \begin{itemize}
     \item \inpy{pp.from_seqs(..., mode='sequential')} creates a pool that cycles through its sequences in order. Here it has 2 states: state 0 yields \inpy{'AAAAA'}, state 1 yields \inpy{'TTTTT'}.
     
-    \item \inpy{pp.replacement_scan()} replaces a segment of the input sequence with an insert at each specified position. With \inpy{mode='sequential'}, it systematically enumerates all position states. Since \inpy{ins_pool} also has sequential states, the two are combined via Cartesian product: $2 \text{ inserts} \times 4 \text{ positions} = 8$ total states.
-    \begin{center}
-        \texttt{[PLACEHOLDER: example2\_rep\_states.png showing the 8 replacement states]}
-    \end{center}
-    
-    \item \inpy{pp.deletion_scan()} removes a segment of specified length at each position, replacing it with deletion markers (\inpy{'-'}). With 4 positions, this yields 4 states.
-    \begin{center}
-        \texttt{[PLACEHOLDER: example2\_del\_states.png showing the 4 deletion states]}
-    \end{center}
+    \item \inpy{pp.replacement_scan()} replaces a segment of the input sequence with an insert at each specified position. With \inpy{mode='sequential'}, it systematically enumerates all position states. Since \inpy{ins_pool} also has sequential states, the two are combined via Cartesian product: $2 \text{ inserts} \times 4 \text{ positions} = 8$ total states (numbered 0-7).
+     
+    \item \inpy{pp.deletion_scan()} removes a segment of specified length at each position, replacing it with deletion markers (\inpy{'-'}). With 4 positions, this yields 4 states (numbered 8-11).
     
     \item \inpy{pp.stack()} combines pools as a union: only one pool is ``active'' at any given state. The first 8 states come from \inpy{rep_pool}, the next 4 from \inpy{del_pool}, for a total of 12 states.
+
+    \item \inpy{generate_seqs(num_complete_iterations=1)} iterates through all 12 states exactly once. More generally, \inpy{num_complete_iterations=N} guarantees that every state is visited exactly $N$ times, with the internal states of the contributing operations cyling in a specific order each time.
     
-    \item \inpy{generate_seqs(num_complete_iterations=1)} iterates through all 12 states exactly once. Unlike \inpy{num_seqs=N} which samples $N$ sequences (potentially with repetition for random operations), \inpy{num_complete_iterations=N} guarantees that every state is visited exactly $N$ times.
-    
-    \item The resulting sequences all have the same length because \inpy{replacement_scan} replaces 5 nucleotides with a 5-nucleotide insert, and \inpy{deletion_scan} replaces 5 nucleotides with 5 deletion markers.
-    \begin{center}
-        \texttt{[PLACEHOLDER: example2\_seqs.png showing all 12 output sequences]}
-    \end{center}
-    
-    \item The computation tree for this example shows how the counters are composed:
-    \begin{center}
-        \texttt{[PLACEHOLDER: example2\_tree.png showing the computation tree with counter states]}
-    \end{center}
-    
-    \item The design card columns in the output dataframe track which state each operation was in when generating each sequence, enabling downstream analysis:
-    \begin{center}
-        \texttt{[PLACEHOLDER: example2\_df.png showing the design card columns]}
-    \end{center}
+    \item Because \inpy{pp.from_iupac()} remains in random mode, the barcodes present in each sequence \inpy{ad3} remain random and do not cycle in any coordinated way with the internal states of \inpy{pp.from_seqs}, \inpy{pp.replacement_scan}, and \inpy{pp.deletion_scan}.
 \end{itemize}
 
 \medskip
 \noindent The remainder of this document describes the architecture and operations of 
 PoolParty and its underlying StateCounter library in detail.
+\newpage
 
 
 %% ============================================================================

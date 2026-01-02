@@ -2,7 +2,8 @@
 
 import pytest
 import poolparty as pp
-from poolparty.operations.swap_case import swap_case, SwapCaseOp
+from poolparty.operations.swap_case import swap_case
+from poolparty.operations.fixed import FixedOp
 
 
 class TestSwapCaseBasics:
@@ -14,7 +15,7 @@ class TestSwapCaseBasics:
             pool = pp.from_seq('ACGT')
             result = swap_case(pool)
             assert hasattr(result, 'operation')
-            assert isinstance(result.operation, SwapCaseOp)
+            assert isinstance(result.operation, FixedOp)
     
     def test_swaps_uppercase_to_lowercase(self):
         """Test that uppercase letters become lowercase."""

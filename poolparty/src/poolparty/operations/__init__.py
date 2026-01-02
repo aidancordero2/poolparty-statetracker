@@ -1,10 +1,11 @@
 """Operations for poolparty."""
-from .from_seq import from_seq, FromSeqOp
+from .fixed import fixed_operation, FixedOp
+from .from_seq import from_seq
 from .from_seqs import from_seqs, FromSeqsOp
 from .from_iupac_motif import from_iupac_motif, FromIupacMotifOp
 from .from_prob_motif import from_prob_motif, FromProbMotifOp
 from .get_kmers import get_kmers, GetKmersOp
-from .join import join, JoinOp
+from .join import join
 from .mutagenize import mutagenize, MutagenizeOp
 from .mutagenize_orf import mutagenize_orf, MutagenizeOrfOp
 from .breakpoint_scan import breakpoint_scan, BreakpointScanOp
@@ -18,20 +19,21 @@ from .state_sample import state_sample, StateSampleOp
 from .stack import stack, StackOp
 from .repeat import repeat, RepeatOp
 from .seq_shuffle import seq_shuffle, SeqShuffleOp
-from .reverse_complement import reverse_complement, ReverseComplementOp
-from .swap_case import swap_case, SwapCaseOp
+from .reverse_complement import reverse_complement
+from .swap_case import swap_case
 from .marker_scan import marker_scan, MarkerScanOp
 from .marker_multiscan import marker_multiscan, MarkerMultiScanOp
 from .replace_marker import replace_marker, ReplaceMarkerOp
 from .sync import sync
 
 __all__ = [
-    'from_seq', 'FromSeqOp',
+    'fixed_operation', 'FixedOp',
+    'from_seq',
     'from_seqs', 'FromSeqsOp',
     'from_iupac_motif', 'FromIupacMotifOp',
     'from_prob_motif', 'FromProbMotifOp',
     'get_kmers', 'GetKmersOp',
-    'join', 'JoinOp',
+    'join',
     'seq_slice', 'SeqSliceOp',
     'mutagenize', 'MutagenizeOp',
     'mutagenize_orf', 'MutagenizeOrfOp',
@@ -45,8 +47,8 @@ __all__ = [
     'stack', 'StackOp',
     'repeat', 'RepeatOp',
     'seq_shuffle', 'SeqShuffleOp',
-    'reverse_complement', 'ReverseComplementOp',
-    'swap_case', 'SwapCaseOp',
+    'reverse_complement',
+    'swap_case',
     'state_slice', 'StateSliceOp',
     'state_shuffle', 'StateShuffleOp',
     'state_sample', 'StateSampleOp',

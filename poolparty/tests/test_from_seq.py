@@ -2,7 +2,8 @@
 
 import pytest
 import poolparty as pp
-from poolparty.operations.from_seq import FromSeqOp, from_seq
+from poolparty.operations.from_seq import from_seq
+from poolparty.operations.fixed import FixedOp
 
 
 class TestFromSeqFactory:
@@ -15,11 +16,11 @@ class TestFromSeqFactory:
             assert pool is not None
             assert hasattr(pool, 'operation')
     
-    def test_creates_from_seq_op(self):
-        """Test that from_seq creates a FromSeqOp."""
+    def test_creates_fixed_op(self):
+        """Test that from_seq creates a FixedOp."""
         with pp.Party() as party:
             pool = from_seq('AAA')
-            assert isinstance(pool.operation, FromSeqOp)
+            assert isinstance(pool.operation, FixedOp)
     
     def test_mode_is_fixed(self):
         """Test that the operation mode is always 'fixed'."""
@@ -50,34 +51,23 @@ class TestFromSeqGeneration:
 class TestFromSeqDesignCards:
     """Test FromSeq design card output."""
     
-    def test_seq_in_output(self):
-        """Test seq is in output."""
-        with pp.Party() as party:
-            pool = from_seq('ATGC', op_name='my_seq').named('mypool')
-        
-        df = pool.generate_seqs(num_seqs=1)
-        assert 'mypool.op.key.seq' in df.columns
-        # Use iloc with column index to handle potential duplicate columns
-        seq_col_idx = list(df.columns).index('mypool.op.key.seq')
-        assert df.iloc[0, seq_col_idx] == 'ATGC'
-    
-    def test_design_card_keys_defined(self):
-        """Test design_card_keys is defined correctly."""
+    def test_no_design_card_keys(self):
+        """Test that from_seq has no design card keys (uses FixedOp)."""
         with pp.Party() as party:
             pool = from_seq('AAA')
-            assert 'seq' in pool.operation.design_card_keys
+            assert len(pool.operation.design_card_keys) == 0
 
 
 class TestFromSeqCustomName:
     """Test FromSeq operation and pool name parameters."""
     
     def test_default_operation_name(self):
-        """Test default operation name is op[{id}]:from_seq."""
+        """Test default operation name is op[{id}]:fixed."""
         with pp.Party() as party:
             pool = from_seq('AAA')
-            # Default name is op[{id}]:from_seq
+            # Default name is op[{id}]:fixed
             assert pool.operation.name.startswith('op[')
-            assert ':from_seq' in pool.operation.name
+            assert ':fixed' in pool.operation.name
     
     def test_custom_operation_name(self):
         """Test custom operation name."""
@@ -90,14 +80,6 @@ class TestFromSeqCustomName:
         with pp.Party() as party:
             pool = from_seq('AAA', name='my_pool')
             assert pool.name == 'my_pool'
-    
-    def test_custom_name_in_design_card(self):
-        """Test custom op name appears in design card columns."""
-        with pp.Party() as party:
-            pool = from_seq('ATGC', op_name='my_seq').named('mypool')
-        
-        df = pool.generate_seqs(num_seqs=1)
-        assert 'mypool.op.key.seq' in df.columns
 
 
 class TestFromSeqCompute:
@@ -111,5 +93,4 @@ class TestFromSeqCompute:
         card = pool.operation.compute_design_card([])
         result = pool.operation.compute_seq_from_card([], card)
         assert result['seq_0'] == 'ATGC'
-        assert card['seq'] == 'ATGC'
-
+        assert card == {}  # FixedOp returns empty design card
