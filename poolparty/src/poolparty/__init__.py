@@ -49,6 +49,7 @@ from .scan_ops import (
     deletion_scan,
     shuffle_scan,
     mutagenize_scan,
+    subseq_scan,
 )
 # Import from marker_ops module
 from .marker_ops import (
@@ -83,6 +84,7 @@ __all__ = [
     'deletion_scan',
     'shuffle_scan',
     'mutagenize_scan',
+    'subseq_scan',
     'seq_shuffle', 'SeqShuffleOp',
     'reverse_complement',
     'swap_case',
