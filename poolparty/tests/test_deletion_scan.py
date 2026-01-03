@@ -2,7 +2,7 @@
 
 import pytest
 import poolparty as pp
-from poolparty.operations.scan import deletion_scan
+from poolparty.scan import deletion_scan
 
 
 class TestDeletionScanBasics:

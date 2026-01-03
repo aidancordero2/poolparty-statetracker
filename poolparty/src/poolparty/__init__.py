@@ -22,11 +22,6 @@ from .operations import (
     mutagenize, MutagenizeOp,
     mutagenize_orf, MutagenizeOrfOp,
     breakpoint_scan, BreakpointScanOp,
-    scan,
-    insertion_scan,
-    replacement_scan,
-    deletion_scan,
-    shuffle_scan,
     seq_shuffle, SeqShuffleOp,
     reverse_complement,
     swap_case,
@@ -36,6 +31,13 @@ from .operations import (
     state_shuffle, StateShuffleOp,
     state_sample, StateSampleOp,
     sync,
+)
+# Import scan functions from scan module
+from .scan import (
+    insertion_scan,
+    replacement_scan,
+    deletion_scan,
+    shuffle_scan,
 )
 # Import from markers module
 from .markers import (
@@ -65,7 +67,6 @@ __all__ = [
     'mutagenize', 'MutagenizeOp',
     'mutagenize_orf', 'MutagenizeOrfOp',
     'breakpoint_scan', 'BreakpointScanOp',
-    'scan',
     'insertion_scan',
     'replacement_scan',
     'deletion_scan',
