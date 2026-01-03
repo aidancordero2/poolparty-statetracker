@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import poolparty as pp
-from poolparty.base_ops.mutagenize_orf import MutagenizeOrfOp, mutagenize_orf
+from poolparty.orf_ops.mutagenize_orf import MutagenizeOrfOp, mutagenize_orf
 from poolparty.codon_table import CodonTable
 from poolparty.codon_table import STANDARD_GENETIC_CODE
 

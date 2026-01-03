@@ -26,9 +26,12 @@ from .base_ops import (
     from_prob_motif, FromProbMotifOp,
     get_kmers, GetKmersOp,
     mutagenize, MutagenizeOp,
-    mutagenize_orf, MutagenizeOrfOp,
     breakpoint_scan, BreakpointScanOp,
     seq_shuffle, SeqShuffleOp,
+)
+# Import ORF operations from orf_ops module
+from .orf_ops import (
+    mutagenize_orf, MutagenizeOrfOp
 )
 # Import state operations from state_ops module
 from .state_ops import (
