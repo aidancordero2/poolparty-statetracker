@@ -1,0 +1,160 @@
+"""Deletion multiscan operation - delete segments at multiple positions simultaneously."""
+from numbers import Integral, Real
+
+from ..types import Union, Optional, PositionsType, beartype
+from ..seq_utils import validate_positions
+from ..pool import Pool
+
+
+@beartype
+def deletion_multiscan(
+    bg_pool: Union[Pool, str],
+    deletion_length: Integral,
+    num_deletions: Integral,
+    deletion_marker: Optional[str] = '-',
+    spacer_str: str = '',
+    positions: PositionsType = None,
+    mode: str = 'random',
+    num_hybrid_states: Optional[Integral] = None,
+    name: Optional[str] = None,
+    op_name: Optional[str] = None,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
+) -> Pool:
+    """
+    Delete segments at multiple positions simultaneously.
+
+    Uses marker_multiscan() to insert markers at multiple positions, then
+    replaces each marker's content with deletion characters (or removes it).
+
+    Parameters
+    ----------
+    bg_pool : Pool or str
+        Source pool or sequence string to delete from.
+    deletion_length : Integral
+        Number of characters to delete at each position.
+    num_deletions : Integral
+        Number of simultaneous deletions to make.
+    deletion_marker : Optional[str], default='-'
+        Character to insert at each deletion site. If None, deleted segments
+        are removed with no marker.
+    spacer_str : str, default=''
+        String to insert as a spacer around deletion sites.
+    positions : PositionsType, default=None
+        Valid positions for deletion starts (0-based). If None, all valid
+        positions are used.
+    mode : str, default='random'
+        Position selection mode: 'random' or 'hybrid'.
+    num_hybrid_states : Optional[Integral], default=None
+        Number of pool states when using 'hybrid' mode.
+    name : Optional[str], default=None
+        Name for the resulting Pool.
+    op_name : Optional[str], default=None
+        Name for the underlying Operations.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Optional[Real], default=None
+        Iteration order priority for the underlying Operations.
+
+    Returns
+    -------
+    Pool
+        A Pool yielding sequences with multiple segments deleted simultaneously.
+    """
+    from ..fixed_ops.from_seq import from_seq
+    from ..fixed_ops.join import join
+    from ..marker_ops import marker_multiscan, replace_marker_content
+
+    # Validate mode
+    if mode not in ('random', 'hybrid'):
+        raise ValueError(
+            f"deletion_multiscan supports only mode='random' or 'hybrid', got '{mode}'"
+        )
+
+    # Validate num_deletions
+    if num_deletions < 1:
+        raise ValueError(f"num_deletions must be >= 1, got {num_deletions}")
+
+    # Convert string inputs to pools if needed
+    bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+
+    # Validate bg_pool has defined seq_length
+    bg_length = bg_pool.seq_length
+    if bg_length is None:
+        raise ValueError("bg_pool must have a defined seq_length")
+
+    # Validate deletion_length
+    if deletion_length <= 0:
+        raise ValueError(f"deletion_length must be > 0, got {deletion_length}")
+    if deletion_length >= bg_length:
+        raise ValueError(
+            f"deletion_length ({deletion_length}) must be < bg_pool.seq_length ({bg_length})"
+        )
+
+    # Check if there's room for num_deletions non-overlapping regions
+    min_required_length = num_deletions * deletion_length
+    if min_required_length > bg_length:
+        raise ValueError(
+            f"Cannot fit {num_deletions} non-overlapping deletions of length "
+            f"{deletion_length} in sequence of length {bg_length}"
+        )
+
+    # Map old API: deletion_marker='-' -> mark_changes=True, del_char='-'
+    #              deletion_marker=None -> mark_changes=False
+    mark_changes = deletion_marker is not None
+    del_char = deletion_marker if deletion_marker else '-'
+
+    # Generate auto-indexed marker names
+    markers = [f'_del_{i}' for i in range(num_deletions)]
+    marker_length = int(deletion_length)
+    max_position = bg_length - deletion_length
+
+    # Validate positions
+    validated_positions = validate_positions(positions, max_position, min_position=0)
+
+    # 1. Insert markers at multiple positions using marker_multiscan
+    marked = marker_multiscan(
+        bg_pool,
+        markers=markers,
+        num_insertions=int(num_deletions),
+        positions=validated_positions,
+        marker_length=marker_length,
+        insertion_mode='ordered',
+        mode=mode,
+        num_hybrid_states=num_hybrid_states,
+        op_name=op_name,
+        op_iter_order=op_iter_order,
+    )
+
+    # 2. Build replacement content based on mark_changes
+    if mark_changes:
+        # Fill gap with del_char * deletion_length
+        marker_str = del_char * marker_length
+        content = from_seq(marker_str)
+        # Wrap with spacers if needed
+        if spacer_str:
+            content = join([from_seq(spacer_str), content, from_seq(spacer_str)])
+    else:
+        # Simply remove the segment - just use spacer_str once (or empty)
+        content = from_seq(spacer_str)
+
+    # 3. Replace each marker's content with deletion content
+    result = marked
+    for marker_name in markers:
+        result = replace_marker_content(
+            result,
+            content,
+            marker_name,
+            name=None,  # Only set name on final result
+            op_name=op_name,
+            iter_order=None,  # Only set iter_order on final result
+            op_iter_order=op_iter_order,
+        )
+
+    # Set name and iter_order on final result if provided
+    if name is not None:
+        result._name = name
+    if iter_order is not None:
+        result._iter_order = iter_order
+
+    return result

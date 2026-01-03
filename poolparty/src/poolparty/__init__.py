@@ -61,6 +61,11 @@ from .marker_ops import (
     apply_at_marker,
     remove_marker,
 )
+# Import from multiscan_ops module
+from .multiscan_ops import (
+    deletion_multiscan,
+    replacement_multiscan,
+)
 
 __all__ = [
     '__version__',
@@ -102,6 +107,9 @@ __all__ = [
     'replace_marker_content',
     'apply_at_marker',
     'remove_marker',
+    # Multiscan operations
+    'deletion_multiscan',
+    'replacement_multiscan',
 ]
 
 # Re-export statecounter primitives for backward compatibility

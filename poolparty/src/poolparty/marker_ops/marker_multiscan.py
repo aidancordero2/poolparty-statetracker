@@ -1,5 +1,5 @@
 """Insert multiple XML markers into a sequence."""
-from poolparty.types import Union, Optional, Sequence
+from poolparty.types import Union, Optional, Sequence, Literal
 from numbers import Integral, Real
 import numpy as np
 
@@ -37,7 +37,7 @@ def marker_multiscan(
     positions: PositionsType = None,
     strand: str = '+',
     marker_length: int = 0,
-    insertion_mode: str = 'ordered',
+    insertion_mode: Literal['ordered', 'unordered'] = 'ordered',
     mode: str = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
