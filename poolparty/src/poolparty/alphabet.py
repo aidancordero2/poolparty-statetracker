@@ -210,7 +210,7 @@ class Alphabet:
         """
         return _get_nonmarker_positions(seq)
     
-    def get_biological_positions(self, seq: str) -> list[int]:
+    def get_molecular_positions(self, seq: str) -> list[int]:
         """Get the indices of valid alphabet characters in a sequence.
         
         Returns positions of characters that are in the alphabet,

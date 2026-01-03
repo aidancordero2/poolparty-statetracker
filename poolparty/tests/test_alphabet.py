@@ -271,53 +271,53 @@ class TestAlphabetSeqLength:
 
 
 class TestAlphabetBiologicalPositions:
-    """Test Alphabet.get_biological_positions method."""
+    """Test Alphabet.get_molecular_positions method."""
     
     def test_simple_sequence(self):
         """Test positions in simple sequence."""
         alph = get_alphabet('dna')
-        assert alph.get_biological_positions('ACGT') == [0, 1, 2, 3]
+        assert alph.get_molecular_positions('ACGT') == [0, 1, 2, 3]
     
     def test_sequence_with_gaps(self):
         """Test positions skip gap characters."""
         alph = get_alphabet('dna')
-        assert alph.get_biological_positions('AC-GT') == [0, 1, 3, 4]
-        assert alph.get_biological_positions('A-C-G-T') == [0, 2, 4, 6]
+        assert alph.get_molecular_positions('AC-GT') == [0, 1, 3, 4]
+        assert alph.get_molecular_positions('A-C-G-T') == [0, 2, 4, 6]
     
     def test_leading_gaps(self):
         """Test positions with leading gaps."""
         alph = get_alphabet('dna')
-        assert alph.get_biological_positions('---ACGT') == [3, 4, 5, 6]
+        assert alph.get_molecular_positions('---ACGT') == [3, 4, 5, 6]
     
     def test_trailing_gaps(self):
         """Test positions with trailing gaps."""
         alph = get_alphabet('dna')
-        assert alph.get_biological_positions('ACGT---') == [0, 1, 2, 3]
+        assert alph.get_molecular_positions('ACGT---') == [0, 1, 2, 3]
     
     def test_sequence_with_dots(self):
         """Test positions skip dot characters."""
         alph = get_alphabet('dna')
-        assert alph.get_biological_positions('AC.GT') == [0, 1, 3, 4]
+        assert alph.get_molecular_positions('AC.GT') == [0, 1, 3, 4]
     
     def test_sequence_with_spaces(self):
         """Test positions skip space characters."""
         alph = get_alphabet('dna')
-        assert alph.get_biological_positions('AC GT') == [0, 1, 3, 4]
+        assert alph.get_molecular_positions('AC GT') == [0, 1, 3, 4]
     
     def test_empty_sequence(self):
         """Test positions of empty sequence."""
         alph = get_alphabet('dna')
-        assert alph.get_biological_positions('') == []
+        assert alph.get_molecular_positions('') == []
     
     def test_only_gaps(self):
         """Test sequence with only gaps."""
         alph = get_alphabet('dna')
-        assert alph.get_biological_positions('---') == []
+        assert alph.get_molecular_positions('---') == []
     
     def test_custom_ignore_chars(self):
         """Test with custom ignore characters."""
         alph = Alphabet(chars=['A', 'B'], ignore_chars=['X', 'Y'])
-        assert alph.get_biological_positions('AXBYA') == [0, 2, 4]
+        assert alph.get_molecular_positions('AXBYA') == [0, 2, 4]
 
 
 class TestNamedAlphabetComplement:
@@ -536,7 +536,7 @@ class TestMixedCaseSequences:
         assert alph.get_seq_length('ACGT') == 4
     
     def test_valid_positions_mixed_case(self):
-        """Test get_biological_positions finds both cases."""
+        """Test get_molecular_positions finds both cases."""
         alph = get_alphabet('dna')
-        assert alph.get_biological_positions('AcGt') == [0, 1, 2, 3]
-        assert alph.get_biological_positions('a-c-g-t') == [0, 2, 4, 6]
+        assert alph.get_molecular_positions('AcGt') == [0, 1, 2, 3]
+        assert alph.get_molecular_positions('a-c-g-t') == [0, 2, 4, 6]

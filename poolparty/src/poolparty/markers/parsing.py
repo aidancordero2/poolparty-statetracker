@@ -246,7 +246,7 @@ def get_literal_positions(seq: str) -> list[int]:
     """Get all raw string positions in a sequence.
     
     Returns list(range(len(seq))). Provided for API completeness
-    alongside get_nonmarker_positions and get_biological_positions.
+    alongside get_nonmarker_positions and get_molecular_positions.
     """
     return list(range(len(seq)))
 
@@ -284,14 +284,16 @@ def build_marker_tag(
     content: str = '', 
     strand: str = '+',
     seq_length: Optional[int] = None,
+    explicit_strand: bool = False,
 ) -> str:
     """Build an XML marker tag string.
     
     Args:
         name: Marker name
         content: Content to wrap (empty string for zero-length marker)
-        strand: '+' or '-' ('+' is omitted from output for brevity)
+        strand: '+' or '-' ('+' is omitted from output by default)
         seq_length: Optional declared seq_length (None to omit, -1 for 'None')
+        explicit_strand: If True, include strand='+' explicitly (useful for strand='both')
     
     Returns:
         XML marker string like '<name>content</name>' or '<name/>'
@@ -299,6 +301,8 @@ def build_marker_tag(
     attrs = []
     if strand == '-':
         attrs.append("strand='-'")
+    elif explicit_strand:
+        attrs.append("strand='+'")
     if seq_length is not None:
         if seq_length == -1:
             attrs.append("seq_length='None'")

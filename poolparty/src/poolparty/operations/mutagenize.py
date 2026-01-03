@@ -204,7 +204,7 @@ class MutagenizeOp(Operation):
     def _random_mutation(self, seq: str, rng: np.random.Generator) -> tuple:
         """Generate random mutation positions (logical) and characters."""
         seq_len = self._get_effective_seq_length(seq)
-        valid_char_positions = self._get_biological_positions(seq)
+        valid_char_positions = self._get_molecular_positions(seq)
         
         # Determine number of mutations
         if self.num_mutations is not None:
@@ -239,7 +239,7 @@ class MutagenizeOp(Operation):
         """Return design card with mutation positions (logical) and characters."""
         seq = parent_seqs[0]
         seq_len = self._get_effective_seq_length(seq)
-        valid_char_positions = self._get_biological_positions(seq)
+        valid_char_positions = self._get_molecular_positions(seq)
         
         if self.num_mutations is not None and self.num_mutations > seq_len:
             raise ValueError(f"Cannot apply {self.num_mutations} mutations to sequence of length {seq_len}")
@@ -295,7 +295,7 @@ class MutagenizeOp(Operation):
         seq = parent_seqs[0]
         positions = card['positions']  # Logical positions
         mut_chars = card['mut_chars']
-        valid_char_positions = self._get_biological_positions(seq)
+        valid_char_positions = self._get_molecular_positions(seq)
         
         seq_list = list(seq)
         for logical_pos, mut in zip(positions, mut_chars):

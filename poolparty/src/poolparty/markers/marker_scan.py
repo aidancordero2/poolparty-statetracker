@@ -286,11 +286,12 @@ class MarkerScanOp(Operation):
         
         # Build marker tag
         raw_position = valid_positions[position_index]
+        explicit_strand = (self._strand == 'both')
         if self._marker_length > 0:
             content = seq[raw_position:raw_position + self._marker_length]
-            marker_tag = build_marker_tag(self.marker_name, content, strand)
+            marker_tag = build_marker_tag(self.marker_name, content, strand, explicit_strand=explicit_strand)
         else:
-            marker_tag = build_marker_tag(self.marker_name, '', strand)
+            marker_tag = build_marker_tag(self.marker_name, '', strand, explicit_strand=explicit_strand)
         
         return {
             'position': position_index,

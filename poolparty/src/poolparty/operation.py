@@ -87,9 +87,9 @@ class Operation:
         """Get raw string positions of all chars excluding marker interiors."""
         return self._party._alphabet.get_nonmarker_positions(seq)
     
-    def _get_biological_positions(self, seq: str) -> list[int]:
+    def _get_molecular_positions(self, seq: str) -> list[int]:
         """Get raw string positions of valid alphabet characters, excluding marker interiors."""
-        return self._party._alphabet.get_biological_positions(seq)
+        return self._party._alphabet.get_molecular_positions(seq)
     
     @property
     def id(self) -> int:

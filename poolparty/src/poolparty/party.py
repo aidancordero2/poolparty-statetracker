@@ -140,9 +140,9 @@ class Party:
         """Get sequence length excluding only marker tags (includes all chars)."""
         return self._alphabet.get_length_without_markers(seq)
     
-    def get_biological_positions(self, seq: str) -> list[int]:
+    def get_molecular_positions(self, seq: str) -> list[int]:
         """Get raw string positions of valid alphabet characters, excluding marker interiors."""
-        return self._alphabet.get_biological_positions(seq)
+        return self._alphabet.get_molecular_positions(seq)
     
     def __enter__(self) -> "Party":
         """Enter the Party context, saving any previous active party."""

@@ -261,12 +261,16 @@ class TestMarkerScan:
             assert '<m/>' in seq
     
     def test_strand_both(self):
-        """Test strand='both' doubles the states."""
+        """Test strand='both' doubles the states and shows explicit strand."""
         with pp.Party():
             result = pp.marker_scan('ACGT', marker='m', mode='sequential', strand='both')
         df = result.generate_seqs(num_complete_iterations=1)
         # 5 positions x 2 strands = 10 states
         assert len(df) == 10
+        # Both strands should be explicit when strand='both'
+        plus_count = sum("strand='+'" in s for s in df['seq'])
+        minus_count = sum("strand='-'" in s for s in df['seq'])
+        assert plus_count == 5 and minus_count == 5
 
 
 class TestExtractMarkerContent:
@@ -451,12 +455,12 @@ class TestPartyMethodsWithXMLMarkers:
             assert party.get_effective_seq_length(seq_with_marker) == 6
             assert party.get_effective_seq_length('ACGT') == 4
     
-    def test_get_biological_positions(self):
-        """Test Party.get_biological_positions method."""
+    def test_get_molecular_positions(self):
+        """Test Party.get_molecular_positions method."""
         with pp.Party() as party:
             # With marker
             seq = 'AC<marker/>GT'
-            positions = party.get_biological_positions(seq)
+            positions = party.get_molecular_positions(seq)
             # A=0, C=1, <marker/>=2-10, G=11, T=12
             assert 0 in positions
             assert 1 in positions
