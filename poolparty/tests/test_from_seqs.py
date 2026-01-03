@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import poolparty as pp
-from poolparty.operations.from_seqs import FromSeqsOp, from_seqs
+from poolparty.base_ops.from_seqs import FromSeqsOp, from_seqs
 
 
 class TestFromSeqsFactory:

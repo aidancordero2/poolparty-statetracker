@@ -3,10 +3,10 @@
 import pytest
 import numpy as np
 import poolparty as pp
-from poolparty.operations.mutagenize import mutagenize
-from poolparty.operations.get_kmers import get_kmers
-from poolparty.operations.from_seqs import from_seqs
-from poolparty.operations.breakpoint_scan import breakpoint_scan
+from poolparty.base_ops.mutagenize import mutagenize
+from poolparty.base_ops.get_kmers import get_kmers
+from poolparty.base_ops.from_seqs import from_seqs
+from poolparty.base_ops.breakpoint_scan import breakpoint_scan
 
 
 class TestHybridModeBasic:

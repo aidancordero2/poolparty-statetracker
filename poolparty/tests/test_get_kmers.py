@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import poolparty as pp
-from poolparty.operations.get_kmers import GetKmersOp, get_kmers
+from poolparty.base_ops.get_kmers import GetKmersOp, get_kmers
 
 
 class TestGetKmersFactory:

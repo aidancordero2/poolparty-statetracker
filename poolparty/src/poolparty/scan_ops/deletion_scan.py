@@ -64,7 +64,7 @@ def deletion_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.join import join
-    from ..markers import marker_scan, replace_marker_content
+    from ..marker_ops import marker_scan, replace_marker_content
 
     # Validate min_spacing/max_spacing not supported
     if min_spacing is not None or max_spacing is not None:

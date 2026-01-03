@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import poolparty as pp
-from poolparty.operations.mutagenize import MutagenizeOp, mutagenize
+from poolparty.base_ops.mutagenize import MutagenizeOp, mutagenize
 
 
 class TestMutagenizeFactory:

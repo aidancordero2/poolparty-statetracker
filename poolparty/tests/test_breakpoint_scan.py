@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import poolparty as pp
-from poolparty.operations.breakpoint_scan import BreakpointScanOp, breakpoint_scan
+from poolparty.base_ops.breakpoint_scan import BreakpointScanOp, breakpoint_scan
 import statecounter as sc
 
 

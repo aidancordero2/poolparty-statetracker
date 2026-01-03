@@ -19,8 +19,8 @@ from .fixed_ops import (
     reverse_complement,
     swap_case,
 )
-# Import other operations from operations module
-from .operations import (
+# Import other operations from base_ops module
+from .base_ops import (
     from_seqs, FromSeqsOp,
     from_iupac_motif, FromIupacMotifOp,
     from_prob_motif, FromProbMotifOp,
@@ -39,16 +39,16 @@ from .state_ops import (
     state_shuffle, StateShuffleOp,
     repeat, RepeatOp,
 )
-# Import scan functions from scan module
-from .scan import (
+# Import scan functions from scan_ops module
+from .scan_ops import (
     insertion_scan,
     replacement_scan,
     deletion_scan,
     shuffle_scan,
     mutagenize_scan,
 )
-# Import from markers module
-from .markers import (
+# Import from marker_ops module
+from .marker_ops import (
     insert_marker,
     marker_scan,
     marker_multiscan,

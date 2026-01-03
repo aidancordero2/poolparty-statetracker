@@ -2,7 +2,7 @@
 
 import pytest
 import poolparty as pp
-from poolparty.scan import replacement_scan
+from poolparty.scan_ops import replacement_scan
 
 
 class TestReplacementScanBasics:

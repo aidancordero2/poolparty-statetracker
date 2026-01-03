@@ -33,7 +33,7 @@ def from_seq(
         A Pool object yielding the provided sequence as its only state.
     """
     from ..party import get_active_party
-    from ..markers.parsing import _validate_markers
+    from ..marker_ops.parsing import _validate_markers
     from .fixed import fixed_operation
     
     party = get_active_party()

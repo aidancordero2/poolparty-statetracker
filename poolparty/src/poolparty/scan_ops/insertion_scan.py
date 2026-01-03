@@ -1,46 +1,48 @@
-"""Replacement scan operation - replace a segment with insert at scanning positions."""
+"""Insertion scan operation - insert a sequence at scanning positions."""
 from numbers import Integral, Real
 
 from ..types import Union, ModeType, Optional, PositionsType, beartype
 from ..seq_utils import validate_positions
-from ..party import get_active_party
 from ..pool import Pool
 
 
 @beartype
-def replacement_scan(
+def insertion_scan(
     bg_pool: Union[Pool, str],
     ins_pool: Union[Pool, str],
     positions: PositionsType = None,
-    spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
+    min_spacing: Optional[Integral] = None,
+    max_spacing: Optional[Integral] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[Integral] = None,
+    spacer_str: str = '',
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
-    Replace a segment of the background sequence with an insert at specified scanning positions.
+    Insert a sequence into a background sequence at specified scanning positions.
 
     Parameters
     ----------
     bg_pool : Pool or str
-        Background Pool or sequence string in which the replacement will occur.
+        The background Pool or sequence string in which to insert.
     ins_pool : Pool or str
-        Insert Pool or sequence string to replace the segment in the background.
+        The insert Pool or sequence string to be inserted.
     positions : PositionsType, default=None
-        Positions at which to place the start of the replacement (0-based, inclusive).
+        Positions to consider for the start of the insertion (0-based, inclusive).
         If None, all valid positions are considered.
-    spacer_str : str, default=''
-        String to insert as a spacer between segments when joining.
-    mark_changes : Optional[bool], default=None
-        If True, apply swapcase() to the insert sequence. If None, uses party default.
+    min_spacing : Optional[Integral], default=None
+        Not supported. Raises ValueError if provided.
+    max_spacing : Optional[Integral], default=None
+        Not supported. Raises ValueError if provided.
     mode : ModeType, default='random'
-        Selection mode for replacement positions: 'sequential', 'random', or 'hybrid'.
+        Selection mode for insert positions: 'random', 'sequential', or 'hybrid'.
     num_hybrid_states : Optional[Integral], default=None
-        Number of pool states to use when mode is 'hybrid' (ignored for other modes).
+        Number of pool states when using 'hybrid' mode (ignored by other modes).
+    spacer_str : str, default=''
+        String to insert as a spacer between pool segments.
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -53,13 +55,19 @@ def replacement_scan(
     Returns
     -------
     Pool
-        A Pool yielding sequences where a segment of the background is replaced by the
-        insert sequence at the specified scanning positions.
+        A Pool yielding sequences where the insert is placed at the selected position(s)
+        in the background.
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.join import join
-    from ..fixed_ops.swap_case import swap_case
-    from ..markers import marker_scan, replace_marker_content
+    from ..marker_ops import marker_scan, replace_marker_content
+
+    # Validate min_spacing/max_spacing not supported
+    if min_spacing is not None or max_spacing is not None:
+        raise ValueError(
+            "min_spacing and max_spacing are not supported in the marker-based "
+            "implementation of insertion_scan. Use breakpoint_scan directly if needed."
+        )
 
     # Convert string inputs to pools if needed
     bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
@@ -75,19 +83,10 @@ def replacement_scan(
     if ins_length is None:
         raise ValueError("ins_pool must have a defined seq_length")
 
-    # Resolve mark_changes from party defaults if not explicitly set
-    party = get_active_party()
-    if mark_changes is None:
-        mark_changes = party.get_default('mark_changes', False) if party else False
-
-    # For replacement: marker_length=ins_length, max_position=bg_length - ins_length
-    marker_name = '_rep'
-    marker_length = ins_length
-    max_position = bg_length - ins_length
-
-    # Apply swap_case if mark_changes
-    if mark_changes:
-        ins_pool = swap_case(ins_pool)
+    # For insertion: marker_length=0, can insert at any position including after last char
+    marker_name = '_ins'
+    marker_length = 0
+    max_position = bg_length
 
     # Validate positions
     validated_positions = validate_positions(positions, max_position, min_position=0)

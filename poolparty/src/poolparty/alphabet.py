@@ -2,7 +2,7 @@
 from .types import beartype, Optional, Sequence, Union
 
 # Import XML-style marker pattern from markers module
-from .markers.parsing import (
+from .marker_ops.parsing import (
     TAG_PATTERN,
     get_length_without_markers as _get_length_without_markers,
     get_nonmarker_positions as _get_nonmarker_positions,
@@ -188,7 +188,7 @@ class Alphabet:
         and marker tags.
         Useful for determining the effective length of a gapped alignment.
         """
-        from .markers.parsing import strip_all_markers
+        from .marker_ops.parsing import strip_all_markers
         # Remove all marker tags first
         seq_no_markers = strip_all_markers(seq)
         char_set = set(self.all_chars)

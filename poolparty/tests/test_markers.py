@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import poolparty as pp
-from poolparty.markers import (
+from poolparty.marker_ops import (
     TAG_PATTERN,
     ParsedMarker,
     parse_marker,

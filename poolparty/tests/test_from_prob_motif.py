@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import poolparty as pp
-from poolparty.operations.from_prob_motif import FromProbMotifOp, from_prob_motif
+from poolparty.base_ops.from_prob_motif import FromProbMotifOp, from_prob_motif
 
 
 class TestFromProbMotifFactory:

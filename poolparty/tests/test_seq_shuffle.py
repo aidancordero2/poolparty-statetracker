@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import poolparty as pp
-from poolparty.operations.seq_shuffle import SeqShuffleOp, seq_shuffle
+from poolparty.base_ops.seq_shuffle import SeqShuffleOp, seq_shuffle
 
 
 class TestSeqShuffleFactory:

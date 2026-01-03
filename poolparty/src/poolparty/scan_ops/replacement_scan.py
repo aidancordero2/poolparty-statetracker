@@ -1,4 +1,4 @@
-"""Shuffle scan operation - shuffle characters within a window at scanning positions."""
+"""Replacement scan operation - replace a segment with insert at scanning positions."""
 from numbers import Integral, Real
 
 from ..types import Union, ModeType, Optional, PositionsType, beartype
@@ -8,9 +8,9 @@ from ..pool import Pool
 
 
 @beartype
-def shuffle_scan(
+def replacement_scan(
     bg_pool: Union[Pool, str],
-    shuffle_length: Integral,
+    ins_pool: Union[Pool, str],
     positions: PositionsType = None,
     spacer_str: str = '',
     mark_changes: Optional[bool] = None,
@@ -22,25 +22,25 @@ def shuffle_scan(
     op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
-    Shuffle characters within a window at specified scanning positions.
+    Replace a segment of the background sequence with an insert at specified scanning positions.
 
     Parameters
     ----------
     bg_pool : Pool or str
-        Source pool or sequence string to shuffle regions of.
-    shuffle_length : Integral
-        Length of the region to shuffle at each position.
+        Background Pool or sequence string in which the replacement will occur.
+    ins_pool : Pool or str
+        Insert Pool or sequence string to replace the segment in the background.
     positions : PositionsType, default=None
-        Positions to consider for the start of the shuffle region (0-based).
-        If None, all valid positions are used.
+        Positions at which to place the start of the replacement (0-based, inclusive).
+        If None, all valid positions are considered.
     spacer_str : str, default=''
-        String to insert as a spacer around the shuffled region.
+        String to insert as a spacer between segments when joining.
     mark_changes : Optional[bool], default=None
-        If True, apply swap_case() to the shuffled region. If None, uses party default.
+        If True, apply swapcase() to the insert sequence. If None, uses party default.
     mode : ModeType, default='random'
-        Selection mode: 'random', 'sequential', or 'hybrid'.
+        Selection mode for replacement positions: 'sequential', 'random', or 'hybrid'.
     num_hybrid_states : Optional[Integral], default=None
-        Number of pool states when using 'hybrid' mode (ignored by other modes).
+        Number of pool states to use when mode is 'hybrid' (ignored for other modes).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -53,40 +53,41 @@ def shuffle_scan(
     Returns
     -------
     Pool
-        A Pool yielding sequences where a region of the specified length is shuffled
-        at each allowed position.
+        A Pool yielding sequences where a segment of the background is replaced by the
+        insert sequence at the specified scanning positions.
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.join import join
     from ..fixed_ops.swap_case import swap_case
-    from ..operations.seq_shuffle import seq_shuffle
-    from ..markers import marker_scan, apply_at_marker
+    from ..marker_ops import marker_scan, replace_marker_content
 
     # Convert string inputs to pools if needed
     bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+    ins_pool = from_seq(ins_pool) if isinstance(ins_pool, str) else ins_pool
 
     # Validate bg_pool has defined seq_length
     bg_length = bg_pool.seq_length
     if bg_length is None:
         raise ValueError("bg_pool must have a defined seq_length")
 
-    # Validate shuffle_length
-    if shuffle_length <= 0:
-        raise ValueError(f"shuffle_length must be > 0, got {shuffle_length}")
-    if shuffle_length >= bg_length:
-        raise ValueError(
-            f"shuffle_length ({shuffle_length}) must be < bg_pool.seq_length ({bg_length})"
-        )
+    # Validate ins_pool has defined seq_length
+    ins_length = ins_pool.seq_length
+    if ins_length is None:
+        raise ValueError("ins_pool must have a defined seq_length")
 
     # Resolve mark_changes from party defaults if not explicitly set
     party = get_active_party()
     if mark_changes is None:
         mark_changes = party.get_default('mark_changes', False) if party else False
 
-    # For shuffle: marker_length=shuffle_length, max_position=bg_length - shuffle_length
-    marker_name = '_shuf'
-    marker_length = int(shuffle_length)
-    max_position = bg_length - shuffle_length
+    # For replacement: marker_length=ins_length, max_position=bg_length - ins_length
+    marker_name = '_rep'
+    marker_length = ins_length
+    max_position = bg_length - ins_length
+
+    # Apply swap_case if mark_changes
+    if mark_changes:
+        ins_pool = swap_case(ins_pool)
 
     # Validate positions
     validated_positions = validate_positions(positions, max_position, min_position=0)
@@ -103,23 +104,19 @@ def shuffle_scan(
         op_iter_order=op_iter_order,
     )
 
-    # 2. Apply shuffle transform at marker
-    # Note: seq_shuffle only supports 'random' mode for the actual shuffling.
-    # The 'mode' parameter controls position selection via marker_scan above.
-    def shuffle_transform(content_pool):
-        shuffled = seq_shuffle(content_pool, mode='random')
-        if mark_changes:
-            shuffled = swap_case(shuffled)
-        # Wrap with spacers if needed
-        if spacer_str:
-            shuffled = join([from_seq(spacer_str), shuffled, from_seq(spacer_str)])
-        return shuffled
+    # 2. Build replacement content (ins_pool with optional spacers)
+    content = ins_pool
+    if spacer_str:
+        content = join([from_seq(spacer_str), content, from_seq(spacer_str)])
 
-    result = apply_at_marker(
+    # 3. Replace marker with content
+    result = replace_marker_content(
         marked,
+        content,
         marker_name,
-        shuffle_transform,
         name=name,
+        op_name=op_name,
         iter_order=iter_order,
+        op_iter_order=op_iter_order,
     )
     return result

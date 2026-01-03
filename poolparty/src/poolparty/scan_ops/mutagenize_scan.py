@@ -66,8 +66,8 @@ def mutagenize_scan(
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.join import join
     from ..fixed_ops.swap_case import swap_case
-    from ..operations.mutagenize import mutagenize
-    from ..markers import marker_scan, apply_at_marker
+    from ..base_ops.mutagenize import mutagenize
+    from ..marker_ops import marker_scan, apply_at_marker
 
     # Convert string inputs to pools if needed
     bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
