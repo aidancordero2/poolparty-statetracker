@@ -53,8 +53,8 @@ def remove_marker(
     ...     result = pp.remove_marker(bg, 'region', keep_content=False)
     ...     # Result: 'ACGTGCGC'
     """
-    from ..operations.from_seq import from_seq
-    from ..operations.fixed import fixed_operation
+    from ..fixed_ops.from_seq import from_seq
+    from ..fixed_ops.fixed import fixed_operation
     
     # Convert string to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool

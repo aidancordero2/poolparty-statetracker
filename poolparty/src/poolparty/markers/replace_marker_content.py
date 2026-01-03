@@ -61,7 +61,7 @@ def replace_marker_content(
     ...     result = pp.replace_marker_content(bg, content, 'region')
     ...     # Result: 'ACGTTTTTTTT' (TTT is reverse complement of AAA)
     """
-    from ..operations.from_seq import from_seq
+    from ..fixed_ops.from_seq import from_seq
     from ..pool import Pool
     
     # Convert strings to pools if needed

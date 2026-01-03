@@ -55,7 +55,7 @@ def breakpoint_scan(
     tuple[Pool, ...]
         Tuple of Pools, each yielding a segment of the original sequence.
     """
-    from .from_seq import from_seq
+    from ..fixed_ops.from_seq import from_seq
     if names is None:
         names = [None] * (num_breakpoints + 1)
     elif len(names) != num_breakpoints + 1:

@@ -77,7 +77,7 @@ def marker_scan(
     ...                              mode='sequential')
     ...     # Creates states for strand='+' and strand='-' at each position
     """
-    from ..operations.from_seq import from_seq
+    from ..fixed_ops.from_seq import from_seq
     from ..pool import Pool
     from ..party import get_active_party
     

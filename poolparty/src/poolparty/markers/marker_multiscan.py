@@ -84,7 +84,7 @@ def marker_multiscan(
     Pool
         A Pool yielding sequences with multiple markers inserted.
     """
-    from ..operations.from_seq import from_seq
+    from ..fixed_ops.from_seq import from_seq
     from ..pool import Pool
     from ..party import get_active_party
 

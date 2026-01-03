@@ -6,8 +6,8 @@ Use join() for sequence joining.
 
 import pytest
 import poolparty as pp
-from poolparty.operations.join import join
-from poolparty.operations.fixed import FixedOp
+from poolparty.fixed_ops.join import join
+from poolparty.fixed_ops.fixed import FixedOp
 
 
 class TestJoinFactory:

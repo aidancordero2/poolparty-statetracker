@@ -64,7 +64,7 @@ def mutagenize_orf(
     Pool
         A Pool that generates codon-mutated sequences.
     """
-    from .from_seq import from_seq
+    from ..fixed_ops.from_seq import from_seq
     pool = from_seq(pool) if isinstance(pool, str) else pool
     op = MutagenizeOrfOp(
         parent_pool=pool,

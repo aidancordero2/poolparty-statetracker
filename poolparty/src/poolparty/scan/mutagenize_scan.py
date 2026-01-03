@@ -63,9 +63,9 @@ def mutagenize_scan(
         A Pool yielding sequences where a region of the specified length is mutagenized
         at each allowed position.
     """
-    from ..operations.from_seq import from_seq
-    from ..operations.join import join
-    from ..operations.swap_case import swap_case
+    from ..fixed_ops.from_seq import from_seq
+    from ..fixed_ops.join import join
+    from ..fixed_ops.swap_case import swap_case
     from ..operations.mutagenize import mutagenize
     from ..markers import marker_scan, apply_at_marker
 

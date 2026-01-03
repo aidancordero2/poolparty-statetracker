@@ -57,8 +57,8 @@ def insert_marker(
     ...     marked = pp.insert_marker(bg, 'ins', start=4)
     ...     # Result: 'ACGT<ins/>ACGT'
     """
-    from ..operations.from_seq import from_seq
-    from ..operations.fixed import fixed_operation
+    from ..fixed_ops.from_seq import from_seq
+    from ..fixed_ops.fixed import fixed_operation
     from ..party import get_active_party
     
     # Convert string to pool if needed

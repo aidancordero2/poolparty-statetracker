@@ -424,7 +424,7 @@ class TestOperationCopy:
     def test_copy_seq_slice_op(self):
         """Test copying SeqSliceOp."""
         with pp.Party() as party:
-            from poolparty.operations.seq_slice import seq_slice
+            from poolparty.fixed_ops.seq_slice import seq_slice
             pool = pp.from_seqs(['ACGT'])
             sliced = seq_slice(pool, slice(1, 3))
             copied_op = sliced.operation.copy()

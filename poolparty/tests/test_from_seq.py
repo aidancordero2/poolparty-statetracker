@@ -2,8 +2,8 @@
 
 import pytest
 import poolparty as pp
-from poolparty.operations.from_seq import from_seq
-from poolparty.operations.fixed import FixedOp
+from poolparty.fixed_ops.from_seq import from_seq
+from poolparty.fixed_ops.fixed import FixedOp
 
 
 class TestFromSeqFactory:

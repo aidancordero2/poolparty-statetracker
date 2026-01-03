@@ -67,7 +67,7 @@ def apply_at_marker(
     have their content reverse-complemented before extraction). The transformed
     content is reverse-complemented back before insertion if strand='-'.
     """
-    from ..operations.from_seq import from_seq
+    from ..fixed_ops.from_seq import from_seq
     from .extract_marker_content import extract_marker_content
     from .replace_marker_content import replace_marker_content
     

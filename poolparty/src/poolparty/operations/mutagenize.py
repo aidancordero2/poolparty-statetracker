@@ -53,7 +53,7 @@ def mutagenize(
         A Pool that generates mutated sequences.
     """
     
-    from .from_seq import from_seq
+    from ..fixed_ops.from_seq import from_seq
     pool = from_seq(pool) if isinstance(pool, str) else pool
     op = MutagenizeOp(
         parent_pool=pool,

@@ -10,21 +10,25 @@ from .operation import Operation
 from .marker import Marker
 from .generate_seqs import generate_seqs
 from .alphabet import get_alphabet, NAMED_ALPHABETS
-from .operations import (
+# Import fixed operations from fixed_ops module
+from .fixed_ops import (
     fixed_operation, FixedOp,
     from_seq,
+    join,
+    seq_slice,
+    reverse_complement,
+    swap_case,
+)
+# Import other operations from operations module
+from .operations import (
     from_seqs, FromSeqsOp,
     from_iupac_motif, FromIupacMotifOp,
     from_prob_motif, FromProbMotifOp,
     get_kmers, GetKmersOp,
-    join,
-    seq_slice, SeqSliceOp,
     mutagenize, MutagenizeOp,
     mutagenize_orf, MutagenizeOrfOp,
     breakpoint_scan, BreakpointScanOp,
     seq_shuffle, SeqShuffleOp,
-    reverse_complement,
-    swap_case,
     stack, StackOp,
     repeat, RepeatOp,
     state_slice, StateSliceOp,
@@ -64,7 +68,7 @@ __all__ = [
     'from_prob_motif', 'FromProbMotifOp',
     'get_kmers', 'GetKmersOp',
     'join',
-    'seq_slice', 'SeqSliceOp',
+    'seq_slice',
     'mutagenize', 'MutagenizeOp',
     'mutagenize_orf', 'MutagenizeOrfOp',
     'breakpoint_scan', 'BreakpointScanOp',

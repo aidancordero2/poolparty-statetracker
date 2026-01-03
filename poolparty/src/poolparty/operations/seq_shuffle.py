@@ -47,7 +47,7 @@ def seq_shuffle(
     Pool
         A Pool that yields shuffled sequences.
     """
-    from .from_seq import from_seq
+    from ..fixed_ops.from_seq import from_seq
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
     op = SeqShuffleOp(
         parent_pool=pool_obj,

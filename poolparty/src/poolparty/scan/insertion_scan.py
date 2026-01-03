@@ -58,8 +58,8 @@ def insertion_scan(
         A Pool yielding sequences where the insert is placed at the selected position(s)
         in the background.
     """
-    from ..operations.from_seq import from_seq
-    from ..operations.join import join
+    from ..fixed_ops.from_seq import from_seq
+    from ..fixed_ops.join import join
     from ..markers import marker_scan, replace_marker_content
 
     # Validate min_spacing/max_spacing not supported

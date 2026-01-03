@@ -2,8 +2,8 @@
 
 import pytest
 import poolparty as pp
-from poolparty.operations.swap_case import swap_case
-from poolparty.operations.fixed import FixedOp
+from poolparty.fixed_ops.swap_case import swap_case
+from poolparty.fixed_ops.fixed import FixedOp
 
 
 class TestSwapCaseBasics:
