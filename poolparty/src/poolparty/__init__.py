@@ -38,6 +38,7 @@ from .scan import (
     replacement_scan,
     deletion_scan,
     shuffle_scan,
+    mutagenize_scan,
 )
 # Import from markers module
 from .markers import (
@@ -71,6 +72,7 @@ __all__ = [
     'replacement_scan',
     'deletion_scan',
     'shuffle_scan',
+    'mutagenize_scan',
     'seq_shuffle', 'SeqShuffleOp',
     'reverse_complement',
     'swap_case',
