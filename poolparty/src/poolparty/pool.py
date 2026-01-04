@@ -254,8 +254,8 @@ class Pool:
         num_cycles: Optional[Integral] = None,
         show_header: bool = True,
         show_states: bool = True,
-    ) -> None:
-        """Print preview sequences from this pool."""
+    ) -> Pool_type:
+        """Print preview sequences from this pool; returns self for chaining."""
         if num_seqs is None and num_cycles is None:
             num_cycles = 1
         df = self.generate_library(
@@ -274,6 +274,7 @@ class Pool:
             else:
                 print(row['seq'])
         print('')
+        return self # For chaining
     
     #########################################################################
     # Tree visualization
@@ -293,7 +294,15 @@ class Pool:
     #########################################################################
     
     def __getattr__(self, name: str):
-        """Delegate attribute access to ops container for convenience methods."""
+        """Delegate attribute access to ops container for convenience methods.
+        
+        Python only calls __getattr__ when an attribute is NOT found through
+        normal lookup (instance dict, class dict, parent classes). This means
+        native Pool attributes (name, counter, ops, etc.) are accessed normally,
+        and only "missing" attributes like mutagenize() get delegated to self.ops.
+        
+        This allows: pool.mutagenize(...) instead of pool.ops.mutagenize(...)
+        """
         try:
             ops = object.__getattribute__(self, 'ops')
             return getattr(ops, name)

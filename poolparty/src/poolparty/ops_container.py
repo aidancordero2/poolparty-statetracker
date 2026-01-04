@@ -1,5 +1,5 @@
 """OpsContainer class housing convenience methods for Pool."""
-from .types import Pool_type, Union, Optional, Real, Callable, Integral, beartype
+from .types import Pool_type, Union, Optional, Real, Callable, Integral, Sequence, beartype
 
 
 @beartype
@@ -267,7 +267,7 @@ class OpsContainer:
             remove_marker=remove_marker,
         )
     
-    def from_iupac_motif(
+    def insert_iupac_motif_seqs(
         self,
         marker_name: str,
         iupac_seq: str,
@@ -307,7 +307,7 @@ class OpsContainer:
         else:
             return _replace_keeping_marker(self.pool, content, marker_name)
     
-    def from_prob_motif(
+    def insert_prob_motif_seqs(
         self,
         marker_name: str,
         prob_df,
@@ -347,7 +347,7 @@ class OpsContainer:
         else:
             return _replace_keeping_marker(self.pool, content, marker_name)
     
-    def get_kmers(
+    def insert_kmers(
         self,
         marker_name: str,
         length: int,
@@ -594,6 +594,71 @@ class OpsContainer:
         return repeat(
             self.pool,
             times,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
+    
+    def sample_states(
+        self,
+        num_states: Optional[Integral] = None,
+        sampled_states: Optional[Sequence[Integral]] = None,
+        seed: Optional[Integral] = None,
+        with_replacement: bool = True,
+        name: Optional[str] = None,
+        op_name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        op_iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Sample states from the Pool. Wrapper for state_sample()."""
+        from .state_ops.state_sample import state_sample
+        return state_sample(
+            self.pool,
+            num_states=num_states,
+            sampled_states=sampled_states,
+            seed=seed,
+            with_replacement=with_replacement,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
+    
+    def shuffle_states(
+        self,
+        seed: Optional[Integral] = None,
+        permutation: Optional[Sequence[Integral]] = None,
+        name: Optional[str] = None,
+        op_name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        op_iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Shuffle (permute) the Pool's states. Wrapper for state_shuffle()."""
+        from .state_ops.state_shuffle import state_shuffle
+        return state_shuffle(
+            self.pool,
+            seed=seed,
+            permutation=permutation,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
+    
+    def slice_states(
+        self,
+        key: Union[Integral, slice],
+        name: Optional[str] = None,
+        op_name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        op_iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Slice the Pool's states. Wrapper for state_slice()."""
+        from .state_ops.state_slice import state_slice
+        return state_slice(
+            self.pool,
+            key,
             name=name,
             op_name=op_name,
             iter_order=iter_order,
