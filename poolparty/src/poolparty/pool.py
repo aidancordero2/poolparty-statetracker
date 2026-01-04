@@ -1,6 +1,6 @@
 """Pool class for poolparty."""
 import statecounter as sc
-from .types import Pool_type, Operation_type, Union, Optional, Real, Integral, beartype
+from .types import Pool_type, Operation_type, Union, Optional, Real, Integral, Callable, beartype
 from .marker import Marker
 from .ops_container import OpsContainer
 import pandas as pd
@@ -56,6 +56,10 @@ class Pool:
         
         # Register pool with party after name is set
         party._register_pool(self)
+        
+        # Sequence naming config (None by default until name_seqs() is called)
+        self._seq_name_prefix: Optional[str] = None
+        self._seq_name_fn: Optional[Callable[[str, dict], str]] = None
         
         # Create ops container for convenience methods
         self.ops = OpsContainer(self)
@@ -175,6 +179,18 @@ class Pool:
         self.operation.name = op_name if op_name is not None else name + '.op'
         return self
     
+    def name_seqs(
+        self,
+        prefix: Optional[str] = None,
+        fn: Optional[Callable[[str, dict], str]] = None,
+    ) -> Pool_type:
+        """Configure how sequences from this pool are named in generate_library output."""
+        if prefix is not None and fn is not None:
+            raise ValueError("Specify prefix OR fn, not both")
+        self._seq_name_prefix = prefix
+        self._seq_name_fn = fn
+        return self
+    
     @property
     def iter_order(self) -> Real:
         """Iteration order for this pool's counter.
@@ -264,15 +280,20 @@ class Pool:
             seqs_only=False,
             init_state=0,
         )
+        has_name = 'name' in df.columns and df['name'].notna().any()
         if show_header:
             print(f"{self.name}: seq_length={self.seq_length}, num_states={self.num_states}")
-            print("state  seq" if show_states else "seq")
+            if show_states:
+                print("state  name  seq" if has_name else "state  seq")
+            else:
+                print("name  seq" if has_name else "seq")
         state_col = f"{self.name}.state"
         for _, row in df.iterrows():
+            name_str = f"{row['name']}  " if has_name else ""
             if show_states:
-                print(f"{row[state_col]:5d}  {row['seq']}")
+                print(f"{row[state_col]:5d}  {name_str}{row['seq']}")
             else:
-                print(row['seq'])
+                print(f"{name_str}{row['seq']}")
         print('')
         return self # For chaining
     

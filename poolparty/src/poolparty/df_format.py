@@ -115,23 +115,30 @@ def finalize_generate_df(
     pool_name: str,
     report_seq: bool,
     report_pool_seqs: bool,
+    pools_filter: set = None,
 ) -> pd.DataFrame:
-    """Apply final column transforms to generated DataFrame.
+    """Apply final column transforms to generated DataFrame."""
+    # Compose 'name' column from *.name columns (if any exist)
+    name_cols = [c for c in df.columns if c.endswith('.name')]
+    if name_cols and pools_filter:
+        pools_topo = list(reversed(get_pools_reverse_topo(pools_filter)))
+        pool_names_ordered = [p.name for p in pools_topo]
+        # Sort name columns by topo order (upstream/parent first)
+        name_cols_ordered = sorted(
+            name_cols,
+            key=lambda c: pool_names_ordered.index(c.rsplit('.', 1)[0])
+            if c.rsplit('.', 1)[0] in pool_names_ordered else len(pool_names_ordered)
+        )
+        # Compose name column per row
+        def compose_name(row):
+            parts = [row[c] for c in name_cols_ordered if pd.notna(row[c])]
+            return '.'.join(str(p) for p in parts) if parts else None
+        df.insert(0, 'name', df.apply(compose_name, axis=1))
     
-    Optionally adds a 'seq' column as a copy of the pool's sequence (placed first),
-    and optionally drops all pool sequence columns.
-    
-    Args:
-        df: The DataFrame to finalize.
-        pool_name: Name of the primary pool (for the 'seq' column source).
-        report_seq: If True, add a 'seq' column as first column.
-        report_pool_seqs: If False, drop all columns ending in '.seq'.
-    
-    Returns:
-        The finalized DataFrame.
-    """
     if report_seq:
-        df.insert(0, 'seq', df[f'{pool_name}.seq'])
+        # Insert 'seq' after 'name' if name exists, else at position 0
+        insert_pos = 1 if 'name' in df.columns else 0
+        df.insert(insert_pos, 'seq', df[f'{pool_name}.seq'])
     if not report_pool_seqs:
         seq_cols = [c for c in df.columns if c.endswith('.seq')]
         df = df.drop(columns=seq_cols)

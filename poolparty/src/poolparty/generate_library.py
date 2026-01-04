@@ -99,7 +99,7 @@ def generate_library(
         global_state = pool._current_state + i
         row = _compute_one(
             pool, sorted_ops, outputs, global_state, 
-            counters, report_op_keys, ops_to_report
+            counters, report_op_keys, ops_to_report, pools_filter
         )
         rows.append(row)
     
@@ -109,7 +109,7 @@ def generate_library(
     df = pd.DataFrame(rows)
     df = clean_df_int_columns(df)
     df = organize_columns(df, pools_filter, organize_columns_by)
-    df = finalize_generate_df(df, pool.name, report_seq, report_pool_seqs)
+    df = finalize_generate_df(df, pool.name, report_seq, report_pool_seqs, pools_filter)
     if seqs_only:
         return list(df['seq'])
     return df
@@ -200,6 +200,7 @@ def _compute_one(
     counters: list[sc.Counter] = (),
     report_op_keys: bool = True,
     ops_to_report: set = None,
+    pools_filter: set = None,
 ) -> dict:
     """Compute one row of output for the given global state."""
     cache: dict[int, dict] = {}
@@ -252,6 +253,22 @@ def _compute_one(
             result = cache[output_pool.operation.id]
             seq_key = f"seq_{output_pool.output_index}"
             row[output_name] = result[seq_key]
+    
+    # Add per-pool name columns for pools with naming configured
+    if pools_filter:
+        for p in pools_filter:
+            state = p.counter.state
+            if p._seq_name_fn is not None:
+                if state is not None:
+                    seq = row.get(f'{p.name}.seq')
+                    row[f'{p.name}.name'] = p._seq_name_fn(seq, row)
+                else:
+                    row[f'{p.name}.name'] = None
+            elif p._seq_name_prefix is not None:
+                if state is not None:
+                    row[f'{p.name}.name'] = f'{p._seq_name_prefix}{state}'
+                else:
+                    row[f'{p.name}.name'] = None
     
     return row
 

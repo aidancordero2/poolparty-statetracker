@@ -204,6 +204,7 @@ class OpsContainer:
         self,
         marker_name: str,
         shuffle_length: Integral,
+        shuffles_per_position: Integral = 1,
         remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
@@ -215,6 +216,8 @@ class OpsContainer:
             Name of the marker whose content to scan.
         shuffle_length : Integral
             Length of the region to shuffle at each position.
+        shuffles_per_position : Integral, default=1
+            Number of shuffles to perform at each position.
         remove_marker : Optional[bool], default=None
             If None, uses party default.
             If True, marker tags are removed from the result.
@@ -231,7 +234,7 @@ class OpsContainer:
         from .scan_ops.shuffle_scan import shuffle_scan
         return self.apply_at_marker(
             marker_name,
-            lambda p: shuffle_scan(p, shuffle_length, **kwargs),
+            lambda p: shuffle_scan(p, shuffle_length=shuffle_length, shuffles_per_position=shuffles_per_position, **kwargs),
             remove_marker=remove_marker,
         )
     
@@ -267,7 +270,7 @@ class OpsContainer:
             remove_marker=remove_marker,
         )
     
-    def insert_iupac_motif_seqs(
+    def insert_from_iupac(
         self,
         marker_name: str,
         iupac_seq: str,
@@ -307,7 +310,7 @@ class OpsContainer:
         else:
             return _replace_keeping_marker(self.pool, content, marker_name)
     
-    def insert_prob_motif_seqs(
+    def insert_from_motif(
         self,
         marker_name: str,
         prob_df,

@@ -12,6 +12,7 @@ def shuffle_scan(
     bg_pool: Union[Pool, str],
     shuffle_length: Integral,
     positions: PositionsType = None,
+    shuffles_per_position: Integral = 1,    
     spacer_str: str = '',
     mark_changes: Optional[bool] = None,
     mode: ModeType = 'random',
@@ -33,6 +34,8 @@ def shuffle_scan(
     positions : PositionsType, default=None
         Positions to consider for the start of the shuffle region (0-based).
         If None, all valid positions are used.
+    shuffles_per_position : Integral, default=1
+        Number of shuffles to perform at each position.
     spacer_str : str, default=''
         String to insert as a spacer around the shuffled region.
     mark_changes : Optional[bool], default=None
@@ -107,7 +110,10 @@ def shuffle_scan(
     # Note: seq_shuffle only supports 'random' mode for the actual shuffling.
     # The 'mode' parameter controls position selection via marker_scan above.
     def shuffle_transform(content_pool):
-        shuffled = seq_shuffle(content_pool, mode='random')
+        shuffled = seq_shuffle(content_pool, 
+                               mode='hybrid', 
+                               num_hybrid_states=shuffles_per_position,
+                               op_iter_order=-1)
         if mark_changes:
             shuffled = swap_case(shuffled)
         # Wrap with spacers if needed
