@@ -14,6 +14,7 @@ def generate_library(
     num_cycles: Optional[int] = None,
     seed: Optional[int] = None,
     init_state: Optional[int] = None,
+    seqs_only: bool = False,
     aux_pools: Sequence[Pool_type] = (),
     report_seq: bool = True,
     report_pool_seqs: bool = True,
@@ -22,7 +23,7 @@ def generate_library(
     report_op_keys: bool = True,
     pools_to_report: Union[str, Sequence[Pool_type]] = 'all',
     organize_columns_by: Literal['pool', 'type'] = 'type',
-) -> pd.DataFrame:
+) -> Union[pd.DataFrame, list[str]]:
     """Generate sequences from a pool.
     
     Args:
@@ -31,6 +32,7 @@ def generate_library(
         num_cycles: Number of complete iterations through all states.
         seed: Random seed for reproducibility.
         init_state: Initial state to start generation from.
+        seqs_only: Whether to include only sequence columns.
         aux_pools: Additional pools to include in output.
         report_seq: Whether to include the main sequence column.
         report_pool_seqs: Whether to include per-pool sequence columns.
@@ -39,6 +41,7 @@ def generate_library(
         report_op_keys: Whether to include operation key columns.
         pools_to_report: Which pools to report ('all', 'self', or a list).
         organize_columns_by: How to organize columns ('pool' or 'type').
+        seqs_only: Whether to include only sequence columns.
     
     Returns:
         DataFrame with generated sequences and metadata.
@@ -107,6 +110,8 @@ def generate_library(
     df = clean_df_int_columns(df)
     df = organize_columns(df, pools_filter, organize_columns_by)
     df = finalize_generate_df(df, pool.name, report_seq, report_pool_seqs)
+    if seqs_only:
+        return list(df['seq'])
     return df
 
 

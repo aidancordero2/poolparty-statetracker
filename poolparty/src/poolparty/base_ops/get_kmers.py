@@ -1,6 +1,6 @@
 """GetKmers operation - generate k-mers from an alphabet."""
 from numbers import Real
-from ..types import Pool_type, ModeType, Optional, beartype
+from ..types import Pool_type, ModeType, Optional, Literal, beartype
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
@@ -10,6 +10,7 @@ import numpy as np
 @beartype
 def get_kmers(
     length: int,
+    case: Literal['lower', 'upper'] = 'upper',
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -26,6 +27,8 @@ def get_kmers(
     ----------
     length : int
         Length of k-mers to generate.
+    case : Literal['lower', 'upper'], default='upper'
+        Case of output k-mers: 'upper' for uppercase, 'lower' for lowercase.
     mode : ModeType, default='random'
         Sequence selection mode: 'sequential', 'random', or 'hybrid'.
     num_hybrid_states : Optional[int], default=None
@@ -49,7 +52,7 @@ def get_kmers(
     RuntimeError
         If called outside of a Party context.
     """
-    op = GetKmersOp(length, mode=mode, num_hybrid_states=num_hybrid_states,
+    op = GetKmersOp(length, case=case, mode=mode, num_hybrid_states=num_hybrid_states,
                     name=op_name, iter_order=op_iter_order)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool
@@ -64,6 +67,7 @@ class GetKmersOp(Operation):
     def __init__(
         self,
         length: int,
+        case: Literal['lower', 'upper'] = 'upper',
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -87,6 +91,7 @@ class GetKmersOp(Operation):
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
         self.length = length
+        self.case = case
         self.alphabet = party.alphabet
         self.alpha_size = self.alphabet.size
         total_kmers = self.alpha_size ** length
@@ -148,12 +153,16 @@ class GetKmersOp(Operation):
         else:
             # Sequential mode: compute from index
             kmer = self._state_to_kmer(card['kmer_index'])
+        # Apply case transformation
+        if self.case == 'lower':
+            kmer = kmer.lower()
         return {'seq_0': kmer}
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
             'length': self.length,
+            'case': self.case,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,

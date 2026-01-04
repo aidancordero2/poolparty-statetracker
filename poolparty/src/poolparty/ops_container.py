@@ -368,3 +368,139 @@ class OpsContainer:
             return replace_marker_content(self.pool, content, marker_name)
         else:
             return _replace_keeping_marker(self.pool, content, marker_name)
+    
+    #########################################################################
+    # Marker management methods
+    #########################################################################
+    
+    def insert_marker(
+        self,
+        marker_name: str,
+        start: int,
+        stop: Optional[int] = None,
+        strand: str = '+',
+        **kwargs,
+    ) -> Pool_type:
+        """Insert an XML-style marker at a fixed position in sequences.
+        
+        Parameters
+        ----------
+        marker_name : str
+            Name for the marker (e.g., 'region', 'orf', 'insert').
+        start : int
+            Start position (0-based) for the marker.
+        stop : Optional[int], default=None
+            End position (exclusive). If None, creates a zero-length marker.
+        strand : str, default='+'
+            Strand annotation ('+' or '-').
+        **kwargs
+            Arguments passed to insert_marker() (e.g., name, op_name,
+            iter_order, op_iter_order).
+        
+        Returns
+        -------
+        Pool
+            A Pool with the marker inserted.
+        """
+        from .marker_ops.insert_marker import insert_marker
+        return insert_marker(self.pool, marker_name, start, stop, strand, **kwargs)
+    
+    def remove_marker(
+        self,
+        marker_name: str,
+        keep_content: bool = True,
+        **kwargs,
+    ) -> Pool_type:
+        """Remove a marker from sequences.
+        
+        Parameters
+        ----------
+        marker_name : str
+            Name of the marker to remove.
+        keep_content : bool, default=True
+            If True, keep the content inside the marker (just remove tags).
+            If False, remove both the marker tags and their content.
+        **kwargs
+            Arguments passed to remove_marker() (e.g., name, op_name,
+            iter_order, op_iter_order).
+        
+        Returns
+        -------
+        Pool
+            A Pool with the marker removed.
+        """
+        from .marker_ops.remove_marker import remove_marker
+        return remove_marker(self.pool, marker_name, keep_content, **kwargs)
+    
+    def replace_marker_content(
+        self,
+        content_pool: Union[Pool_type, str],
+        marker_name: str,
+        **kwargs,
+    ) -> Pool_type:
+        """Replace a marker region with content from another Pool.
+        
+        Parameters
+        ----------
+        content_pool : Pool or str
+            Pool or sequence string to insert at the marker position.
+        marker_name : str
+            Name of the marker to replace.
+        **kwargs
+            Arguments passed to replace_marker_content() (e.g., name,
+            op_name, iter_order, op_iter_order).
+        
+        Returns
+        -------
+        Pool
+            A Pool with the marker replaced by content_pool sequences.
+        """
+        from .marker_ops.replace_marker_content import replace_marker_content
+        return replace_marker_content(self.pool, content_pool, marker_name, **kwargs)
+    
+    def clear_markers(
+        self,
+        name: Optional[str] = None,
+        op_name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        op_iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Remove all marker tags from sequences, keeping content.
+        
+        Parameters
+        ----------
+        name : Optional[str], default=None
+            Name for the resulting Pool.
+        op_name : Optional[str], default=None
+            Name for the underlying Operation.
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the resulting Pool.
+        op_iter_order : Optional[Real], default=None
+            Iteration order priority for the underlying Operation.
+        
+        Returns
+        -------
+        Pool
+            A Pool with all marker tags removed (content preserved).
+        """
+        from .fixed_ops.fixed import fixed_operation
+        from .marker_ops.parsing import strip_all_markers
+        
+        def seq_from_seqs_fn(seqs: list[str]) -> str:
+            return strip_all_markers(seqs[0])
+        
+        def seq_length_fn(pools) -> Optional[int]:
+            return None
+        
+        result = fixed_operation(
+            parents=[self.pool],
+            seq_from_seqs_fn=seq_from_seqs_fn,
+            seq_length_from_pools_fn=seq_length_fn,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
+        # Clear all markers from the pool's marker set
+        result._markers = set()
+        return result

@@ -239,7 +239,7 @@ class Pool:
     # Generation
     #########################################################################
     
-    def generate_library(self, **kwargs) -> pd.DataFrame:
+    def generate_library(self, **kwargs) -> Union[pd.DataFrame, list[str]]:
         """Generate sequences from this pool.
         
         This is a thin wrapper around poolparty.generate_library().
