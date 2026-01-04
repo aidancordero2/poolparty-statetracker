@@ -184,3 +184,96 @@ class TestLowerPreservesMarkers:
         
         df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'aa<m strand="-">bb</m>cc'
+
+
+class TestReverseComplementPreservesMarkers:
+    """Test that reverse_complement() preserves and repositions XML marker tags."""
+    
+    def test_rc_region_marker(self):
+        """Test that region markers are repositioned correctly."""
+        with pp.Party() as party:
+            pool = pp.from_seq('ACG<region>TT</region>AA')
+            result = pp.reverse_complement(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == 'TT<region>AA</region>CGT'
+    
+    def test_rc_marker_with_strand_attribute(self):
+        """Test that marker strand attribute is preserved."""
+        with pp.Party() as party:
+            pool = pp.from_seq('AA<m strand="-">CC</m>GG')
+            result = pp.reverse_complement(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == "CC<m strand='-'>GG</m>TT"
+    
+    def test_rc_self_closing_marker(self):
+        """Test that self-closing markers are repositioned correctly."""
+        with pp.Party() as party:
+            pool = pp.from_seq('ACGT<ins/>AAAA')
+            result = pp.reverse_complement(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == 'TTTT<ins/>ACGT'
+    
+    def test_rc_marker_at_start(self):
+        """Test marker at sequence start."""
+        with pp.Party() as party:
+            pool = pp.from_seq('<region>ACGT</region>AAAA')
+            result = pp.reverse_complement(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        # Content: ACGTAAAA (8), marker [0,4) -> [4,8)
+        assert df['seq'].iloc[0] == 'TTTT<region>ACGT</region>'
+    
+    def test_rc_marker_at_end(self):
+        """Test marker at sequence end."""
+        with pp.Party() as party:
+            pool = pp.from_seq('AAAA<region>ACGT</region>')
+            result = pp.reverse_complement(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        # Content: AAAAACGT (8), marker [4,8) -> [0,4)
+        assert df['seq'].iloc[0] == '<region>ACGT</region>TTTT'
+    
+    def test_rc_multiple_markers(self):
+        """Test multiple markers are repositioned correctly."""
+        with pp.Party() as party:
+            pool = pp.from_seq('A<m1>T</m1>G<m2>C</m2>')
+            result = pp.reverse_complement(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        # Content: ATGC (4), m1 [1,2) -> [2,3), m2 [3,4) -> [0,1)
+        # Reversed: GCAT, complemented: CGTA? Wait...
+        # reverse(ATGC) = CGTA, complement(CGTA) = GCAT
+        # So result: <m2>G</m2>CA<m1>T</m1>
+        assert df['seq'].iloc[0] == '<m2>G</m2>C<m1>A</m1>T'
+    
+    def test_rc_nested_markers(self):
+        """Test nested markers are repositioned correctly."""
+        with pp.Party() as party:
+            pool = pp.from_seq('A<outer>C<inner>G</inner>T</outer>A')
+            result = pp.reverse_complement(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        # Content: ACGTA (5), outer [1,4) -> [1,4), inner [2,3) -> [2,3)
+        # Reversed: ATGCA, complemented: TACGT
+        assert df['seq'].iloc[0] == 'T<outer>A<inner>C</inner>G</outer>T'
+    
+    def test_rc_no_markers(self):
+        """Test that reverse_complement still works without markers."""
+        with pp.Party() as party:
+            pool = pp.from_seq('ACGT')
+            result = pp.reverse_complement(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == 'ACGT'
+    
+    def test_rc_with_seq_length_attribute(self):
+        """Test that seq_length attribute is preserved."""
+        with pp.Party() as party:
+            pool = pp.from_seq("AA<m seq_length='2'>CC</m>GG")
+            result = pp.reverse_complement(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == "CC<m seq_length='2'>GG</m>TT"

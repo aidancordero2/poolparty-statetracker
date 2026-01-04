@@ -245,6 +245,174 @@ def transform_nonmarker_chars(seq: str, transform_fn: Callable[[str], str]) -> s
     return ''.join(result)
 
 
+def reverse_complement_with_markers(
+    seq: str, 
+    complement_fn: Callable[[str], str]
+) -> str:
+    """Reverse complement a sequence while preserving XML marker structure.
+    
+    Markers are repositioned based on their content coordinates:
+    - Region markers [start, end) map to [n-end, n-start) in reversed sequence
+    - Self-closing markers at position i map to position n-i
+    
+    Example:
+        # complement_fn maps A<->T, C<->G
+        reverse_complement_with_markers('ACG<region>TT</region>AA', complement_fn)
+        -> 'TT<region>AA</region>CGT'
+    """
+    # Parse markers
+    markers = find_all_markers(seq)
+    
+    # If no markers, just reverse complement the content
+    if not markers:
+        return ''.join(complement_fn(c) for c in reversed(seq))
+    
+    # Get content without markers
+    content = strip_all_markers(seq)
+    n = len(content)
+    
+    # Build mapping from literal positions to content positions
+    nonmarker_positions = get_nonmarker_positions(seq)
+    literal_to_content = {lit: i for i, lit in enumerate(nonmarker_positions)}
+    
+    # Calculate content ranges for each marker and their new positions
+    marker_info = []
+    for m in markers:
+        if m.is_zero_length:
+            # Self-closing marker: find its content position
+            # It's positioned "before" the character at the next content position
+            # Find the content position after this marker
+            content_pos = None
+            for lit_pos in range(m.end, len(seq) + 1):
+                if lit_pos in literal_to_content:
+                    content_pos = literal_to_content[lit_pos]
+                    break
+            if content_pos is None:
+                content_pos = n  # At the end
+            
+            # New position: n - content_pos
+            new_pos = n - content_pos
+            
+            # Determine seq_length for build_marker_tag
+            if m.declared_seq_length_str == 'None':
+                seq_length_arg = -1  # Will produce seq_length='None'
+            elif m.declared_seq_length_str is not None:
+                seq_length_arg = int(m.declared_seq_length_str)
+            else:
+                seq_length_arg = None
+            
+            marker_info.append({
+                'name': m.name,
+                'strand': m.strand,
+                'seq_length_arg': seq_length_arg,
+                'is_zero_length': True,
+                'new_start': new_pos,
+                'new_end': new_pos,
+            })
+        else:
+            # Region marker: find content start and end
+            content_start = literal_to_content[m.content_start]
+            # content_end is one past the last character inside the marker
+            # m.content_end is the literal position of the closing tag '<'
+            # We need to find the content index after the last content char
+            if m.content_end == m.content_start:
+                # Empty marker content
+                content_end = content_start
+            else:
+                # Find the last content character before m.content_end
+                last_content_literal = m.content_end - 1
+                while last_content_literal >= m.content_start and last_content_literal not in literal_to_content:
+                    last_content_literal -= 1
+                if last_content_literal >= m.content_start:
+                    content_end = literal_to_content[last_content_literal] + 1
+                else:
+                    content_end = content_start
+            
+            # New positions: [n - end, n - start)
+            new_start = n - content_end
+            new_end = n - content_start
+            
+            # Determine seq_length for build_marker_tag
+            if m.declared_seq_length_str == 'None':
+                seq_length_arg = -1
+            elif m.declared_seq_length_str is not None:
+                seq_length_arg = int(m.declared_seq_length_str)
+            else:
+                seq_length_arg = None
+            
+            marker_info.append({
+                'name': m.name,
+                'strand': m.strand,
+                'seq_length_arg': seq_length_arg,
+                'is_zero_length': False,
+                'new_start': new_start,
+                'new_end': new_end,
+            })
+    
+    # Reverse complement the content
+    rc_content = ''.join(complement_fn(c) for c in reversed(content))
+    
+    # Build result by inserting markers at their new positions
+    # We need to handle overlapping/nested markers properly
+    # Strategy: collect all "events" (marker starts and ends) and process in order
+    
+    events = []  # (position, priority, event_type, marker_idx)
+    # Priority: lower = processed first at same position
+    # For opening tags: use marker length as priority (longer markers open first)
+    # For closing tags: use negative marker length (shorter markers close first)
+    # For self-closing: use 0
+    
+    for idx, mi in enumerate(marker_info):
+        if mi['is_zero_length']:
+            events.append((mi['new_start'], 0, 'self_close', idx))
+        else:
+            marker_len = mi['new_end'] - mi['new_start']
+            events.append((mi['new_start'], -marker_len, 'open', idx))
+            events.append((mi['new_end'], marker_len, 'close', idx))
+    
+    # Sort events by position, then by priority
+    events.sort(key=lambda e: (e[0], e[1]))
+    
+    # Build result
+    result = []
+    last_pos = 0
+    
+    for pos, priority, event_type, idx in events:
+        # Add content up to this position
+        if pos > last_pos:
+            result.append(rc_content[last_pos:pos])
+            last_pos = pos
+        
+        mi = marker_info[idx]
+        if event_type == 'self_close':
+            result.append(build_marker_tag(
+                mi['name'],
+                content='',
+                strand=mi['strand'],
+                seq_length=mi['seq_length_arg'],
+            ))
+        elif event_type == 'open':
+            # Build opening tag
+            attrs = []
+            if mi['strand'] == '-':
+                attrs.append("strand='-'")
+            if mi['seq_length_arg'] is not None:
+                if mi['seq_length_arg'] == -1:
+                    attrs.append("seq_length='None'")
+                else:
+                    attrs.append(f"seq_length='{mi['seq_length_arg']}'")
+            attrs_str = ' ' + ' '.join(attrs) if attrs else ''
+            result.append(f"<{mi['name']}{attrs_str}>")
+        elif event_type == 'close':
+            result.append(f"</{mi['name']}>")
+    
+    # Add remaining content
+    if last_pos < n:
+        result.append(rc_content[last_pos:])
+    
+    return ''.join(result)
+
+
 def get_length_without_markers(seq: str) -> int:
     """Get sequence length excluding marker tags (but including marker content)."""
     return len(strip_all_markers(seq))

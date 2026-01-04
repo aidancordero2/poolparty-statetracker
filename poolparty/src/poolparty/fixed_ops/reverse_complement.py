@@ -2,6 +2,7 @@
 from numbers import Real
 from ..types import Pool_type, Union, Optional, Sequence, beartype
 from ..pool import Pool
+from ..marker_ops.parsing import reverse_complement_with_markers
 
 
 @beartype
@@ -14,6 +15,9 @@ def reverse_complement(
 ) -> Pool:
     """
     Create a Pool containing the reverse complement of sequences from the input pool.
+
+    Preserves XML marker tags, repositioning them based on reversed content
+    coordinates.
 
     Parameters
     ----------
@@ -40,7 +44,7 @@ def reverse_complement(
 
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         seq = seqs[0]
-        return ''.join(alphabet.get_complement(c) for c in reversed(seq))
+        return reverse_complement_with_markers(seq, alphabet.get_complement)
 
     return fixed_operation(
         parents=[pool],
