@@ -1,7 +1,8 @@
 """Pool class for poolparty."""
 import statecounter as sc
-from .types import Pool_type, Operation_type, Union, Optional, Real, Callable, Integral, beartype
+from .types import Pool_type, Operation_type, Union, Optional, Real, beartype
 from .marker import Marker
+from .ops_container import OpsContainer
 import pandas as pd
 
 
@@ -55,6 +56,9 @@ class Pool:
         
         # Register pool with party after name is set
         party._register_pool(self)
+        
+        # Create ops container for convenience methods
+        self.ops = OpsContainer(self)
     
     @property
     def iter_order(self) -> Real:
@@ -136,158 +140,6 @@ class Pool:
     def remove_marker(self, name: str) -> None:
         """Remove a marker from this pool's marker set by name."""
         self._markers = {m for m in self._markers if m.name != name}
-    
-    def apply_at_marker(
-        self,
-        marker_name: str,
-        transform_fn: Callable,
-        remove_marker: bool = True,
-        name: Optional[str] = None,
-        iter_order: Optional[Real] = None,
-    ) -> Pool_type:
-        """Apply a transformation to the content of a marked region.
-        
-        This is a thin wrapper around poolparty.apply_at_marker().
-        See that function for full documentation of parameters.
-        """
-        from .marker_ops.apply_at_marker import apply_at_marker
-        return apply_at_marker(
-            self, marker_name, transform_fn,
-            remove_marker=remove_marker, name=name, iter_order=iter_order,
-        )
-    
-    def mutagenize(
-        self,
-        marker_name: str,
-        remove_marker: bool = True,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply mutagenize() to a marked region.
-        
-        Parameters
-        ----------
-        marker_name : str
-            Name of the marker whose content to mutagenize.
-        remove_marker : bool, default=True
-            If True, marker tags are removed from the result.
-            If False, marker tags are preserved around the mutagenized content.
-        **kwargs
-            Arguments passed to mutagenize() (e.g., num_mutations,
-            mutation_rate, mark_changes, mode, num_hybrid_states).
-        
-        Returns
-        -------
-        Pool
-            A Pool with the marker region mutagenized.
-        """
-        from .base_ops.mutagenize import mutagenize
-        return self.apply_at_marker(
-            marker_name,
-            lambda p: mutagenize(p, **kwargs),
-            remove_marker=remove_marker,
-        )
-    
-    def deletion_scan(
-        self,
-        marker_name: str,
-        deletion_length: Integral,
-        remove_marker: bool = True,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply deletion_scan() to a marked region.
-        
-        Parameters
-        ----------
-        marker_name : str
-            Name of the marker whose content to scan.
-        deletion_length : Integral
-            Number of characters to delete at each position.
-        remove_marker : bool, default=True
-            If True, marker tags are removed from the result.
-            If False, marker tags are preserved around the scanned content.
-        **kwargs
-            Arguments passed to deletion_scan() (e.g., deletion_marker,
-            spacer_str, positions, mode, num_hybrid_states).
-        
-        Returns
-        -------
-        Pool
-            A Pool with deletion scan applied to the marker region.
-        """
-        from .scan_ops.deletion_scan import deletion_scan
-        return self.apply_at_marker(
-            marker_name,
-            lambda p: deletion_scan(p, deletion_length, **kwargs),
-            remove_marker=remove_marker,
-        )
-    
-    def insertion_scan(
-        self,
-        marker_name: str,
-        ins_pool: Union[Pool_type, str],
-        remove_marker: bool = True,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply insertion_scan() to a marked region.
-        
-        Parameters
-        ----------
-        marker_name : str
-            Name of the marker whose content to scan.
-        ins_pool : Pool or str
-            The insert Pool or sequence string to be inserted.
-        remove_marker : bool, default=True
-            If True, marker tags are removed from the result.
-            If False, marker tags are preserved around the scanned content.
-        **kwargs
-            Arguments passed to insertion_scan() (e.g., positions,
-            spacer_str, mode, num_hybrid_states).
-        
-        Returns
-        -------
-        Pool
-            A Pool with insertion scan applied to the marker region.
-        """
-        from .scan_ops.insertion_scan import insertion_scan
-        return self.apply_at_marker(
-            marker_name,
-            lambda p: insertion_scan(p, ins_pool, **kwargs),
-            remove_marker=remove_marker,
-        )
-    
-    def replacement_scan(
-        self,
-        marker_name: str,
-        ins_pool: Union[Pool_type, str],
-        remove_marker: bool = True,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply replacement_scan() to a marked region.
-        
-        Parameters
-        ----------
-        marker_name : str
-            Name of the marker whose content to scan.
-        ins_pool : Pool or str
-            The insert Pool or sequence string to replace segments.
-        remove_marker : bool, default=True
-            If True, marker tags are removed from the result.
-            If False, marker tags are preserved around the scanned content.
-        **kwargs
-            Arguments passed to replacement_scan() (e.g., positions,
-            spacer_str, mark_changes, mode, num_hybrid_states).
-        
-        Returns
-        -------
-        Pool
-            A Pool with replacement scan applied to the marker region.
-        """
-        from .scan_ops.replacement_scan import replacement_scan
-        return self.apply_at_marker(
-            marker_name,
-            lambda p: replacement_scan(p, ins_pool, **kwargs),
-            remove_marker=remove_marker,
-        )
     
     #########################################################################
     # Counter-based operators
