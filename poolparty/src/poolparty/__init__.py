@@ -18,6 +18,10 @@ from .fixed_ops import (
     seq_slice,
     reverse_complement,
     swap_case,
+    upper,
+    lower,
+    clear_nonmolecular_chars,
+    clear_ignore_chars,
 )
 # Import other operations from base_ops module
 from .base_ops import (
@@ -94,6 +98,10 @@ __all__ = [
     'seq_shuffle', 'SeqShuffleOp',
     'reverse_complement',
     'swap_case',
+    'upper',
+    'lower',
+    'clear_nonmolecular_chars',
+    'clear_ignore_chars',
     'stack', 'StackOp',
     'repeat', 'RepeatOp',
     'state_slice', 'StateSliceOp',

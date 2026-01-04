@@ -100,3 +100,87 @@ class TestSwapCasePreservesSeqLength:
         
         assert result.seq_length == 8
         assert result.seq_length == pool.seq_length
+
+
+class TestSwapCasePreservesMarkers:
+    """Test that swap_case preserves XML marker tags."""
+    
+    def test_preserves_region_marker(self):
+        """Test that region markers are preserved."""
+        with pp.Party() as party:
+            pool = pp.from_seq('AA<region>TT</region>CC')
+            result = swap_case(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == 'aa<region>tt</region>cc'
+    
+    def test_preserves_marker_with_attributes(self):
+        """Test that marker attributes are preserved."""
+        with pp.Party() as party:
+            pool = pp.from_seq('AA<m strand="-">BB</m>CC')
+            result = swap_case(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == 'aa<m strand="-">bb</m>cc'
+    
+    def test_preserves_self_closing_marker(self):
+        """Test that self-closing markers are preserved."""
+        with pp.Party() as party:
+            pool = pp.from_seq('AA<ins/>BB')
+            result = swap_case(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == 'aa<ins/>bb'
+    
+    def test_preserves_nested_markers(self):
+        """Test that nested markers are preserved."""
+        with pp.Party() as party:
+            pool = pp.from_seq('AA<outer>BB<inner>CC</inner>DD</outer>EE')
+            result = swap_case(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == 'aa<outer>bb<inner>cc</inner>dd</outer>ee'
+
+
+class TestUpperPreservesMarkers:
+    """Test that upper() preserves XML marker tags."""
+    
+    def test_upper_preserves_region_marker(self):
+        """Test that upper preserves region markers."""
+        with pp.Party() as party:
+            pool = pp.from_seq('aa<region>tt</region>cc')
+            result = pp.upper(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == 'AA<region>TT</region>CC'
+    
+    def test_upper_preserves_marker_attributes(self):
+        """Test that upper preserves marker attributes."""
+        with pp.Party() as party:
+            pool = pp.from_seq('aa<m strand="-">bb</m>cc')
+            result = pp.upper(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == 'AA<m strand="-">BB</m>CC'
+
+
+class TestLowerPreservesMarkers:
+    """Test that lower() preserves XML marker tags."""
+    
+    def test_lower_preserves_region_marker(self):
+        """Test that lower preserves region markers."""
+        with pp.Party() as party:
+            pool = pp.from_seq('AA<region>TT</region>CC')
+            result = pp.lower(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == 'aa<region>tt</region>cc'
+    
+    def test_lower_preserves_marker_attributes(self):
+        """Test that lower preserves marker attributes."""
+        with pp.Party() as party:
+            pool = pp.from_seq('AA<m strand="-">BB</m>CC')
+            result = pp.lower(pool).named('result')
+        
+        df = result.generate_library(num_seqs=1)
+        assert df['seq'].iloc[0] == 'aa<m strand="-">bb</m>cc'

@@ -370,6 +370,174 @@ class OpsContainer:
             return _replace_keeping_marker(self.pool, content, marker_name)
     
     #########################################################################
+    # Fixed operation convenience methods
+    #########################################################################
+    
+    def reverse_complement(
+        self,
+        name: Optional[str] = None,
+        op_name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        op_iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Create a Pool containing the reverse complement of sequences.
+        
+        This is a thin wrapper around poolparty.reverse_complement().
+        See that function for full documentation of parameters.
+        
+        Returns
+        -------
+        Pool
+            A Pool containing reverse-complemented sequences.
+        """
+        from .fixed_ops.reverse_complement import reverse_complement
+        return reverse_complement(
+            self.pool,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
+    
+    def swap_case(
+        self,
+        name: Optional[str] = None,
+        op_name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        op_iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Create a Pool containing case-swapped sequences.
+        
+        This is a thin wrapper around poolparty.swap_case().
+        See that function for full documentation of parameters.
+        
+        Returns
+        -------
+        Pool
+            A Pool containing case-swapped sequences.
+        """
+        from .fixed_ops.swap_case import swap_case
+        return swap_case(
+            self.pool,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
+    
+    def upper(
+        self,
+        name: Optional[str] = None,
+        op_name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        op_iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Create a Pool containing uppercase sequences.
+        
+        This is a thin wrapper around poolparty.upper().
+        See that function for full documentation of parameters.
+        
+        Returns
+        -------
+        Pool
+            A Pool containing uppercase sequences.
+        """
+        from .fixed_ops.upper import upper
+        return upper(
+            self.pool,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
+    
+    def lower(
+        self,
+        name: Optional[str] = None,
+        op_name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        op_iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Create a Pool containing lowercase sequences.
+        
+        This is a thin wrapper around poolparty.lower().
+        See that function for full documentation of parameters.
+        
+        Returns
+        -------
+        Pool
+            A Pool containing lowercase sequences.
+        """
+        from .fixed_ops.lower import lower
+        return lower(
+            self.pool,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
+    
+    def clear_nonmolecular_chars(
+        self,
+        name: Optional[str] = None,
+        op_name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        op_iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Create a Pool with all non-molecular characters removed.
+        
+        This removes everything that is NOT in the alphabet's all_chars, including:
+        - Ignore characters (gaps '-', dots '.', spaces ' ', etc.)
+        - All marker tags (XML-style markers like <marker>...</marker>)
+        - Any other characters not in the molecular alphabet
+        
+        This is a thin wrapper around poolparty.clear_nonmolecular_chars().
+        See that function for full documentation of parameters.
+        
+        Returns
+        -------
+        Pool
+            A Pool containing only molecular alphabet characters.
+        """
+        from .fixed_ops.clear_nonmolecular_chars import clear_nonmolecular_chars
+        return clear_nonmolecular_chars(
+            self.pool,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
+    
+    def clear_ignore_chars(
+        self,
+        name: Optional[str] = None,
+        op_name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        op_iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Create a Pool with ignore characters removed.
+        
+        This removes only the alphabet's ignore_chars (gaps '-', dots '.', 
+        spaces ' ', etc.) while preserving marker tags intact.
+        
+        This is a thin wrapper around poolparty.clear_ignore_chars().
+        See that function for full documentation of parameters.
+        
+        Returns
+        -------
+        Pool
+            A Pool with ignore characters removed but markers preserved.
+        """
+        from .fixed_ops.clear_ignore_chars import clear_ignore_chars
+        return clear_ignore_chars(
+            self.pool,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
+    
+    #########################################################################
     # Marker management methods
     #########################################################################
     

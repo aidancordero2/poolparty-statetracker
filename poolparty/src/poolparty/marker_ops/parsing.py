@@ -2,7 +2,7 @@
 import re
 from dataclasses import dataclass
 from xml.etree import ElementTree as ET
-from poolparty.types import Optional, Literal
+from poolparty.types import Optional, Literal, Callable
 
 # Regex pattern for XML-style marker tags
 # 
@@ -220,6 +220,29 @@ def strip_all_markers(seq: str) -> str:
         'ACG<ins/>TT' -> 'ACGTT'
     """
     return TAG_PATTERN.sub('', seq)
+
+
+def transform_nonmarker_chars(seq: str, transform_fn: Callable[[str], str]) -> str:
+    """Apply a transformation to only non-marker characters in a sequence.
+    
+    Preserves XML marker tags exactly as they appear while transforming
+    all other characters using the provided function.
+    
+    Example:
+        transform_nonmarker_chars('ACgt<region>TT</region>', str.lower)
+        -> 'acgt<region>tt</region>'
+    """
+    result = []
+    last_end = 0
+    for match in TAG_PATTERN.finditer(seq):
+        # Transform text before this tag
+        result.append(transform_fn(seq[last_end:match.start()]))
+        # Keep the tag unchanged
+        result.append(match.group(0))
+        last_end = match.end()
+    # Transform remaining text after last tag
+    result.append(transform_fn(seq[last_end:]))
+    return ''.join(result)
 
 
 def get_length_without_markers(seq: str) -> int:
