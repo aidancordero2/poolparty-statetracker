@@ -565,6 +565,7 @@ class OpsContainer:
     def repeat_states(
         self,
         times: int,
+        seq_name_prefix: Optional[str] = None,
         name: Optional[str] = None,
         op_name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -579,6 +580,8 @@ class OpsContainer:
         ----------
         times : int
             The number of times to repeat the pool's states.
+        seq_name_prefix : Optional[str], default=None
+            Prefix for auto-generated sequence names (e.g., 'v' produces 'v0', 'v1', ...).
         name : Optional[str], default=None
             Name to assign to the resulting Pool.
         op_name : Optional[str], default=None
@@ -597,6 +600,7 @@ class OpsContainer:
         return repeat(
             self.pool,
             times,
+            seq_name_prefix=seq_name_prefix,
             name=name,
             op_name=op_name,
             iter_order=iter_order,
@@ -609,6 +613,7 @@ class OpsContainer:
         sampled_states: Optional[Sequence[Integral]] = None,
         seed: Optional[Integral] = None,
         with_replacement: bool = True,
+        seq_name_prefix: Optional[str] = None,
         name: Optional[str] = None,
         op_name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -622,6 +627,7 @@ class OpsContainer:
             sampled_states=sampled_states,
             seed=seed,
             with_replacement=with_replacement,
+            seq_name_prefix=seq_name_prefix,
             name=name,
             op_name=op_name,
             iter_order=iter_order,
@@ -632,6 +638,7 @@ class OpsContainer:
         self,
         seed: Optional[Integral] = None,
         permutation: Optional[Sequence[Integral]] = None,
+        seq_name_prefix: Optional[str] = None,
         name: Optional[str] = None,
         op_name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -643,6 +650,7 @@ class OpsContainer:
             self.pool,
             seed=seed,
             permutation=permutation,
+            seq_name_prefix=seq_name_prefix,
             name=name,
             op_name=op_name,
             iter_order=iter_order,
@@ -652,6 +660,7 @@ class OpsContainer:
     def slice_states(
         self,
         key: Union[Integral, slice],
+        seq_name_prefix: Optional[str] = None,
         name: Optional[str] = None,
         op_name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -662,6 +671,7 @@ class OpsContainer:
         return state_slice(
             self.pool,
             key,
+            seq_name_prefix=seq_name_prefix,
             name=name,
             op_name=op_name,
             iter_order=iter_order,

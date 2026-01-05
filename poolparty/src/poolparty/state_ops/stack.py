@@ -10,6 +10,7 @@ import numpy as np
 @beartype
 def stack(
     pools: Sequence[Pool],
+    seq_name_prefix: Optional[str] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -37,7 +38,7 @@ def stack(
         A Pool object representing the state-wise stacking of all provided input Pools. 
         Each state corresponds to a sequence from one of the input Pools.
     """
-    op = StackOp(pools, name=op_name, iter_order=op_iter_order)
+    op = StackOp(pools, seq_name_prefix=seq_name_prefix, name=op_name, iter_order=op_iter_order)
     result_pool = Pool(operation=op, name=name, iter_order=iter_order)
     return result_pool
 
@@ -51,6 +52,7 @@ class StackOp(Operation):
     def __init__(
         self,
         parent_pools: Sequence[Pool],
+        seq_name_prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -67,6 +69,7 @@ class StackOp(Operation):
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
+            seq_name_prefix=seq_name_prefix,
         )
     
     def build_pool_counter(
@@ -107,6 +110,9 @@ class StackOp(Operation):
         card: dict,
     ) -> dict:
         """Return the name from the active parent."""
+        # Block all names if _block_seq_names is set
+        if self._block_seq_names:
+            return {'name_0': None}
         # Apply clear_parent_names if set
         if self.clear_parent_names:
             parent_names = [None] * len(parent_names)
@@ -131,6 +137,7 @@ class StackOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'parent_pools': self.parent_pools,
+            'seq_name_prefix': self.name_prefix,
             'name': None,
             'iter_order': self.iter_order,
         }

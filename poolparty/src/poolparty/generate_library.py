@@ -272,16 +272,5 @@ def _compute_one(
     name_key = f"name_{pool.output_index}"
     row['name'] = final_name_result.get(name_key)
     
-    # Handle custom name function if set (for advanced use)
-    if pools_filter:
-        for p in pools_filter:
-            if p._seq_name_fn is not None:
-                state = p.counter.state
-                if state is not None:
-                    seq = row.get(f'{p.name}.seq')
-                    row['name'] = p._seq_name_fn(seq, row)
-                else:
-                    row['name'] = None
-    
     return row
 

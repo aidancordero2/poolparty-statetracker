@@ -11,6 +11,7 @@ import numpy as np
 def from_iupac_motif(
     iupac_seq: str,
     mark_changes: Optional[bool] = None,
+    seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -49,6 +50,7 @@ def from_iupac_motif(
     op = FromIupacMotifOp(
         iupac_seq=iupac_seq,
         mark_changes=mark_changes,
+        seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         name=op_name,
@@ -68,6 +70,7 @@ class FromIupacMotifOp(Operation):
         self,
         iupac_seq: str,
         mark_changes: Optional[bool] = None,
+        seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -146,6 +149,7 @@ class FromIupacMotifOp(Operation):
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
+            seq_name_prefix=seq_name_prefix,
         )
 
     def compute_design_card(
@@ -191,6 +195,7 @@ class FromIupacMotifOp(Operation):
         return {
             'iupac_seq': self.iupac_seq,
             'mark_changes': self.mark_changes,
+            'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,

@@ -10,6 +10,7 @@ import numpy as np
 def from_seqs(
     seqs: Sequence[str],
     seq_names: Optional[Sequence[str]] = None,
+    seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -25,7 +26,10 @@ def from_seqs(
     seqs : Sequence[str]
         Sequence of string sequences to include in the pool.
     seq_names : Optional[Sequence[str]], default=None
-        Optional sequence of names for each sequence. If not provided, names are auto-generated.
+        Explicit names for each sequence. If provided, these are used directly.
+    seq_name_prefix : Optional[str], default=None
+        Prefix for auto-generated names (e.g., 'seq_' produces 'seq_0', 'seq_1', ...).
+        Cannot be used together with seq_names.
     mode : ModeType, default='random'
         Sequence selection mode: 'sequential', 'random', or 'hybrid'.
     num_hybrid_states : Optional[int], default=None
@@ -44,8 +48,8 @@ def from_seqs(
     Pool_type
         A Pool object yielding the provided sequences using the specified selection mode.
     """
-    op = FromSeqsOp(seqs, seq_names=seq_names, mode=mode, 
-                    num_hybrid_states=num_hybrid_states, name=op_name,
+    op = FromSeqsOp(seqs, seq_names=seq_names, seq_name_prefix=seq_name_prefix,
+                    mode=mode, num_hybrid_states=num_hybrid_states, name=op_name,
                     iter_order=op_iter_order)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool
@@ -61,6 +65,7 @@ class FromSeqsOp(Operation):
         self,
         seqs: Sequence[str],
         seq_names: Optional[Sequence[str]] = None,
+        seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -80,7 +85,11 @@ class FromSeqsOp(Operation):
             raise ValueError("mode='fixed' requires exactly 1 sequence")
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
+        if seq_names is not None and seq_name_prefix is not None:
+            raise ValueError("Cannot specify both seq_names and seq_name_prefix")
         self.seqs = list(seqs)
+        # Track whether explicit seq_names were provided (for compute_seq_names)
+        self._seq_names_explicit = seq_names is not None
         self.seq_names = list(seq_names) if seq_names else [f"seq_{i}" for i in range(len(seqs))]
         if len(self.seq_names) != len(self.seqs):
             raise ValueError("seq_names must have same length as seqs")
@@ -101,6 +110,7 @@ class FromSeqsOp(Operation):
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
+            seq_name_prefix=seq_name_prefix,
         )
     
     def compute_design_card(
@@ -136,11 +146,17 @@ class FromSeqsOp(Operation):
         parent_names: list[Optional[str]],
         card: dict,
     ) -> dict:
-        """Return name based on name_prefix (None if not set)."""
-        # Only return names if name_prefix is explicitly set
+        """Return name based on explicit seq_names or name_prefix."""
+        # Block all names if _block_seq_names is set
+        if self._block_seq_names:
+            return {'name_0': None}
+        # If explicit seq_names were provided, use them directly
+        if self._seq_names_explicit:
+            idx = card['seq_index']
+            return {'name_0': self.seq_names[idx]}
+        # Otherwise fall back to prefix logic
         if self.name_prefix is None:
             return {'name_0': None}
-        
         state = self.counter.state
         if state is None:
             return {'name_0': None}
@@ -150,7 +166,8 @@ class FromSeqsOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'seqs': self.seqs,
-            'seq_names': self.seq_names,
+            'seq_names': self.seq_names if self._seq_names_explicit else None,
+            'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,

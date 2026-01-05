@@ -12,6 +12,7 @@ import pandas as pd
 @beartype
 def from_prob_motif(
     prob_df: pd.DataFrame,
+    seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -53,6 +54,7 @@ def from_prob_motif(
         )
     op = FromProbMotifOp(
         prob_df=prob_df,
+        seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         name=op_name,
@@ -71,6 +73,7 @@ class FromProbMotifOp(Operation):
     def __init__(
         self,
         prob_df: pd.DataFrame,
+        seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -106,6 +109,7 @@ class FromProbMotifOp(Operation):
             seq_length=len(self.prob_df),
             name=name,
             iter_order=iter_order,
+            seq_name_prefix=seq_name_prefix,
         )
 
     def compute_design_card(
@@ -136,6 +140,7 @@ class FromProbMotifOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'prob_df': self.prob_df.copy(),
+            'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,

@@ -36,6 +36,7 @@ class Operation:
         seq_length: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        seq_name_prefix: Optional[str] = None,
     ) -> None:
         """Initialize Operation."""
         from .party import get_active_party
@@ -57,9 +58,10 @@ class Operation:
         self.counter = sc.Counter(num_states=num_states, name=f"{self._name}.state", iter_order=iter_order)
         self.rng: np.random.Generator | None = None
         self.num_states = num_states
-        # Sequence naming attributes (set via Pool.name_seqs())
-        self.name_prefix: Optional[str] = None
+        # Sequence naming attributes
+        self.name_prefix: Optional[str] = seq_name_prefix
         self.clear_parent_names: bool = False
+        self._block_seq_names: bool = False
         # Register operation with party after name is set
         party._register_operation(self)
     
@@ -179,6 +181,10 @@ class Operation:
         
         Returns a dictionary with name_0, name_1, ... keys matching num_outputs.
         """
+        # Block all names if _block_seq_names is set
+        if self._block_seq_names:
+            return {f'name_{i}': None for i in range(self.num_outputs)}
+        
         # Apply clear_parent_names if set
         if self.clear_parent_names:
             parent_names = [None] * len(parent_names)

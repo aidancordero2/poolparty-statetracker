@@ -15,6 +15,7 @@ def mutagenize(
     mutation_rate: Optional[Real] = None,
     mark_changes: Optional[bool] = None,
     swapcase: bool = False,
+    seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -65,6 +66,7 @@ def mutagenize(
         mutation_rate=mutation_rate,
         mark_changes=mark_changes,
         swapcase=swapcase,
+        seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         name=op_name,
@@ -95,6 +97,7 @@ class MutagenizeOp(Operation):
         mutation_rate: Optional[Real] = None,
         mark_changes: Optional[bool] = None,
         swapcase: bool = False,
+        seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -177,6 +180,7 @@ class MutagenizeOp(Operation):
             seq_length=self._seq_length,
             name=name,
             iter_order=iter_order,
+            seq_name_prefix=seq_name_prefix,
         )
     
     def _build_caches(self, num_positions: int) -> int:
@@ -323,6 +327,7 @@ class MutagenizeOp(Operation):
             'mutation_rate': self.mutation_rate,
             'mark_changes': self.mark_changes,
             'swapcase': self.swapcase,
+            'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,

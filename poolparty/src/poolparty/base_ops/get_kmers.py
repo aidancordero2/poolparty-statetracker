@@ -11,6 +11,7 @@ import numpy as np
 def get_kmers(
     length: int,
     case: Literal['lower', 'upper'] = 'upper',
+    seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -52,7 +53,8 @@ def get_kmers(
     RuntimeError
         If called outside of a Party context.
     """
-    op = GetKmersOp(length, case=case, mode=mode, num_hybrid_states=num_hybrid_states,
+    op = GetKmersOp(length, case=case, seq_name_prefix=seq_name_prefix,
+                    mode=mode, num_hybrid_states=num_hybrid_states,
                     name=op_name, iter_order=op_iter_order)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool
@@ -68,6 +70,7 @@ class GetKmersOp(Operation):
         self,
         length: int,
         case: Literal['lower', 'upper'] = 'upper',
+        seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -108,6 +111,7 @@ class GetKmersOp(Operation):
             seq_length=length,
             name=name,
             iter_order=iter_order,
+            seq_name_prefix=seq_name_prefix,
         )
     
     def _state_to_kmer(self, state: int) -> str:
@@ -163,6 +167,7 @@ class GetKmersOp(Operation):
         return {
             'length': self.length,
             'case': self.case,
+            'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,

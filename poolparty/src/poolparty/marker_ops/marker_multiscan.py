@@ -38,6 +38,7 @@ def marker_multiscan(
     strand: str = '+',
     marker_length: int = 0,
     insertion_mode: Literal['ordered', 'unordered'] = 'ordered',
+    seq_name_prefix: Optional[str] = None,
     mode: str = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -106,6 +107,7 @@ def marker_multiscan(
         strand=strand,
         marker_length=int(marker_length),
         insertion_mode=insertion_mode,
+        seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         name=op_name,
@@ -135,6 +137,7 @@ class MarkerMultiScanOp(Operation):
         strand: str = '+',
         marker_length: int = 0,
         insertion_mode: str = 'ordered',
+        seq_name_prefix: Optional[str] = None,
         mode: str = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -167,6 +170,7 @@ class MarkerMultiScanOp(Operation):
             seq_length=None,
             name=name,
             iter_order=iter_order,
+            seq_name_prefix=seq_name_prefix,
         )
 
     def _coerce_markers(
@@ -399,6 +403,7 @@ class MarkerMultiScanOp(Operation):
             'strand': self._strand,
             'marker_length': self._marker_length,
             'insertion_mode': self.insertion_mode,
+            'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,

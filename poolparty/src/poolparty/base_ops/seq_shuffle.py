@@ -11,6 +11,7 @@ def seq_shuffle(
     pool: Union[Pool_type, str],
     start: int = 0,
     end: Optional[int] = None,
+    seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -53,6 +54,7 @@ def seq_shuffle(
         parent_pool=pool_obj,
         start=start,
         end=end,
+        seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         name=op_name,
@@ -73,6 +75,7 @@ class SeqShuffleOp(Operation):
         parent_pool: Pool,
         start: int = 0,
         end: Optional[int] = None,
+        seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -102,6 +105,7 @@ class SeqShuffleOp(Operation):
             seq_length=self._seq_length,
             name=name,
             iter_order=iter_order,
+            seq_name_prefix=seq_name_prefix,
         )
     
     def _validate_region(self, seq: str) -> tuple[int, int, int]:
@@ -195,6 +199,7 @@ class SeqShuffleOp(Operation):
             'parent_pool': self.parent_pools[0],
             'start': self.start,
             'end': self.end,
+            'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
