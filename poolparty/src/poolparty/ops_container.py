@@ -247,13 +247,13 @@ class OpsContainer:
             remove_marker=remove_marker,
         )
     
-    def seq_shuffle(
+    def shuffle_seq(
         self,
         marker_name: str,
         remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
-        """Apply seq_shuffle() to a marked region.
+        """Apply shuffle_seq() to a marked region.
         
         Parameters
         ----------
@@ -264,14 +264,14 @@ class OpsContainer:
             If True, marker tags are removed from the result.
             If False, marker tags are preserved around the shuffled content.
         **kwargs
-            Arguments passed to seq_shuffle() (e.g., mode, num_hybrid_states).
+            Arguments passed to shuffle_seq() (e.g., mode, num_hybrid_states).
         
         Returns
         -------
         Pool
             A Pool with the marker content shuffled.
         """
-        from .base_ops.seq_shuffle import seq_shuffle
+        from .base_ops.shuffle_seq import shuffle_seq
         from .marker_ops.remove_marker import remove_marker as remove_marker_op
         
         # Resolve None to party default
@@ -279,7 +279,7 @@ class OpsContainer:
             remove_marker = self.pool._party.get_default('remove_marker', True)
         
         # Use region parameter to shuffle only the marker content
-        result = seq_shuffle(self.pool, region=marker_name, **kwargs)
+        result = shuffle_seq(self.pool, region=marker_name, **kwargs)
         
         # Remove marker tags if requested
         if remove_marker:

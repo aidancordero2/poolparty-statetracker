@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import poolparty as pp
-from poolparty.base_ops.seq_shuffle import SeqShuffleOp, seq_shuffle
+from poolparty.base_ops.shuffle_seq import SeqShuffleOp, shuffle_seq
 
 
 class TestSeqShuffleFactory:
@@ -11,13 +11,13 @@ class TestSeqShuffleFactory:
     
     def test_returns_pool(self):
         with pp.Party():
-            pool = seq_shuffle('ACGT')
+            pool = shuffle_seq('ACGT')
             assert pool is not None
             assert hasattr(pool, 'operation')
     
     def test_creates_seqshuffle_op(self):
         with pp.Party():
-            pool = seq_shuffle('ACGT')
+            pool = shuffle_seq('ACGT')
             assert isinstance(pool.operation, SeqShuffleOp)
 
 
@@ -26,27 +26,27 @@ class TestSeqShuffleBehavior:
     
     def test_preserves_length(self):
         with pp.Party():
-            pool = seq_shuffle('ACGTAC', region=[1, 5]).named('shuf')
+            pool = shuffle_seq('ACGTAC', region=[1, 5]).named('shuf')
         df = pool.generate_library(num_seqs=10, seed=123)
         for seq in df['seq']:
             assert len(seq) == 6
     
     def test_random_variability(self):
         with pp.Party():
-            pool = seq_shuffle('ACGTACGT', region=[0, 8]).named('shuf')
+            pool = shuffle_seq('ACGTACGT', region=[0, 8]).named('shuf')
         df = pool.generate_library(num_seqs=50, seed=42)
         assert df['seq'].nunique() > 5
     
     def test_hybrid_num_states(self):
         with pp.Party():
-            pool = seq_shuffle('ACGT', mode='hybrid', num_hybrid_states=10).named('shuf')
+            pool = shuffle_seq('ACGT', mode='hybrid', num_hybrid_states=10).named('shuf')
         assert pool.operation.num_states == 10
         df = pool.generate_library(num_cycles=1, seed=99)
         assert len(df) == 10
     
     def test_region_only_shuffled(self):
         with pp.Party():
-            pool = seq_shuffle('ABCD', region=[1, 3]).named('shuf')
+            pool = shuffle_seq('ABCD', region=[1, 3]).named('shuf')
         df = pool.generate_library(num_seqs=5, seed=7)
         for seq in df['seq']:
             assert seq[0] == 'A'
@@ -56,7 +56,7 @@ class TestSeqShuffleBehavior:
     
     def test_zero_length_region_noop(self):
         with pp.Party():
-            pool = seq_shuffle('ABCDE', region=[2, 2]).named('shuf')
+            pool = shuffle_seq('ABCDE', region=[2, 2]).named('shuf')
         df = pool.generate_library(num_seqs=3, seed=1)
         assert set(df['seq']) == {'ABCDE'}
 
@@ -66,7 +66,7 @@ class TestSeqShuffleDesignCard:
     
     def test_compute_and_apply_permutation(self):
         with pp.Party():
-            pool = seq_shuffle('WXYZ', region=[0, 4])
+            pool = shuffle_seq('WXYZ', region=[0, 4])
             rng = np.random.default_rng(42)
             card = pool.operation.compute_design_card(['WXYZ'], rng)
             result = pool.operation.compute_seq_from_card(['WXYZ'], card)
@@ -83,7 +83,7 @@ class TestSeqShuffleWithMarker:
     
     def test_shuffle_marker_region(self):
         with pp.Party():
-            pool = seq_shuffle('AA<r>BCDE</r>FF', region='r').named('shuf')
+            pool = shuffle_seq('AA<r>BCDE</r>FF', region='r').named('shuf')
         df = pool.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
             # AA and FF should be preserved
@@ -97,7 +97,7 @@ class TestSeqShuffleWithMarker:
     
     def test_shuffle_whole_sequence_with_none_region(self):
         with pp.Party():
-            pool = seq_shuffle('ABCD').named('shuf')
+            pool = shuffle_seq('ABCD').named('shuf')
         df = pool.generate_library(num_seqs=10, seed=123)
         # All results should be permutations of ABCD
         for seq in df['seq']:

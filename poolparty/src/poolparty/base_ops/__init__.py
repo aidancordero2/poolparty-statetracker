@@ -5,7 +5,7 @@ from .from_prob_motif import from_prob_motif, FromProbMotifOp
 from .get_kmers import get_kmers, GetKmersOp
 from .mutagenize import mutagenize, MutagenizeOp
 from .breakpoint_scan import breakpoint_scan, BreakpointScanOp
-from .seq_shuffle import seq_shuffle, SeqShuffleOp
+from .shuffle_seq import shuffle_seq, SeqShuffleOp
 
 __all__ = [
     'from_seqs', 'FromSeqsOp',
@@ -14,5 +14,5 @@ __all__ = [
     'get_kmers', 'GetKmersOp',
     'mutagenize', 'MutagenizeOp',
     'breakpoint_scan', 'BreakpointScanOp',
-    'seq_shuffle', 'SeqShuffleOp',
+    'shuffle_seq', 'SeqShuffleOp',
 ]

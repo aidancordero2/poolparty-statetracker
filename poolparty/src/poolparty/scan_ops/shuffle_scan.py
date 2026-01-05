@@ -63,7 +63,7 @@ def shuffle_scan(
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.join import join
     from ..fixed_ops.swapcase import swapcase
-    from ..base_ops.seq_shuffle import seq_shuffle
+    from ..base_ops.shuffle_seq import shuffle_seq
     from ..marker_ops import marker_scan, apply_at_marker
 
     # Convert string inputs to pools if needed
@@ -109,10 +109,10 @@ def shuffle_scan(
     )
 
     # 2. Apply shuffle transform at marker
-    # Note: seq_shuffle only supports 'random' mode for the actual shuffling.
+    # Note: shuffle_seq only supports 'random' mode for the actual shuffling.
     # The 'mode' parameter controls position selection via marker_scan above.
     def shuffle_transform(content_pool):
-        shuffled = seq_shuffle(content_pool, 
+        shuffled = shuffle_seq(content_pool, 
                                mode='hybrid', 
                                num_hybrid_states=shuffles_per_position,
                                op_iter_order=-1)

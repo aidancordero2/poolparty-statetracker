@@ -7,7 +7,7 @@ import numpy as np
 
 
 @beartype
-def seq_shuffle(
+def shuffle_seq(
     pool: Union[Pool_type, str],
     region: RegionType = None,
     seq_name_prefix: Optional[str] = None,
@@ -64,7 +64,7 @@ def seq_shuffle(
 @beartype
 class SeqShuffleOp(Operation):
     """Randomly shuffle characters within a region of the parent sequence."""
-    factory_name = "seq_shuffle"
+    factory_name = "shuffle_seq"
     design_card_keys = ['permutation']
     
     def __init__(

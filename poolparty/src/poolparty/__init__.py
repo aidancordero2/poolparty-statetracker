@@ -31,7 +31,7 @@ from .base_ops import (
     get_kmers, GetKmersOp,
     mutagenize, MutagenizeOp,
     breakpoint_scan, BreakpointScanOp,
-    seq_shuffle, SeqShuffleOp,
+    shuffle_seq, SeqShuffleOp,
 )
 # Import ORF operations from orf_ops module
 from .orf_ops import (
@@ -95,7 +95,7 @@ __all__ = [
     'shuffle_scan',
     'mutagenize_scan',
     'subseq_scan',
-    'seq_shuffle', 'SeqShuffleOp',
+    'shuffle_seq', 'SeqShuffleOp',
     'reverse_complement',
     'swapcase',
     'upper',

@@ -349,13 +349,13 @@ class TestApplyAtMarker:
         # ATGCCC reverse complement = GGGCAT
         assert df['seq'].iloc[0] == 'ACGTGGGCATTTTT'
     
-    def test_apply_seq_shuffle(self):
-        """Test applying seq_shuffle at marker."""
+    def test_apply_shuffle_seq(self):
+        """Test applying shuffle_seq at marker."""
         with pp.Party():
             bg = pp.from_seq('AAA<region>ACGTACGT</region>TTT')
             result = pp.apply_at_marker(
                 bg, 'region',
-                lambda p: pp.seq_shuffle(p, mode='random')
+                lambda p: pp.shuffle_seq(p, mode='random')
             )
         df = result.generate_library(num_seqs=5, seed=42)
         # All should have 8 characters between AAA and TTT
