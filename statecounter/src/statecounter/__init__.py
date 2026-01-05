@@ -13,6 +13,8 @@ from .ops import (
     PassthroughOp,
     product,
     ordered_product,
+    set_product_order_mode,
+    get_product_order_mode,
     stack,
     sync,
     slice,
@@ -31,7 +33,7 @@ __all__ = [
     'Counter', 'Manager', 'Operation', 'ConflictingStateAssignmentError',
     'ProductOp', 'StackOp', 'SyncOp', 'SliceOp',
     'RepeatOp', 'ShuffleOp', 'SampleOp', 'InterleaveOp', 'PassthroughOp',
-    'product', 'ordered_product', 'stack', 'sync',
-    'slice', 'repeat', 'shuffle', 'sample',
+    'product', 'ordered_product', 'set_product_order_mode', 'get_product_order_mode',
+    'stack', 'sync', 'slice', 'repeat', 'shuffle', 'sample',
     'split', 'interleave', 'passthrough',
 ]

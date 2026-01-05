@@ -1,6 +1,20 @@
 """ProductOp - Cartesian product of N counters."""
-from ..imports import beartype, Sequence, Optional, math, Integral, Counter_type
+from ..imports import beartype, Sequence, Optional, math, Integral, Counter_type, Literal
 from ..operation import Operation
+
+# Module-level flag for product ordering mode
+_product_order_mode: str = 'first_counter_slowest'
+
+def set_product_order_mode(mode: Literal['first_counter_fastest', 'first_counter_slowest']) -> None:
+    """Set the global ordering mode for ordered_product()."""
+    global _product_order_mode
+    if mode not in ('first_counter_fastest', 'first_counter_slowest'):
+        raise ValueError(f"mode must be 'first_counter_fastest' or 'first_counter_slowest', got {mode!r}")
+    _product_order_mode = mode
+
+def get_product_order_mode() -> str:
+    """Get the current global ordering mode for ordered_product()."""
+    return _product_order_mode
 
 
 def _collect_product_bases(counter: Counter_type) -> list:
@@ -76,7 +90,8 @@ def ordered_product(counters:Sequence[Counter_type], name:Optional[str]=None):
     
     # Deduplicate and order
     unique_counters = list(set(base_counters))
-    ordered_counters = sorted(unique_counters, key=lambda c: (c._iter_order, c._id))
+    id_sign = -1 if _product_order_mode == 'first_counter_slowest' else 1
+    ordered_counters = sorted(unique_counters, key=lambda c: (c._iter_order, id_sign * c._id))
     
     return Counter(_parents=ordered_counters, _op=ProductOp(), name=name)
 

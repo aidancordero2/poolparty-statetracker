@@ -1,6 +1,9 @@
 """Tests for ProductOp and product_counters()."""
 import pytest
-from statecounter import Counter, Manager, ProductOp, product, ordered_product, stack
+from statecounter import (
+    Counter, Manager, ProductOp, product, ordered_product, stack,
+    set_product_order_mode, get_product_order_mode,
+)
 
 class TestProductOperation:
     """Test product (multiplication) operation."""
@@ -229,9 +232,10 @@ class TestOrderedProductFlattening:
             for state in result:
                 results.append((state, A.state, B.state))
 
+            # With first_counter_slowest default, A (lower id) cycles slowest, B cycles fastest
             expected = [
-                (0, 0, 0), (1, 1, 0), (2, 0, 1),
-                (3, 1, 1), (4, 0, 2), (5, 1, 2),
+                (0, 0, 0), (1, 0, 1), (2, 0, 2),
+                (3, 1, 0), (4, 1, 1), (5, 1, 2),
             ]
             assert results == expected
 
@@ -286,3 +290,84 @@ class TestOrderedProductFlattening:
 
             # Should deduplicate to A * B = 6
             assert result.num_states == 6
+
+
+class TestProductOrderMode:
+    """Test product order mode (first_counter_fastest vs first_counter_slowest)."""
+    
+    def test_get_set_product_order_mode(self):
+        """Test getter/setter for product order mode."""
+        original = get_product_order_mode()
+        try:
+            set_product_order_mode('first_counter_slowest')
+            assert get_product_order_mode() == 'first_counter_slowest'
+            set_product_order_mode('first_counter_fastest')
+            assert get_product_order_mode() == 'first_counter_fastest'
+        finally:
+            set_product_order_mode(original)
+    
+    def test_invalid_mode_raises(self):
+        """Invalid mode value should raise ValueError."""
+        with pytest.raises(ValueError):
+            set_product_order_mode('invalid_mode')
+    
+    def test_first_counter_fastest_ordering(self):
+        """Default mode: lower ID counters cycle fastest."""
+        original = get_product_order_mode()
+        try:
+            set_product_order_mode('first_counter_fastest')
+            with Manager():
+                A = Counter(num_states=2, name='A')  # id=0
+                B = Counter(num_states=3, name='B')  # id=1
+                P = ordered_product([A, B])
+                
+                results = []
+                for _ in P:
+                    results.append((A.state, B.state))
+                
+                # A (lower id) cycles fastest: (0,0), (1,0), (0,1), (1,1), (0,2), (1,2)
+                expected = [(0,0), (1,0), (0,1), (1,1), (0,2), (1,2)]
+                assert results == expected
+        finally:
+            set_product_order_mode(original)
+    
+    def test_first_counter_slowest_ordering(self):
+        """first_counter_slowest mode: lower ID counters cycle slowest."""
+        original = get_product_order_mode()
+        try:
+            set_product_order_mode('first_counter_slowest')
+            with Manager():
+                A = Counter(num_states=2, name='A')  # id=0
+                B = Counter(num_states=3, name='B')  # id=1
+                P = ordered_product([A, B])
+                
+                results = []
+                for _ in P:
+                    results.append((A.state, B.state))
+                
+                # B (higher id, lower -id) cycles fastest: (0,0), (0,1), (0,2), (1,0), (1,1), (1,2)
+                expected = [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2)]
+                assert results == expected
+        finally:
+            set_product_order_mode(original)
+    
+    def test_mode_affects_only_ordered_product(self):
+        """Mode only affects ordered_product, not product()."""
+        original = get_product_order_mode()
+        try:
+            set_product_order_mode('first_counter_slowest')
+            with Manager():
+                A = Counter(num_states=2, name='A')
+                B = Counter(num_states=3, name='B')
+                # product() uses explicit order, not sorted by id
+                P = product([A, B])
+                
+                results = []
+                for _ in P:
+                    results.append((A.state, B.state))
+                
+                # A cycles fastest because it's first in the list
+                expected = [(0,0), (1,0), (0,1), (1,1), (0,2), (1,2)]
+                assert results == expected
+        finally:
+            set_product_order_mode(original)

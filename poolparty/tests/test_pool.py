@@ -448,7 +448,8 @@ class TestPoolMulOperator:
             repeated = (pool * 2).named('rep')
         
         df = repeated.generate_library(num_cycles=1)
-        assert list(df['seq']) == ['A', 'B', 'A', 'B']
+        # With first_counter_slowest default, original pool cycles slowest
+        assert list(df['seq']) == ['A', 'A', 'B', 'B']
     
     def test_int_times_pool(self):
         """Test int * Pool repetition."""
@@ -457,7 +458,8 @@ class TestPoolMulOperator:
             repeated = (2 * pool).named('rep')
         
         df = repeated.generate_library(num_cycles=1)
-        assert list(df['seq']) == ['X', 'Y', 'X', 'Y']
+        # With first_counter_slowest default, original pool cycles slowest
+        assert list(df['seq']) == ['X', 'X', 'Y', 'Y']
     
     def test_pool_times_one(self):
         """Test Pool * 1 returns equivalent result."""
@@ -585,11 +587,12 @@ class TestPoolOperatorChaining:
         """Test repetition then state slicing."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B'], mode='sequential')  # 2 states
-            repeated = pool * 3  # 6 states: A, B, A, B, A, B
-            sliced = repeated[2:5].named('sl')  # States 2, 3, 4 -> A, B, A
+            # With first_counter_slowest, 6 states: A, A, A, B, B, B
+            repeated = pool * 3
+            sliced = repeated[2:5].named('sl')  # States 2, 3, 4 -> A, B, B
         
         df = sliced.generate_library(num_cycles=1)
-        assert list(df['seq']) == ['A', 'B', 'A']
+        assert list(df['seq']) == ['A', 'B', 'B']
     
     def test_slice_then_add(self):
         """Test state slicing then stacking."""

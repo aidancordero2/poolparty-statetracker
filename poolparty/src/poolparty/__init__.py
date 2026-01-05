@@ -132,6 +132,8 @@ _init_default_party()
 
 def set_default(key: str, value) -> None:
     """Set a default parameter on the active Party."""
+    if key == 'iter_order':
+        sc.set_product_order_mode(value)
     get_active_party().set_default(key, value)
 
 

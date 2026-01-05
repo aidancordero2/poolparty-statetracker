@@ -358,7 +358,8 @@ class TestRepeatOp:
             repeated = (pool * 2).named('seq')
         
         df = repeated.generate_library(num_cycles=1)
-        assert list(df['seq']) == ['A', 'B', 'A', 'B']
+        # With first_counter_slowest default, original pool cycles slowest
+        assert list(df['seq']) == ['A', 'A', 'B', 'B']
     
     def test_repeat_num_states(self):
         """Test that repeat num_states is original * n."""
