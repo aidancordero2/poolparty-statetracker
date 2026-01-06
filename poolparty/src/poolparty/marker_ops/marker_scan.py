@@ -222,33 +222,39 @@ class MarkerScanOp(Operation):
             raise ValueError("No valid positions for marker insertion")
         return num_states
     
-    def _get_valid_marker_positions(self, seq: str) -> list[int]:
-        """Get valid marker insertion positions, excluding marker interiors."""
+    def _get_valid_marker_positions(self, seq: str) -> tuple[list[int], list[int]]:
+        """Get valid marker insertion positions, excluding marker interiors.
+        
+        Returns tuple of (valid_nonmarker_indices, nonmarker_positions) where:
+        - valid_nonmarker_indices: indices into nonmarker_positions that are valid start positions
+        - nonmarker_positions: literal positions of all non-marker characters
+        """
         # Get positions not inside existing markers
-        valid_raw_positions = get_nonmarker_positions(seq)
+        nonmarker_positions = get_nonmarker_positions(seq)
         
         # For region markers, ensure there's room for marker_length bases
         if self._marker_length > 0:
-            # Filter to positions where we have enough room
-            all_valid = []
-            for i, raw_pos in enumerate(valid_raw_positions):
-                # Check if there are marker_length consecutive valid positions
-                if i + self._marker_length <= len(valid_raw_positions):
-                    all_valid.append(raw_pos)
+            # Valid indices are those where we have room for marker_length consecutive non-marker chars
+            max_valid_idx = len(nonmarker_positions) - self._marker_length
+            if max_valid_idx < 0:
+                all_valid_indices = []
+            else:
+                all_valid_indices = list(range(max_valid_idx + 1))
         else:
-            # For zero-length markers, all positions are valid plus end
-            all_valid = valid_raw_positions + [len(seq)]
+            # For zero-length markers, all positions are valid plus end (len of seq)
+            all_valid_indices = list(range(len(nonmarker_positions) + 1))
         
         # Apply user position filter
         if self._positions is not None:
             indices = _validate_positions(
                 self._positions,
-                max_position=len(all_valid) - 1,
+                max_position=len(all_valid_indices) - 1,
                 min_position=0,
             )
-            return [all_valid[i] for i in indices]
+            filtered_indices = [all_valid_indices[i] for i in indices]
+            return filtered_indices, nonmarker_positions
         
-        return all_valid
+        return all_valid_indices, nonmarker_positions
     
     def compute_design_card(
         self,
@@ -258,8 +264,8 @@ class MarkerScanOp(Operation):
         """Return design card with insertion position and strand."""
         seq = parent_seqs[0]
         
-        valid_positions = self._get_valid_marker_positions(seq)
-        if len(valid_positions) == 0:
+        valid_indices, nonmarker_positions = self._get_valid_marker_positions(seq)
+        if len(valid_indices) == 0:
             raise ValueError("No valid positions for marker insertion")
         
         # Determine strand for this state
@@ -268,31 +274,35 @@ class MarkerScanOp(Operation):
             if self.mode == 'sequential':
                 state = self.counter.state
                 state = 0 if state is None else state
-                num_pos = len(valid_positions)
+                num_pos = len(valid_indices)
                 position_index = (state // 2) % num_pos
                 strand = '+' if (state % 2) == 0 else '-'
             else:
                 # Random mode: randomly choose strand
                 if rng is None:
                     raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
-                position_index = int(rng.integers(0, len(valid_positions)))
+                position_index = int(rng.integers(0, len(valid_indices)))
                 strand = '+' if rng.random() < 0.5 else '-'
         else:
             strand = self._strand
             if self.mode in ('random', 'hybrid'):
                 if rng is None:
                     raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
-                position_index = int(rng.integers(0, len(valid_positions)))
+                position_index = int(rng.integers(0, len(valid_indices)))
             else:
                 state = self.counter.state
                 state = 0 if state is None else state
-                position_index = state % len(valid_positions)
+                position_index = state % len(valid_indices)
         
-        # Build marker tag
-        raw_position = valid_positions[position_index]
+        # Build marker tag - extract content using non-marker indices
+        nonmarker_idx = valid_indices[position_index]
         explicit_strand = (self._strand == 'both')
         if self._marker_length > 0:
-            content = seq[raw_position:raw_position + self._marker_length]
+            # Extract content from non-marker characters only
+            content = ''.join(
+                seq[nonmarker_positions[i]]
+                for i in range(nonmarker_idx, nonmarker_idx + self._marker_length)
+            )
             marker_tag = build_marker_tag(self.marker_name, content, strand, explicit_strand=explicit_strand)
         else:
             marker_tag = build_marker_tag(self.marker_name, '', strand, explicit_strand=explicit_strand)
@@ -313,18 +323,26 @@ class MarkerScanOp(Operation):
         position_index = card['position']
         marker_tag = card['marker_tag']
         
-        valid_positions = self._get_valid_marker_positions(seq)
-        raw_position = valid_positions[position_index]
+        valid_indices, nonmarker_positions = self._get_valid_marker_positions(seq)
+        nonmarker_idx = valid_indices[position_index]
         
         if self._marker_length > 0:
             # Region marker: replace content with marker
-            result_seq = (
-                seq[:raw_position] +
-                marker_tag +
-                seq[raw_position + self._marker_length:]
-            )
+            # Get literal start and end positions from non-marker indices
+            start_literal = nonmarker_positions[nonmarker_idx]
+            end_nonmarker_idx = nonmarker_idx + self._marker_length
+            # End position is the literal position of the first char AFTER the region
+            if end_nonmarker_idx < len(nonmarker_positions):
+                end_literal = nonmarker_positions[end_nonmarker_idx]
+            else:
+                end_literal = len(seq)
+            result_seq = seq[:start_literal] + marker_tag + seq[end_literal:]
         else:
             # Zero-length marker: insert at position
+            if nonmarker_idx < len(nonmarker_positions):
+                raw_position = nonmarker_positions[nonmarker_idx]
+            else:
+                raw_position = len(seq)  # Insert at end
             result_seq = seq[:raw_position] + marker_tag + seq[raw_position:]
         
         return {'seq_0': result_seq}

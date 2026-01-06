@@ -555,8 +555,8 @@ def _validate_markers(seq: str) -> set:
             # Explicitly declared with a specific length (already validated in parsing)
             seq_length = int(rm.declared_seq_length_str)
         else:
-            # Not declared, infer from content
-            seq_length = len(rm.content)
+            # Not declared, infer from content (excluding nested marker tags)
+            seq_length = get_length_without_markers(rm.content)
         
         # Register with party (will raise if conflict)
         marker = party.register_marker(rm.name, seq_length)
