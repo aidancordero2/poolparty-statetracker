@@ -1,8 +1,9 @@
 """Insertion scan operation - insert a sequence at scanning positions."""
 from numbers import Integral, Real
 
-from ..types import Union, ModeType, Optional, PositionsType, beartype
+from ..types import Union, ModeType, Optional, PositionsType, RegionType, beartype
 from ..seq_utils import validate_positions
+from ..party import get_active_party
 from ..pool import Pool
 
 
@@ -11,6 +12,9 @@ def insertion_scan(
     bg_pool: Union[Pool, str],
     ins_pool: Union[Pool, str],
     positions: PositionsType = None,
+    region: RegionType = None,
+    remove_marker: Optional[bool] = None,
+    mark_changes: Optional[bool] = None,
     min_spacing: Optional[Integral] = None,
     max_spacing: Optional[Integral] = None,
     seq_name_prefix: Optional[str] = None,
@@ -34,6 +38,14 @@ def insertion_scan(
     positions : PositionsType, default=None
         Positions to consider for the start of the insertion (0-based, inclusive).
         If None, all valid positions are considered.
+    region : RegionType, default=None
+        Region to constrain the scan to. Can be a marker name (str) or [start, stop].
+        If specified, positions are relative to the region start.
+    remove_marker : Optional[bool], default=None
+        If True and region is a marker name, remove marker tags from output.
+        If None, uses Party default.
+    mark_changes : Optional[bool], default=None
+        If True, apply swapcase() to the inserted content. If None, uses party default.
     min_spacing : Optional[Integral], default=None
         Not supported. Raises ValueError if provided.
     max_spacing : Optional[Integral], default=None
@@ -61,7 +73,8 @@ def insertion_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.join import join
-    from ..marker_ops import marker_scan, replace_marker_content
+    from ..fixed_ops.swapcase import swapcase
+    from ..marker_ops import marker_scan, replace_marker_content, apply_at_marker, insert_marker
 
     # Validate min_spacing/max_spacing not supported
     if min_spacing is not None or max_spacing is not None:
@@ -73,6 +86,97 @@ def insertion_scan(
     # Convert string inputs to pools if needed
     bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     ins_pool = from_seq(ins_pool) if isinstance(ins_pool, str) else ins_pool
+
+    # Resolve mark_changes from party defaults if not explicitly set
+    party = get_active_party()
+    if mark_changes is None:
+        mark_changes = party.get_default('mark_changes', False) if party else False
+
+    # Resolve remove_marker from party defaults if not explicitly set
+    if remove_marker is None:
+        remove_marker = party.get_default('remove_marker', True) if party else True
+
+    # Apply swapcase to insert if mark_changes
+    if mark_changes:
+        ins_pool = swapcase(ins_pool)
+
+    # If region is specified, apply scan within that region
+    if region is not None:
+        # Define transform function that applies insertion_scan to region content
+        def do_insertion_scan(region_content_pool):
+            return _insertion_scan_impl(
+                bg_pool=region_content_pool,
+                ins_pool=ins_pool,
+                positions=positions,
+                seq_name_prefix=seq_name_prefix,
+                mode=mode,
+                num_hybrid_states=num_hybrid_states,
+                spacer_str=spacer_str,
+                op_name=op_name,
+                op_iter_order=op_iter_order,
+            )
+
+        if isinstance(region, str):
+            # Region is a marker name
+            return apply_at_marker(
+                bg_pool,
+                marker_name=region,
+                transform_fn=do_insertion_scan,
+                remove_marker=remove_marker,
+                name=name,
+                iter_order=iter_order,
+            )
+        else:
+            # Region is [start, stop] - insert temporary marker
+            temp_marker = '_insertion_scan_region'
+            marked_pool = insert_marker(
+                bg_pool,
+                marker_name=temp_marker,
+                start=int(region[0]),
+                stop=int(region[1]),
+            )
+            return apply_at_marker(
+                marked_pool,
+                marker_name=temp_marker,
+                transform_fn=do_insertion_scan,
+                remove_marker=True,  # Always remove temp marker
+                name=name,
+                iter_order=iter_order,
+            )
+
+    # No region specified - apply to entire bg_pool
+    return _insertion_scan_impl(
+        bg_pool=bg_pool,
+        ins_pool=ins_pool,
+        positions=positions,
+        seq_name_prefix=seq_name_prefix,
+        mode=mode,
+        num_hybrid_states=num_hybrid_states,
+        spacer_str=spacer_str,
+        name=name,
+        op_name=op_name,
+        iter_order=iter_order,
+        op_iter_order=op_iter_order,
+    )
+
+
+def _insertion_scan_impl(
+    bg_pool: Pool,
+    ins_pool: Pool,
+    positions: PositionsType,
+    seq_name_prefix: Optional[str],
+    mode: ModeType,
+    num_hybrid_states: Optional[Integral],
+    spacer_str: str,
+    name: Optional[str] = None,
+    op_name: Optional[str] = None,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
+) -> Pool:
+    """Core insertion scan implementation without region handling."""
+    from ..fixed_ops.from_seq import from_seq
+    from ..fixed_ops.join import join
+    from ..marker_ops import marker_scan, replace_marker_content
 
     # Validate bg_pool has defined seq_length
     bg_length = bg_pool.seq_length

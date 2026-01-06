@@ -1,8 +1,9 @@
 """Subsequence scan operation - extract subsequences at scanning positions."""
 from numbers import Integral, Real
 
-from ..types import Union, Literal, ModeType, Optional, PositionsType, beartype
+from ..types import Union, Literal, ModeType, Optional, PositionsType, RegionType, beartype
 from ..seq_utils import validate_positions
+from ..party import get_active_party
 from ..pool import Pool
 
 
@@ -11,6 +12,8 @@ def subseq_scan(
     pool: Union[Pool, str],
     seq_length: Integral,
     positions: PositionsType = None,
+    region: RegionType = None,
+    remove_marker: Optional[bool] = None,
     strand: Literal['+', '-', 'both'] = '+',
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
@@ -35,6 +38,12 @@ def subseq_scan(
     positions : PositionsType, default=None
         Positions to consider for the start of extraction (0-based).
         If None, all valid positions are used.
+    region : RegionType, default=None
+        Region to constrain the scan to. Can be a marker name (str) or [start, stop].
+        If specified, positions are relative to the region start.
+    remove_marker : Optional[bool], default=None
+        If True and region is a marker name, remove marker tags from the region
+        before scanning. If None, uses Party default.
     strand : Literal['+', '-', 'both'], default='+'
         Strand for extraction: '+', '-', or 'both'.
         If '-', content is reverse-complemented.
@@ -58,10 +67,90 @@ def subseq_scan(
         A Pool yielding subsequences extracted at each allowed position.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..marker_ops import marker_scan, extract_marker_content
+    from ..marker_ops import marker_scan, extract_marker_content, insert_marker
 
     # Convert string input to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
+
+    # Resolve remove_marker from party defaults if not explicitly set
+    party = get_active_party()
+    if remove_marker is None:
+        remove_marker = party.get_default('remove_marker', True) if party else True
+
+    # If region is specified, extract subsequences only from that region
+    if region is not None:
+        if isinstance(region, str):
+            # Region is a marker name - extract marker content first
+            region_content = extract_marker_content(pool, region)
+            # Apply subseq_scan to the region content
+            return _subseq_scan_impl(
+                pool=region_content,
+                seq_length=seq_length,
+                positions=positions,
+                strand=strand,
+                seq_name_prefix=seq_name_prefix,
+                mode=mode,
+                num_hybrid_states=num_hybrid_states,
+                name=name,
+                op_name=op_name,
+                iter_order=iter_order,
+                op_iter_order=op_iter_order,
+            )
+        else:
+            # Region is [start, stop] - insert temporary marker, extract, then scan
+            temp_marker = '_subseq_scan_region'
+            marked_pool = insert_marker(
+                pool,
+                marker_name=temp_marker,
+                start=int(region[0]),
+                stop=int(region[1]),
+            )
+            region_content = extract_marker_content(marked_pool, temp_marker)
+            return _subseq_scan_impl(
+                pool=region_content,
+                seq_length=seq_length,
+                positions=positions,
+                strand=strand,
+                seq_name_prefix=seq_name_prefix,
+                mode=mode,
+                num_hybrid_states=num_hybrid_states,
+                name=name,
+                op_name=op_name,
+                iter_order=iter_order,
+                op_iter_order=op_iter_order,
+            )
+
+    # No region specified - apply to entire pool
+    return _subseq_scan_impl(
+        pool=pool,
+        seq_length=seq_length,
+        positions=positions,
+        strand=strand,
+        seq_name_prefix=seq_name_prefix,
+        mode=mode,
+        num_hybrid_states=num_hybrid_states,
+        name=name,
+        op_name=op_name,
+        iter_order=iter_order,
+        op_iter_order=op_iter_order,
+    )
+
+
+def _subseq_scan_impl(
+    pool: Pool,
+    seq_length: Integral,
+    positions: PositionsType,
+    strand: Literal['+', '-', 'both'],
+    seq_name_prefix: Optional[str],
+    mode: ModeType,
+    num_hybrid_states: Optional[Integral],
+    name: Optional[str] = None,
+    op_name: Optional[str] = None,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
+) -> Pool:
+    """Core subseq scan implementation without region handling."""
+    from ..marker_ops import marker_scan, extract_marker_content
 
     # Validate pool has defined seq_length
     pool_length = pool.seq_length

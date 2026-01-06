@@ -1,8 +1,9 @@
 """Deletion scan operation - delete a segment at scanning positions."""
 from numbers import Integral, Real
 
-from ..types import Union, ModeType, Optional, PositionsType, beartype
+from ..types import Union, ModeType, Optional, PositionsType, RegionType, beartype
 from ..seq_utils import validate_positions
+from ..party import get_active_party
 from ..pool import Pool
 
 
@@ -11,6 +12,9 @@ def deletion_scan(
     bg_pool: Union[Pool, str],
     deletion_length: Integral,
     deletion_marker: Optional[str] = '-',
+    region: RegionType = None,
+    remove_marker: Optional[bool] = None,
+    mark_changes: Optional[bool] = None,
     spacer_str: str = '',
     positions: PositionsType = None,
     min_spacing: Optional[Integral] = None,
@@ -33,8 +37,17 @@ def deletion_scan(
     deletion_length : Integral
         Number of characters to delete at each valid position.
     deletion_marker : Optional[str], default='-'
-        String to insert at the deletion site (i.e., a gap marker). If None, deleted
-        segment is removed with no marker.
+        Character to insert at the deletion site when mark_changes is True.
+        If None, deleted segment is removed with no marker.
+    region : RegionType, default=None
+        Region to constrain the scan to. Can be a marker name (str) or [start, stop].
+        If specified, positions are relative to the region start.
+    remove_marker : Optional[bool], default=None
+        If True and region is a marker name, remove marker tags from output.
+        If None, uses Party default.
+    mark_changes : Optional[bool], default=None
+        If True, insert deletion_marker for each deleted molecular character.
+        If None, uses party default. If False, segment is simply removed.
     spacer_str : str, default=''
         String to insert as a spacer between pool segments after deletion.
     positions : PositionsType, default=None
@@ -65,7 +78,7 @@ def deletion_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.join import join
-    from ..marker_ops import marker_scan, replace_marker_content
+    from ..marker_ops import marker_scan, replace_marker_content, apply_at_marker, insert_marker
 
     # Validate min_spacing/max_spacing not supported
     if min_spacing is not None or max_spacing is not None:
@@ -76,6 +89,106 @@ def deletion_scan(
 
     # Convert string inputs to pools if needed
     bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+
+    # Resolve mark_changes: if not explicitly set, use deletion_marker presence as the trigger
+    # (deletion_marker='-' means insert markers, deletion_marker=None means no markers)
+    # This maintains backward compatibility with the original API
+    party = get_active_party()
+    if mark_changes is None:
+        # If deletion_marker is explicitly None, don't mark changes
+        # If deletion_marker has a value (including default '-'), mark changes
+        mark_changes = deletion_marker is not None
+
+    # Resolve remove_marker from party defaults if not explicitly set
+    if remove_marker is None:
+        remove_marker = party.get_default('remove_marker', True) if party else True
+
+    # Default deletion_marker character
+    del_char = deletion_marker if deletion_marker else '-'
+
+    # If region is specified, apply scan within that region
+    if region is not None:
+        # Define transform function that applies deletion_scan to region content
+        def do_deletion_scan(region_content_pool):
+            return _deletion_scan_impl(
+                bg_pool=region_content_pool,
+                deletion_length=deletion_length,
+                del_char=del_char,
+                mark_changes=mark_changes,
+                spacer_str=spacer_str,
+                positions=positions,
+                seq_name_prefix=seq_name_prefix,
+                mode=mode,
+                num_hybrid_states=num_hybrid_states,
+                op_name=op_name,
+                op_iter_order=op_iter_order,
+            )
+
+        if isinstance(region, str):
+            # Region is a marker name
+            return apply_at_marker(
+                bg_pool,
+                marker_name=region,
+                transform_fn=do_deletion_scan,
+                remove_marker=remove_marker,
+                name=name,
+                iter_order=iter_order,
+            )
+        else:
+            # Region is [start, stop] - insert temporary marker
+            temp_marker = '_deletion_scan_region'
+            marked_pool = insert_marker(
+                bg_pool,
+                marker_name=temp_marker,
+                start=int(region[0]),
+                stop=int(region[1]),
+            )
+            return apply_at_marker(
+                marked_pool,
+                marker_name=temp_marker,
+                transform_fn=do_deletion_scan,
+                remove_marker=True,  # Always remove temp marker
+                name=name,
+                iter_order=iter_order,
+            )
+
+    # No region specified - apply to entire bg_pool
+    return _deletion_scan_impl(
+        bg_pool=bg_pool,
+        deletion_length=deletion_length,
+        del_char=del_char,
+        mark_changes=mark_changes,
+        spacer_str=spacer_str,
+        positions=positions,
+        seq_name_prefix=seq_name_prefix,
+        mode=mode,
+        num_hybrid_states=num_hybrid_states,
+        name=name,
+        op_name=op_name,
+        iter_order=iter_order,
+        op_iter_order=op_iter_order,
+    )
+
+
+def _deletion_scan_impl(
+    bg_pool: Pool,
+    deletion_length: Integral,
+    del_char: str,
+    mark_changes: bool,
+    spacer_str: str,
+    positions: PositionsType,
+    seq_name_prefix: Optional[str],
+    mode: ModeType,
+    num_hybrid_states: Optional[Integral],
+    name: Optional[str] = None,
+    op_name: Optional[str] = None,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
+) -> Pool:
+    """Core deletion scan implementation without region handling."""
+    from ..fixed_ops.from_seq import from_seq
+    from ..fixed_ops.join import join
+    from ..marker_ops import marker_scan, replace_marker_content
 
     # Validate bg_pool has defined seq_length
     bg_length = bg_pool.seq_length
@@ -89,11 +202,6 @@ def deletion_scan(
         raise ValueError(
             f"del_length ({deletion_length}) must be < bg_pool.seq_length ({bg_length})"
         )
-
-    # Map old API: deletion_marker='-' -> mark_changes=True, del_char='-'
-    #              deletion_marker=None -> mark_changes=False
-    mark_changes = deletion_marker is not None
-    del_char = deletion_marker if deletion_marker else '-'
 
     # For deletion: marker_length=del_length, max_position=bg_length - del_length
     marker_name = '_del'
