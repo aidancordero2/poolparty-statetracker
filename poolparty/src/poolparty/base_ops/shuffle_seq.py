@@ -10,6 +10,7 @@ import numpy as np
 def shuffle_seq(
     pool: Union[Pool_type, str],
     region: RegionType = None,
+    remove_marker: Optional[bool] = None,
     mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
@@ -29,6 +30,9 @@ def shuffle_seq(
     region : RegionType, default=None
         Region to shuffle. Can be a marker name (str), explicit interval [start, stop],
         or None to shuffle entire sequence.
+    remove_marker : Optional[bool], default=None
+        If True and region is a marker name, remove the marker tags from output.
+        If None, uses Party default ('remove_marker').
     mark_changes : Optional[bool], default=None
         If True, swapcase() is applied to the shuffled region. If None, uses party default.
     mode : ModeType, default='random'
@@ -54,6 +58,7 @@ def shuffle_seq(
     op = SeqShuffleOp(
         parent_pool=pool_obj,
         region=region,
+        remove_marker=remove_marker,
         mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
@@ -75,6 +80,7 @@ class SeqShuffleOp(Operation):
         self,
         parent_pool: Pool,
         region: RegionType = None,
+        remove_marker: Optional[bool] = None,
         mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
@@ -90,17 +96,12 @@ class SeqShuffleOp(Operation):
         if mode == 'sequential':
             raise ValueError("mode='sequential' is not supported for SeqShuffleOp")
         
-        # Store and validate region parameter using centralized validation
-        self._region = region
-        Operation._validate_region(region)
-        
         # Resolve mark_changes from party defaults if not explicitly set
         party = get_active_party()
         if mark_changes is None:
             mark_changes = party.get_default('mark_changes', False) if party else False
         self.mark_changes = mark_changes
         
-        self._seq_length = parent_pool.seq_length
         # Determine num_states
         if mode == 'hybrid':
             num_states = num_hybrid_states
@@ -110,10 +111,12 @@ class SeqShuffleOp(Operation):
             parent_pools=[parent_pool],
             num_states=num_states,
             mode=mode,
-            seq_length=self._seq_length,
+            seq_length=parent_pool.seq_length,
             name=name,
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
+            region=region,
+            remove_marker=remove_marker,
         )
     
     def compute_design_card(
@@ -121,7 +124,11 @@ class SeqShuffleOp(Operation):
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card containing the permutation for the shuffle."""
+        """Return design card containing the permutation for the shuffle.
+        
+        Note: Region handling is done by base class wrapper methods.
+        parent_seqs[0] is the region content when region is specified.
+        """
         if self.mode in ('random', 'hybrid'):
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
@@ -129,11 +136,9 @@ class SeqShuffleOp(Operation):
             raise RuntimeError(f"Unsupported mode {self.mode!r}")
         
         seq = parent_seqs[0]
-        # Extract region content using centralized helper
-        _, region_seq, _ = self._extract_region_parts(seq, self._region)
         
         # Get molecular positions only (excludes markers and ignore_chars)
-        molecular_positions = self._get_molecular_positions(region_seq)
+        molecular_positions = self._get_molecular_positions(seq)
         num_molecular = len(molecular_positions)
         
         if num_molecular == 0:
@@ -152,15 +157,16 @@ class SeqShuffleOp(Operation):
         parent_seqs: list[str],
         card: dict,
     ) -> dict:
-        """Apply the permutation to the target region (molecular chars only)."""
+        """Apply the permutation to the sequence (molecular chars only).
+        
+        Note: Region handling is done by base class wrapper methods.
+        parent_seqs[0] is the region content when region is specified.
+        """
         seq = parent_seqs[0]
         permutation = card['permutation']
         
-        # Extract region parts using centralized helper
-        prefix, region_seq, suffix = self._extract_region_parts(seq, self._region)
-        
         # Get molecular positions (excludes markers and ignore_chars)
-        molecular_positions = self._get_molecular_positions(region_seq)
+        molecular_positions = self._get_molecular_positions(seq)
         num_molecular = len(molecular_positions)
         
         if len(permutation) != num_molecular:
@@ -173,7 +179,7 @@ class SeqShuffleOp(Operation):
             return {'seq_0': seq}
         
         # Extract molecular characters
-        molecular_chars = [region_seq[pos] for pos in molecular_positions]
+        molecular_chars = [seq[pos] for pos in molecular_positions]
         
         # Apply permutation: permutation[i] tells us where char i should go
         shuffled_molecular = [''] * num_molecular
@@ -186,20 +192,19 @@ class SeqShuffleOp(Operation):
             shuffled_molecular = [ch.swapcase() for ch in shuffled_molecular]
         
         # Place shuffled molecular chars back at their original positions
-        region_list = list(region_seq)
+        seq_list = list(seq)
         for i, pos in enumerate(molecular_positions):
-            region_list[pos] = shuffled_molecular[i]
-        shuffled_region = ''.join(region_list)
+            seq_list[pos] = shuffled_molecular[i]
+        shuffled_seq = ''.join(seq_list)
         
-        # Reassemble: prefix + shuffled_region + suffix
-        result_seq = prefix + shuffled_region + suffix
-        return {'seq_0': result_seq}
+        return {'seq_0': shuffled_seq}
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
             'parent_pool': self.parent_pools[0],
             'region': self._region,
+            'remove_marker': self._remove_marker,
             'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,

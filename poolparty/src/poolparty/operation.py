@@ -10,7 +10,7 @@ class Operation:
     """Base class for all operations."""
     design_card_keys: Sequence[str] = []
     num_outputs: int = 1
-    max_num_sequential_states: int = 100_000
+    max_num_sequential_states: int = 1_000_000
     factory_name: str = "op"
     
     @classmethod
@@ -37,6 +37,8 @@ class Operation:
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         seq_name_prefix: Optional[str] = None,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
     ) -> None:
         """Initialize Operation."""
         from .party import get_active_party
@@ -62,6 +64,18 @@ class Operation:
         self.name_prefix: Optional[str] = seq_name_prefix
         self.clear_parent_names: bool = False
         self._block_seq_names: bool = False
+        
+        # Region handling
+        self._region = region
+        self._validate_region(region)
+        if region is not None and len(self.parent_pools) == 0:
+            raise ValueError("region requires at least one parent pool")
+        # Resolve remove_marker from party default if None
+        if remove_marker is None:
+            self._remove_marker = party.get_default('remove_marker', True)
+        else:
+            self._remove_marker = remove_marker
+        
         # Register operation with party after name is set
         party._register_operation(self)
     
@@ -234,6 +248,66 @@ class Operation:
         Returns a dictionary with seq_0, seq_1, ... keys.
         """
         raise NotImplementedError("Subclasses must implement compute_seq_from_card()")
+    
+    def wrapped_compute_design_card(
+        self,
+        parent_seqs: list[str],
+        rng: np.random.Generator | None = None,
+    ) -> dict:
+        """Compute design card with automatic region handling.
+        
+        If region is specified, extracts region content from parent_seqs[0]
+        before calling compute_design_card.
+        """
+        if self._region is not None:
+            _, region_content, _ = self._extract_region_parts(parent_seqs[0], self._region)
+            modified_seqs = [region_content] + parent_seqs[1:]
+            return self.compute_design_card(modified_seqs, rng)
+        return self.compute_design_card(parent_seqs, rng)
+    
+    def wrapped_compute_seq_from_card(
+        self,
+        parent_seqs: list[str],
+        card: dict,
+    ) -> dict:
+        """Compute sequences with automatic region handling and marker removal.
+        
+        If region is specified:
+        1. Extracts region content from parent_seqs[0]
+        2. Calls compute_seq_from_card with modified sequences
+        3. Reassembles prefix + result + suffix
+        4. Removes marker tags if remove_marker=True and region is a marker name
+        """
+        if self._region is None:
+            return self.compute_seq_from_card(parent_seqs, card)
+        
+        # Extract region parts from parent_seqs[0]
+        prefix, region_content, suffix = self._extract_region_parts(
+            parent_seqs[0], self._region
+        )
+        
+        # Call subclass with region content as first sequence
+        modified_seqs = [region_content] + parent_seqs[1:]
+        result = self.compute_seq_from_card(modified_seqs, card)
+        
+        # Reassemble each output sequence
+        reassembled = {}
+        for key, seq in result.items():
+            if key.startswith('seq_'):
+                # Handle marker removal if needed
+                if self._remove_marker and isinstance(self._region, str):
+                    # Get clean prefix/suffix without marker tags
+                    from .marker_ops.parsing import parse_marker
+                    clean_prefix, _, clean_suffix, _ = parse_marker(
+                        parent_seqs[0], self._region
+                    )
+                    reassembled[key] = clean_prefix + seq + clean_suffix
+                else:
+                    reassembled[key] = prefix + seq + suffix
+            else:
+                reassembled[key] = seq
+        
+        return reassembled
     
     def compute_seq_names(
         self,

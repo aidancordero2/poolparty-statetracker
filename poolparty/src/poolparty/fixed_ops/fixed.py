@@ -91,19 +91,9 @@ class FixedOp(Operation):
         
         self.seq_from_seqs_fn = seq_from_seqs_fn
         self._seq_length_from_pool_lengths_fn = seq_length_from_pool_lengths_fn
-        self._region = region
-        
-        # Validate region parameter
-        Operation._validate_region(region)
-        
-        # Resolve remove_marker from party default if None
-        party = get_active_party()
-        if remove_marker is None:
-            self._remove_marker = party.get_default('remove_marker', True) if party else True
-        else:
-            self._remove_marker = remove_marker
         
         # Compute seq_length from pool_lengths
+        party = get_active_party()
         if region is not None:
             if isinstance(region, str):
                 # Marker name - look up registered marker's seq_length
@@ -127,6 +117,8 @@ class FixedOp(Operation):
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
+            region=region,
+            remove_marker=remove_marker,
         )
 
     def compute_design_card(self, parent_seqs: list[str], rng=None) -> dict:
@@ -134,28 +126,12 @@ class FixedOp(Operation):
         return {}
 
     def compute_seq_from_card(self, parent_seqs: list[str], card: dict) -> dict:
-        """Compute output sequence using the user-defined function."""
-        if self._region is not None:
-            # Extract region parts
-            prefix, region_content, suffix = self._extract_region_parts(
-                parent_seqs[0], self._region
-            )
-            
-            # Apply transformation to region content
-            # First sequence passed to fn is region content, rest are other parent seqs
-            transformed = self.seq_from_seqs_fn([region_content] + parent_seqs[1:])
-            
-            # Handle marker removal
-            if self._remove_marker and isinstance(self._region, str):
-                # Get clean prefix/suffix without marker tags
-                from ..marker_ops.parsing import parse_marker
-                clean_prefix, _, clean_suffix, _ = parse_marker(parent_seqs[0], self._region)
-                result = clean_prefix + transformed + clean_suffix
-            else:
-                result = prefix + transformed + suffix
-        else:
-            result = self.seq_from_seqs_fn(parent_seqs)
+        """Compute output sequence using the user-defined function.
         
+        Note: Region handling is done by the base class wrapper methods.
+        parent_seqs[0] is the region content when region is specified.
+        """
+        result = self.seq_from_seqs_fn(parent_seqs)
         return {'seq_0': result}
 
     def _get_copy_params(self) -> dict:

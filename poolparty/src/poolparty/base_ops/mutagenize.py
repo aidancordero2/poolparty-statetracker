@@ -14,6 +14,7 @@ def mutagenize(
     num_mutations: Optional[Integral] = None,
     mutation_rate: Optional[Real] = None,
     region: RegionType = None,
+    remove_marker: Optional[bool] = None,
     mark_changes: Optional[bool] = None,
     swapcase: bool = False,
     seq_name_prefix: Optional[str] = None,
@@ -38,6 +39,9 @@ def mutagenize(
     region : Union[str, Sequence[Integral], None], default=None
         Region to mutagenize. Can be a marker name (str), explicit interval [start, stop],
         or None to mutagenize entire sequence. Positions are region-relative.
+    remove_marker : Optional[bool], default=None
+        If True and region is a marker name, remove the marker tags from output.
+        If None, uses Party default ('remove_marker').
     mark_changes : Optional[bool], default=None
         If True, apply swapcase() to mutated positions. If None, uses party default.
     swapcase : bool, default=False
@@ -69,6 +73,7 @@ def mutagenize(
         num_mutations=num_mutations,
         mutation_rate=mutation_rate,
         region=region,
+        remove_marker=remove_marker,
         mark_changes=mark_changes,
         swapcase=swapcase,
         seq_name_prefix=seq_name_prefix,
@@ -101,6 +106,7 @@ class MutagenizeOp(Operation):
         num_mutations: Optional[Integral] = None,
         mutation_rate: Optional[Real] = None,
         region: RegionType = None,
+        remove_marker: Optional[bool] = None,
         mark_changes: Optional[bool] = None,
         swapcase: bool = False,
         seq_name_prefix: Optional[str] = None,
@@ -136,10 +142,6 @@ class MutagenizeOp(Operation):
         # Validate hybrid mode
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
-        
-        # Store and validate region parameter using centralized validation
-        self._region = region
-        Operation._validate_region(region)
         
         self.num_mutations = num_mutations
         self.mutation_rate = mutation_rate
@@ -191,6 +193,8 @@ class MutagenizeOp(Operation):
             name=name,
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
+            region=region,
+            remove_marker=remove_marker,
         )
     
     def _build_caches(self, num_positions: int) -> int:
@@ -257,14 +261,15 @@ class MutagenizeOp(Operation):
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with mutation positions (logical, region-relative) and characters."""
+        """Return design card with mutation positions (logical) and characters.
+        
+        Note: Region handling is done by base class wrapper methods.
+        parent_seqs[0] is the region content when region is specified.
+        """
         seq = parent_seqs[0]
         
-        # Extract region if specified - mutations apply only to region content
-        _, region_seq, _ = self._extract_region_parts(seq, self._region)
-        
-        seq_len = self._get_effective_seq_length(region_seq)
-        valid_char_positions = self._get_molecular_positions(region_seq)
+        seq_len = self._get_effective_seq_length(seq)
+        valid_char_positions = self._get_molecular_positions(seq)
         
         if self.num_mutations is not None and self.num_mutations > seq_len:
             raise ValueError(f"Cannot apply {self.num_mutations} mutations to sequence of length {seq_len}")
@@ -272,7 +277,7 @@ class MutagenizeOp(Operation):
         if self.mode in ('random', 'hybrid'):
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
-            positions, wt_chars, mut_chars = self._random_mutation(region_seq, rng)
+            positions, wt_chars, mut_chars = self._random_mutation(seq, rng)
         else:
             # Sequential mode (only available with num_mutations)
             # Build or rebuild cache based on actual mutable positions
@@ -293,7 +298,7 @@ class MutagenizeOp(Operation):
             mut_chars = []
             for logical_pos, mut_idx in zip(positions, mut_indices):
                 raw_pos = valid_char_positions[logical_pos]
-                wt = region_seq[raw_pos]
+                wt = seq[raw_pos]
                 wt_chars.append(wt)
                 mut = self._mutation_map[(wt, mut_idx)]
                 mut_chars.append(mut)
@@ -316,26 +321,25 @@ class MutagenizeOp(Operation):
         parent_seqs: list[str],
         card: dict,
     ) -> dict:
-        """Apply mutations to the parent sequence based on design card."""
+        """Apply mutations to the sequence based on design card.
+        
+        Note: Region handling is done by base class wrapper methods.
+        parent_seqs[0] is the region content when region is specified.
+        """
         from ..marker_ops.parsing import transform_nonmarker_chars
         
         seq = parent_seqs[0]
-        positions = card['positions']  # Logical positions (region-relative)
+        positions = card['positions']  # Logical positions
         mut_chars = card['mut_chars']
         
-        # Extract region parts
-        prefix, region_seq, suffix = self._extract_region_parts(seq, self._region)
-        valid_char_positions = self._get_molecular_positions(region_seq)
+        valid_char_positions = self._get_molecular_positions(seq)
         
-        # Apply mutations to region
-        region_list = list(region_seq)
+        # Apply mutations
+        seq_list = list(seq)
         for logical_pos, mut in zip(positions, mut_chars):
             raw_pos = valid_char_positions[logical_pos]
-            region_list[raw_pos] = mut
-        mutated_region = ''.join(region_list)
-        
-        # Reassemble: prefix + mutated_region + suffix
-        result_seq = prefix + mutated_region + suffix
+            seq_list[raw_pos] = mut
+        result_seq = ''.join(seq_list)
         
         if self.swapcase:
             result_seq = transform_nonmarker_chars(result_seq, str.swapcase)
@@ -348,6 +352,7 @@ class MutagenizeOp(Operation):
             'num_mutations': self.num_mutations,
             'mutation_rate': self.mutation_rate,
             'region': self._region,
+            'remove_marker': self._remove_marker,
             'mark_changes': self.mark_changes,
             'swapcase': self.swapcase,
             'seq_name_prefix': self.name_prefix,

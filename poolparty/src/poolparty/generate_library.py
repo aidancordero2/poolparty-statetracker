@@ -241,9 +241,9 @@ def _compute_one(
         else:
             op_rng = op.rng
         
-        # Compute design card, sequences, and names
-        card = op.compute_design_card(parent_seqs, op_rng)
-        seqs = op.compute_seq_from_card(parent_seqs, card)
+        # Compute design card, sequences, and names (using wrapped methods for region handling)
+        card = op.wrapped_compute_design_card(parent_seqs, op_rng)
+        seqs = op.wrapped_compute_seq_from_card(parent_seqs, card)
         names = op.compute_seq_names(parent_names, card)
         
         # Store in caches for downstream operations
