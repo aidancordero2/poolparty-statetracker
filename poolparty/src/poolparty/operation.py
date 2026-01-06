@@ -294,15 +294,21 @@ class Operation:
         reassembled = {}
         for key, seq in result.items():
             if key.startswith('seq_'):
-                # Handle marker removal if needed
-                if self._remove_marker and isinstance(self._region, str):
-                    # Get clean prefix/suffix without marker tags
-                    from .marker_ops.parsing import parse_marker
-                    clean_prefix, _, clean_suffix, _ = parse_marker(
+                if isinstance(self._region, str):
+                    # Region is a marker name - get clean prefix/suffix
+                    from .marker_ops.parsing import parse_marker, build_marker_tag
+                    clean_prefix, _, clean_suffix, strand = parse_marker(
                         parent_seqs[0], self._region
                     )
-                    reassembled[key] = clean_prefix + seq + clean_suffix
+                    if self._remove_marker:
+                        # Remove marker tags
+                        reassembled[key] = clean_prefix + seq + clean_suffix
+                    else:
+                        # Keep marker - rebuild with new content
+                        wrapped = build_marker_tag(self._region, seq, strand=strand)
+                        reassembled[key] = clean_prefix + wrapped + clean_suffix
                 else:
+                    # Region is [start, stop] interval - just reassemble
                     reassembled[key] = prefix + seq + suffix
             else:
                 reassembled[key] = seq
