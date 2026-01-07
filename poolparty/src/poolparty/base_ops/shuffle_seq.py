@@ -11,6 +11,7 @@ def shuffle_seq(
     pool: Union[Pool_type, str],
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
+    spacer_str: str = '',
     mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
@@ -19,6 +20,7 @@ def shuffle_seq(
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
+    _factory_name: Optional[str] = None,
 ) -> Pool:
     """
     Create a Pool that shuffles characters within a specified region.
@@ -59,12 +61,14 @@ def shuffle_seq(
         parent_pool=pool_obj,
         region=region,
         remove_marker=remove_marker,
+        spacer_str=spacer_str,
         mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         name=op_name,
         iter_order=op_iter_order,
+        _factory_name=_factory_name,
     )
     result_pool = Pool(operation=op, name=name, iter_order=iter_order)
     return result_pool
@@ -81,12 +85,14 @@ class SeqShuffleOp(Operation):
         parent_pool: Pool,
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
+        spacer_str: str = '',
         mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        _factory_name: Optional[str] = None,
     ) -> None:
         """Initialize SeqShuffleOp."""
         from ..party import get_active_party
@@ -95,6 +101,10 @@ class SeqShuffleOp(Operation):
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
         if mode == 'sequential':
             raise ValueError("mode='sequential' is not supported for SeqShuffleOp")
+        
+        # Set factory_name if provided
+        if _factory_name is not None:
+            self.factory_name = _factory_name
         
         # Resolve mark_changes from party defaults if not explicitly set
         party = get_active_party()
@@ -117,6 +127,7 @@ class SeqShuffleOp(Operation):
             seq_name_prefix=seq_name_prefix,
             region=region,
             remove_marker=remove_marker,
+            spacer_str=spacer_str,
         )
     
     def compute_design_card(
@@ -205,6 +216,7 @@ class SeqShuffleOp(Operation):
             'parent_pool': self.parent_pools[0],
             'region': self._region,
             'remove_marker': self._remove_marker,
+            'spacer_str': self._spacer_str,
             'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,

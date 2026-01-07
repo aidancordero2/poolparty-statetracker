@@ -12,6 +12,7 @@ def from_seqs(
     bg_pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
+    spacer_str: str = '',
     mark_changes: Optional[bool] = None,
     seq_names: Optional[Sequence[str]] = None,
     seq_name_prefix: Optional[str] = None,
@@ -69,7 +70,8 @@ def from_seqs(
     from ..fixed_ops.from_seq import from_seq
     bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     op = FromSeqsOp(seqs, bg_pool=bg_pool_obj, region=region,
-                    remove_marker=remove_marker, mark_changes=mark_changes,
+                    remove_marker=remove_marker, spacer_str=spacer_str,
+                    mark_changes=mark_changes,
                     seq_names=seq_names, seq_name_prefix=seq_name_prefix,
                     mode=mode, num_hybrid_states=num_hybrid_states,
                     name=op_name, iter_order=op_iter_order,
@@ -90,6 +92,7 @@ class FromSeqsOp(Operation):
         bg_pool: Optional[Pool] = None,
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
+        spacer_str: str = '',
         mark_changes: Optional[bool] = None,
         seq_names: Optional[Sequence[str]] = None,
         seq_name_prefix: Optional[str] = None,
@@ -160,6 +163,7 @@ class FromSeqsOp(Operation):
             seq_name_prefix=seq_name_prefix,
             region=region,
             remove_marker=remove_marker,
+            spacer_str=spacer_str,
         )
     
     def compute_design_card(
@@ -222,6 +226,7 @@ class FromSeqsOp(Operation):
             'bg_pool': self.parent_pools[0] if self.parent_pools else None,
             'region': self._region,
             'remove_marker': self._remove_marker,
+            'spacer_str': self._spacer_str,
             'mark_changes': self.mark_changes,
             'seq_names': self.seq_names if self._seq_names_explicit else None,
             'seq_name_prefix': self.name_prefix,

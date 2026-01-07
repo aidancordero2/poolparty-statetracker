@@ -11,6 +11,7 @@ def replace_marker_content(
     bg_pool,
     content_pool,
     marker_name: str,
+    spacer_str: str = '',
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -75,6 +76,7 @@ def replace_marker_content(
         bg_pool=bg_pool,
         content_pool=content_pool,
         marker_name=marker_name,
+        spacer_str=spacer_str,
         name=op_name,
         iter_order=op_iter_order,
         _factory_name=_factory_name,
@@ -98,6 +100,7 @@ class ReplaceMarkerContentOp(Operation):
         bg_pool,
         content_pool,
         marker_name: str,
+        spacer_str: str = '',
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
@@ -119,7 +122,12 @@ class ReplaceMarkerContentOp(Operation):
             seq_length=None,  # Variable length
             name=name,
             iter_order=iter_order,
+            spacer_str=spacer_str,
         )
+        
+        # Store spacer_str for our manual handling in compute_seq_from_card
+        # (we handle it manually since we don't use the base class's region-based handling)
+        self._spacer_str = spacer_str
 
     
     def compute_design_card(
@@ -150,6 +158,10 @@ class ReplaceMarkerContentOp(Operation):
             alphabet = party.alphabet
             content_seq = ''.join(alphabet.get_complement(c) for c in reversed(content_seq))
         
+        # Apply spacer_str if specified
+        if self._spacer_str:
+            content_seq = self._spacer_str + content_seq + self._spacer_str
+        
         # Build result: prefix + content + suffix
         prefix = bg_seq[:marker.start]
         suffix = bg_seq[marker.end:]
@@ -163,6 +175,7 @@ class ReplaceMarkerContentOp(Operation):
             'bg_pool': self.parent_pools[0],
             'content_pool': self.parent_pools[1],
             'marker_name': self.marker_name,
+            'spacer_str': self._spacer_str,
             'name': None,
             'iter_order': self.iter_order,
         }

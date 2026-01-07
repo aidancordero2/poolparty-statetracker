@@ -13,6 +13,7 @@ def get_kmers(
     bg_pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
+    spacer_str: str = '',
     mark_changes: Optional[bool] = None,
     case: Literal['lower', 'upper'] = 'upper',
     seq_name_prefix: Optional[str] = None,
@@ -70,7 +71,8 @@ def get_kmers(
     from ..fixed_ops.from_seq import from_seq
     bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     op = GetKmersOp(length, bg_pool=bg_pool_obj, region=region,
-                    remove_marker=remove_marker, mark_changes=mark_changes,
+                    remove_marker=remove_marker, spacer_str=spacer_str,
+                    mark_changes=mark_changes,
                     case=case, seq_name_prefix=seq_name_prefix, mode=mode,
                     num_hybrid_states=num_hybrid_states,
                     name=op_name, iter_order=op_iter_order)
@@ -90,6 +92,7 @@ class GetKmersOp(Operation):
         bg_pool: Optional[Pool] = None,
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
+        spacer_str: str = '',
         mark_changes: Optional[bool] = None,
         case: Literal['lower', 'upper'] = 'upper',
         seq_name_prefix: Optional[str] = None,
@@ -147,6 +150,7 @@ class GetKmersOp(Operation):
             seq_name_prefix=seq_name_prefix,
             region=region,
             remove_marker=remove_marker,
+            spacer_str=spacer_str,
         )
     
     def _state_to_kmer(self, state: int) -> str:
@@ -207,6 +211,7 @@ class GetKmersOp(Operation):
             'bg_pool': self.parent_pools[0] if self.parent_pools else None,
             'region': self._region,
             'remove_marker': self._remove_marker,
+            'spacer_str': self._spacer_str,
             'mark_changes': self.mark_changes,
             'case': self.case,
             'seq_name_prefix': self.name_prefix,

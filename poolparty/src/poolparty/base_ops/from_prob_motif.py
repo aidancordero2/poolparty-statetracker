@@ -15,6 +15,7 @@ def from_prob_motif(
     bg_pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
+    spacer_str: str = '',
     mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
@@ -76,6 +77,7 @@ def from_prob_motif(
         bg_pool=bg_pool_obj,
         region=region,
         remove_marker=remove_marker,
+        spacer_str=spacer_str,
         mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
@@ -99,6 +101,7 @@ class FromProbMotifOp(Operation):
         bg_pool: Optional[Pool] = None,
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
+        spacer_str: str = '',
         mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
@@ -153,6 +156,7 @@ class FromProbMotifOp(Operation):
             seq_name_prefix=seq_name_prefix,
             region=region,
             remove_marker=remove_marker,
+            spacer_str=spacer_str,
         )
 
     def compute_design_card(
@@ -189,6 +193,7 @@ class FromProbMotifOp(Operation):
             'bg_pool': self.parent_pools[0] if self.parent_pools else None,
             'region': self._region,
             'remove_marker': self._remove_marker,
+            'spacer_str': self._spacer_str,
             'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,

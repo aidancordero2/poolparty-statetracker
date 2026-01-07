@@ -73,7 +73,6 @@ def mutagenize_scan(
         at each allowed position.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..fixed_ops.join import join
     from ..base_ops.mutagenize import mutagenize
     from ..marker_ops import marker_scan, apply_at_marker, insert_marker
 
@@ -178,10 +177,8 @@ def _mutagenize_scan_impl(
     op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """Core mutagenize scan implementation without region handling."""
-    from ..fixed_ops.from_seq import from_seq
-    from ..fixed_ops.join import join
     from ..base_ops.mutagenize import mutagenize
-    from ..marker_ops import marker_scan, apply_at_marker
+    from ..marker_ops import marker_scan
 
     # Validate bg_pool has defined seq_length
     bg_length = bg_pool.seq_length
@@ -217,27 +214,19 @@ def _mutagenize_scan_impl(
         op_iter_order=op_iter_order,
     )
 
-    # 2. Apply mutagenize transform at marker
+    # 2. Apply mutagenize directly to the marked region
     # Note: MutagenizeOp always uses 'random' mode for the actual mutagenesis.
     # The 'mode' parameter controls position selection via marker_scan above.
-    def mutagenize_transform(content_pool):
-        mutagenized = mutagenize(
-            content_pool,
-            num_mutations=num_mutations,
-            mutation_rate=mutation_rate,
-            mark_changes=mark_changes,
-            mode='random',  # Always random for mutagenesis
-        )
-        # Wrap with spacers if needed
-        if spacer_str:
-            mutagenized = join([from_seq(spacer_str), mutagenized, from_seq(spacer_str)])
-        return mutagenized
-
-    result = apply_at_marker(
+    # spacer_str is handled by Operation base class in wrapped_compute_seq_from_card
+    return mutagenize(
         marked,
-        marker_name,
-        mutagenize_transform,
+        region=marker_name,
+        remove_marker=True,  # Always remove the internal _mut marker
+        spacer_str=spacer_str,
+        num_mutations=num_mutations,
+        mutation_rate=mutation_rate,
+        mark_changes=mark_changes,
+        mode='random',  # Always random for mutagenesis
         name=name,
         iter_order=iter_order,
     )
-    return result

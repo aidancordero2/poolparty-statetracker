@@ -39,6 +39,7 @@ class Operation:
         seq_name_prefix: Optional[str] = None,
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
+        spacer_str: str = '',
     ) -> None:
         """Initialize Operation."""
         from .party import get_active_party
@@ -75,6 +76,9 @@ class Operation:
             self._remove_marker = party.get_default('remove_marker', True)
         else:
             self._remove_marker = remove_marker
+        
+        # Spacer string for region operations
+        self._spacer_str = spacer_str
         
         # Register operation with party after name is set
         party._register_operation(self)
@@ -270,13 +274,14 @@ class Operation:
         parent_seqs: list[str],
         card: dict,
     ) -> dict:
-        """Compute sequences with automatic region handling and marker removal.
+        """Compute sequences with automatic region handling, spacer insertion, and marker removal.
         
         If region is specified:
         1. Extracts region content from parent_seqs[0]
         2. Calls compute_seq_from_card with modified sequences
-        3. Reassembles prefix + result + suffix
-        4. Removes marker tags if remove_marker=True and region is a marker name
+        3. Wraps result with spacer_str if specified
+        4. Reassembles prefix + result + suffix
+        5. Removes marker tags if remove_marker=True and region is a marker name
         """
         if self._region is None:
             return self.compute_seq_from_card(parent_seqs, card)
@@ -294,6 +299,10 @@ class Operation:
         reassembled = {}
         for key, seq in result.items():
             if key.startswith('seq_'):
+                # Apply spacer_str if specified
+                if self._spacer_str:
+                    seq = self._spacer_str + seq + self._spacer_str
+                
                 if isinstance(self._region, str):
                     # Region is a marker name - get clean prefix/suffix
                     from .marker_ops.parsing import parse_marker, build_marker_tag

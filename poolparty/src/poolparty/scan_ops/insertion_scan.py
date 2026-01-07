@@ -57,7 +57,6 @@ def insertion_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.swapcase import swapcase
-    from ..fixed_ops.join import join
     from ..marker_ops import marker_scan, replace_marker_content
 
     # Convert string inputs to pools
@@ -108,16 +107,12 @@ def insertion_scan(
         _factory_name=f'{_factory_name}(marker_scan)',
     )
 
-    # 2. Build replacement content (ins_pool with optional spacers)
-    content = ins_pool
-    if spacer_str:
-        content = join([from_seq(spacer_str), content, from_seq(spacer_str)])
-
-    # 3. Replace marker with content
+    # 2. Replace marker with content (spacer_str is handled by replace_marker_content)
     return replace_marker_content(
         marked,
-        content,
+        ins_pool,
         marker_name,
+        spacer_str=spacer_str,
         name=name,
         op_name=op_name,
         iter_order=iter_order,

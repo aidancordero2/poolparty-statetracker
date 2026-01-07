@@ -15,6 +15,7 @@ def mutagenize(
     mutation_rate: Optional[Real] = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
+    spacer_str: str = '',
     mark_changes: Optional[bool] = None,
     swapcase: bool = False,
     seq_name_prefix: Optional[str] = None,
@@ -74,6 +75,7 @@ def mutagenize(
         mutation_rate=mutation_rate,
         region=region,
         remove_marker=remove_marker,
+        spacer_str=spacer_str,
         mark_changes=mark_changes,
         swapcase=swapcase,
         seq_name_prefix=seq_name_prefix,
@@ -107,6 +109,7 @@ class MutagenizeOp(Operation):
         mutation_rate: Optional[Real] = None,
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
+        spacer_str: str = '',
         mark_changes: Optional[bool] = None,
         swapcase: bool = False,
         seq_name_prefix: Optional[str] = None,
@@ -195,6 +198,7 @@ class MutagenizeOp(Operation):
             seq_name_prefix=seq_name_prefix,
             region=region,
             remove_marker=remove_marker,
+            spacer_str=spacer_str,
         )
     
     def _build_caches(self, num_positions: int) -> int:
@@ -353,6 +357,7 @@ class MutagenizeOp(Operation):
             'mutation_rate': self.mutation_rate,
             'region': self._region,
             'remove_marker': self._remove_marker,
+            'spacer_str': self._spacer_str,
             'mark_changes': self.mark_changes,
             'swapcase': self.swapcase,
             'seq_name_prefix': self.name_prefix,

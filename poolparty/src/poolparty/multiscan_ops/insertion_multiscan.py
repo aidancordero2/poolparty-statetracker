@@ -70,7 +70,6 @@ def insertion_multiscan(
         A Pool yielding sequences with multiple insertions made simultaneously.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..fixed_ops.join import join
     from ..fixed_ops.swapcase import swapcase
     from ..marker_ops import marker_multiscan, replace_marker_content
     from ..party import get_active_party
@@ -146,20 +145,18 @@ def insertion_multiscan(
     )
 
     # 2. Build insertion content for each pool
+    # spacer_str is handled by replace_marker_content
     result = marked
     for marker_name, ins_pool in zip(markers, pools_list):
         # Apply swapcase if mark_changes
         content = swapcase(ins_pool) if mark_changes else ins_pool
-
-        # Wrap with spacers if needed
-        if spacer_str:
-            content = join([from_seq(spacer_str), content, from_seq(spacer_str)])
 
         # Replace marker with content
         result = replace_marker_content(
             result,
             content,
             marker_name,
+            spacer_str=spacer_str,
             name=None,  # Only set name on final result
             op_name=op_name,
             iter_order=None,  # Only set iter_order on final result

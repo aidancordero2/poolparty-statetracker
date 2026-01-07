@@ -63,7 +63,6 @@ def deletion_multiscan(
         A Pool yielding sequences with multiple segments deleted simultaneously.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..fixed_ops.join import join
     from ..marker_ops import marker_multiscan, replace_marker_content
 
     # Validate mode
@@ -133,12 +132,12 @@ def deletion_multiscan(
         # Fill gap with del_char * deletion_length
         marker_str = del_char * marker_length
         content = from_seq(marker_str)
-        # Wrap with spacers if needed
-        if spacer_str:
-            content = join([from_seq(spacer_str), content, from_seq(spacer_str)])
+        # Apply spacer_str via replace_marker_content
+        effective_spacer = spacer_str
     else:
-        # Simply remove the segment - just use spacer_str once (or empty)
+        # Simply remove the segment - use spacer_str as the content (once)
         content = from_seq(spacer_str)
+        effective_spacer = ''  # Don't add additional spacers
 
     # 3. Replace each marker's content with deletion content
     result = marked
@@ -147,6 +146,7 @@ def deletion_multiscan(
             result,
             content,
             marker_name,
+            spacer_str=effective_spacer,
             name=None,  # Only set name on final result
             op_name=op_name,
             iter_order=None,  # Only set iter_order on final result

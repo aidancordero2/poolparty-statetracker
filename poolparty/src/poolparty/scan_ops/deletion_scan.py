@@ -109,20 +109,17 @@ def deletion_scan(
     )
 
     # 2. Build deletion content string
-    if mark_changes:
-        content_str = del_char * marker_length
-        if spacer_str:
-            content_str = spacer_str + content_str + spacer_str
-    else:
-        content_str = ''
+    content_str = del_char * marker_length if mark_changes else ''
 
     # 3. Replace _del marker with content
+    # spacer_str is only applied when mark_changes is True (i.e., when there's content to wrap)
     # Always remove the internal _del marker (it's our implementation detail)
     return from_seq(
         content_str,
         bg_pool=marked,
         region=marker_name,
         remove_marker=True,  # Always remove the internal _del marker
+        spacer_str=spacer_str if mark_changes else '',
         name=name,
         op_name=op_name,
         iter_order=iter_order,
