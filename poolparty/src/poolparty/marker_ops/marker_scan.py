@@ -27,6 +27,7 @@ def marker_scan(
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
+    _factory_name: Optional[str] = None,
 ):
     """
     Insert XML-style markers at scanning positions in a sequence.
@@ -50,6 +51,8 @@ def marker_scan(
         >0 creates region markers (<name>BASES</name>).
     mode : ModeType, default='random'
         Position selection mode: 'random', 'sequential', or 'hybrid'.
+    _factory_name : Optional[str], default=None
+        Sets default name of the resulting operation
 
     Returns
     -------
@@ -84,6 +87,7 @@ def marker_scan(
         num_hybrid_states=num_hybrid_states,
         name=op_name,
         iter_order=op_iter_order,
+        _factory_name=_factory_name,
     )
     result_pool = Pool(operation=op, name=name, iter_order=iter_order)
     
@@ -132,6 +136,7 @@ class MarkerScanOp(Operation):
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        _factory_name: Optional[str] = None,
     ) -> None:
         """Initialize MarkerScanOp."""
         if mode == 'hybrid' and num_hybrid_states is None:
@@ -146,6 +151,10 @@ class MarkerScanOp(Operation):
         self._valid_positions = None
         self._sequential_cache = None
         
+        # Set factory name if provided
+        if _factory_name is not None:
+            self.factory_name = _factory_name
+ 
         # Calculate number of states
         if mode == 'sequential':
             if self._seq_length is not None:

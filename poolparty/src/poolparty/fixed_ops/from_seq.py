@@ -14,6 +14,7 @@ def from_seq(
     name: Optional[str] = None,
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
+    _factory_name: Optional[str] = None,
 ) -> Pool_type:
     """
     Create a Pool containing a single, fixed sequence.
@@ -53,34 +54,22 @@ def from_seq(
     seq_length = party._alphabet.get_length_without_markers(seq)
     
     # If bg_pool and region provided, replace region content with seq
-    if bg_pool is not None:
-        if region is None:
-            raise ValueError("region is required when bg_pool is provided")
-        
-        pool = fixed_operation(
-            parent_pools=[bg_pool],
-            seq_from_seqs_fn=lambda _: seq,
-            seq_length_from_pool_lengths_fn=lambda _: seq_length,
-            region=region,
-            remove_marker=remove_marker,
-            name=name,
-            op_name=op_name,
-            iter_order=iter_order,
-            op_iter_order=op_iter_order,
-            _factory_name='from_seq',
-        )
-    else:
-        # Standalone pool with just the sequence
-        pool = fixed_operation(
-            parent_pools=[],
-            seq_from_seqs_fn=lambda _: seq,
-            seq_length_from_pool_lengths_fn=lambda _: seq_length,
-            name=name,
-            op_name=op_name,
-            iter_order=iter_order,
-            op_iter_order=op_iter_order,
-            _factory_name='from_seq',
-        )
+    if (bg_pool is not None) and (region is None):
+        raise ValueError("region is required when bg_pool is provided")
+    
+    # Create the pool
+    pool = fixed_operation(
+        parent_pools=[bg_pool] if bg_pool is not None else [],
+        seq_from_seqs_fn=lambda _: seq,
+        seq_length_from_pool_lengths_fn=lambda _: seq_length,
+        region=region,
+        remove_marker=remove_marker,
+        name=name,
+        op_name=op_name,
+        iter_order=iter_order,
+        op_iter_order=op_iter_order,
+        _factory_name=_factory_name if _factory_name is not None else 'from_seq',
+    )
     
     # Add validated markers to the pool
     for marker in markers:

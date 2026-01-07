@@ -105,6 +105,7 @@ def deletion_scan(
         num_hybrid_states=num_hybrid_states,
         op_name=op_name,
         op_iter_order=op_iter_order,
+        _factory_name='deletion_scan(marker_scan)',
     )
 
     # 2. Build deletion content string
@@ -126,4 +127,5 @@ def deletion_scan(
         op_name=op_name,
         iter_order=iter_order,
         op_iter_order=op_iter_order,
+        _factory_name='deletion_scan(from_seq)',
     )

@@ -21,6 +21,7 @@ def from_seqs(
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
+    _factory_name: Optional[str] = None,
 ) -> Pool_type:
     """
     Create a Pool containing the specified sequences.
@@ -71,7 +72,8 @@ def from_seqs(
                     remove_marker=remove_marker, mark_changes=mark_changes,
                     seq_names=seq_names, seq_name_prefix=seq_name_prefix,
                     mode=mode, num_hybrid_states=num_hybrid_states,
-                    name=op_name, iter_order=op_iter_order)
+                    name=op_name, iter_order=op_iter_order,
+                    _factory_name=_factory_name)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool
 
@@ -95,6 +97,7 @@ class FromSeqsOp(Operation):
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        _factory_name: Optional[str] = None,
     ) -> None:
         """Initialize FromSeqsOp."""
         from ..party import get_active_party
@@ -105,6 +108,10 @@ class FromSeqsOp(Operation):
                 "Use 'with pp.Party() as party:' to create one."
             )
         
+        # Set factory name if provided
+        if _factory_name is not None:
+            self.factory_name = _factory_name
+ 
         # Validate bg_pool/region combination
         if bg_pool is not None and region is None:
             raise ValueError(
