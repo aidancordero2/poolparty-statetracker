@@ -182,13 +182,22 @@ class MutagenizeOp(Operation):
             # Sequential mode only available with num_mutations
             # If seq_length is known, eagerly build cache assuming all chars are mutable
             # This will be verified/rebuilt at runtime if actual mutable positions differ
-            if self._seq_length is not None:
-                if self._seq_length < num_mutations:
+            effective_length = self._seq_length
+            # If seq_length is unknown but region is a marker, try to get marker's seq_length
+            if effective_length is None and isinstance(region, str):
+                try:
+                    marker = party.get_marker_by_name(region)
+                    effective_length = marker.seq_length
+                except ValueError:
+                    pass  # Marker not found, stay with None
+            
+            if effective_length is not None:
+                if effective_length < num_mutations:
                     raise ValueError(
-                        f"{num_mutations=} exceeds sequence length={self._seq_length}. "
-                        f"Cannot apply {num_mutations} mutations to a sequence of length {self._seq_length}."
+                        f"{num_mutations=} exceeds sequence length={effective_length}. "
+                        f"Cannot apply {num_mutations} mutations to a sequence of length {effective_length}."
                     )
-                num_states = self._build_caches(self._seq_length)
+                num_states = self._build_caches(effective_length)
             else:
                 num_states = 1
         elif mode == 'hybrid':

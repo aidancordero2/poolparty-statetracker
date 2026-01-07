@@ -177,10 +177,4 @@ def mutagenize_scan(
         _factory_name=f'{_factory_name}(mutagenize)',
     )
     
-    # mutated.op.counter has been overridden by mutagenize, so we need to
-    # manually multiply it by the counter in marked.op. 
-    print('debugging here')
-    marked.counter.print_tree()
-    result.counter.print_tree()
-    
     return result
