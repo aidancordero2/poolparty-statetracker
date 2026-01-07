@@ -8,7 +8,7 @@ from ..pool import Pool
 
 @beartype
 def insertion_scan(
-    bg_pool: Union[Pool, str],
+    pool: Union[Pool, str],
     ins_pool: Union[Pool, str],
     positions: PositionsType = None,
     region: RegionType = None,
@@ -30,7 +30,7 @@ def insertion_scan(
 
     Parameters
     ----------
-    bg_pool : Pool or str
+    pool : Pool or str
         The background Pool or sequence string.
     ins_pool : Pool or str
         The insert Pool or sequence string to be inserted.
@@ -60,7 +60,7 @@ def insertion_scan(
     from ..marker_ops import marker_scan, replace_marker_content
 
     # Convert string inputs to pools
-    bg_pool = from_seq(bg_pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(bg_pool, str) else bg_pool
+    pool = from_seq(pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
     ins_pool = from_seq(ins_pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(ins_pool, str) else ins_pool
 
     # Validate ins_pool has defined seq_length
@@ -69,9 +69,9 @@ def insertion_scan(
         raise ValueError("ins_pool must have a defined seq_length")
 
     # Validate bg_pool has defined seq_length (only when no region specified)
-    bg_length = bg_pool.seq_length
+    bg_length = pool.seq_length
     if bg_length is None and region is None:
-        raise ValueError("bg_pool must have a defined seq_length")
+        raise ValueError("pool must have a defined seq_length")
 
     # Resolve defaults from party
     party = get_active_party()
@@ -93,7 +93,7 @@ def insertion_scan(
 
     # 1. Insert marker at scanning positions
     marked = marker_scan(
-        bg_pool,
+        pool,
         marker=marker_name,
         marker_length=marker_length,
         positions=positions,
@@ -123,7 +123,7 @@ def insertion_scan(
 
 @beartype
 def replacement_scan(
-    bg_pool: Union[Pool, str],
+    pool: Union[Pool, str],
     ins_pool: Union[Pool, str],
     positions: PositionsType = None,
     region: RegionType = None,
@@ -144,7 +144,7 @@ def replacement_scan(
     Equivalent to insertion_scan(..., replace=True).
     """
     return insertion_scan(
-        bg_pool=bg_pool,
+        pool=pool,
         ins_pool=ins_pool,
         positions=positions,
         region=region,

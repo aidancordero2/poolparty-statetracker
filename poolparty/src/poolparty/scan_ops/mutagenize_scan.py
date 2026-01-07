@@ -8,7 +8,7 @@ from ..pool import Pool
 
 @beartype
 def mutagenize_scan(
-    bg_pool: Union[Pool, str],
+    pool: Union[Pool, str],
     mutagenize_length: Integral,
     num_mutations: Optional[Integral] = None,
     mutation_rate: Optional[Real] = None,
@@ -31,7 +31,7 @@ def mutagenize_scan(
 
     Parameters
     ----------
-    bg_pool : Pool or str
+    pool : Pool or str
         Source pool or sequence string to mutagenize regions of.
     mutagenize_length : Integral
         Length of the region to mutagenize at each position.
@@ -84,7 +84,7 @@ def mutagenize_scan(
     from ..marker_ops import marker_scan
 
     # Convert string inputs to pools if needed
-    bg_pool = from_seq(bg_pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(bg_pool, str) else bg_pool
+    pool = from_seq(pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
 
     # Validate num_mutations/mutation_rate
     if num_mutations is None and mutation_rate is None:
@@ -141,7 +141,7 @@ def mutagenize_scan(
 
     # 1. Insert marker at scanning positions
     marked = marker_scan(
-        bg_pool,
+        pool,
         marker=marker_name,
         marker_length=marker_length,
         positions=positions,

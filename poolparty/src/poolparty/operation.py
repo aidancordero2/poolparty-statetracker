@@ -429,6 +429,18 @@ class Operation:
         elif 'parent_pools' in init_params:
             init_params['parent_pools'] = new_parent_pools
         
+        # Handle 'bg_pool' parameter (used by several operations)
+        if 'bg_pool' in init_params and new_parent_pools:
+            init_params['bg_pool'] = new_parent_pools[0]
+        
+        # Handle 'pool' parameter (used by mutagenize and other operations)
+        if 'pool' in init_params and new_parent_pools:
+            init_params['pool'] = new_parent_pools[0]
+        
+        # Handle 'content_pool' parameter (used by ReplaceMarkerContentOp)
+        if 'content_pool' in init_params and len(new_parent_pools) > 1:
+            init_params['content_pool'] = new_parent_pools[1]
+        
         if name is not None:
             init_params['name'] = name
         else:

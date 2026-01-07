@@ -24,145 +24,69 @@ class OpsContainer:
         iter_order = kwargs.pop('iter_order', None)
         return apply_at_marker(self.pool, marker_name, transform_fn, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
     
-    def mutagenize(self, **kwargs) -> Pool_type:
+    def mutagenize(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .base_ops.mutagenize import mutagenize
-        return mutagenize(self.pool, **kwargs)
+        return mutagenize(pool=self.pool, region=region, **kwargs)
     
-    def mutagenize_scan(self, **kwargs) -> Pool_type:
+    def mutagenize_scan(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .scan_ops.mutagenize_scan import mutagenize_scan
-        return mutagenize_scan(bg_pool=self.pool, **kwargs)
+        return mutagenize_scan(pool=self.pool, region=region, **kwargs)
     
-    def deletion_scan(self, **kwargs) -> Pool_type:
+    def deletion_scan(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .scan_ops.deletion_scan import deletion_scan
-        return deletion_scan(self.pool, **kwargs)
+        return deletion_scan(pool=self.pool, region=region, **kwargs)
     
-    def insertion_scan(self, **kwargs) -> Pool_type:
+    def insertion_scan(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .scan_ops.insertion_scan import insertion_scan
-        return insertion_scan(self.pool, **kwargs)
+        return insertion_scan(pool=self.pool, region=region, **kwargs)
     
-    def replacement_scan(self, **kwargs) -> Pool_type:
+    def replacement_scan(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .scan_ops.insertion_scan import replacement_scan
-        return replacement_scan(self.pool, **kwargs)
+        return replacement_scan(pool=self.pool, region=region, **kwargs)
     
-    
-    def shuffle_scan(
-        self,
-        region: str,
-        shuffle_length: Integral,
-        shuffles_per_position: Integral = 1,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply shuffle_scan() to a marked region."""
+    def shuffle_scan(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .scan_ops.shuffle_scan import shuffle_scan
-        iter_order = kwargs.pop('iter_order', None)
-        return shuffle_scan(self.pool, shuffle_length, shuffles_per_position=shuffles_per_position, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return shuffle_scan(pool=self.pool, region=region, **kwargs)
     
-    def shuffle_seq(
-        self,
-        region: str,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply shuffle_seq() to a marked region."""
+    def shuffle_seq(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .base_ops.shuffle_seq import shuffle_seq
-        iter_order = kwargs.pop('iter_order', None)
-        return shuffle_seq(self.pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return shuffle_seq(pool=self.pool, region=region, **kwargs)
     
-    def insert_from_iupac(
-        self,
-        region: str,
-        iupac_seq: str,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Replace marker content with IUPAC-generated sequences."""
+    def insert_from_iupac(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .base_ops.from_iupac_motif import from_iupac_motif
-        iter_order = kwargs.pop('iter_order', None)
-        return from_iupac_motif(iupac_seq, bg_pool=self.pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return from_iupac_motif(pool=self.pool, region=region, **kwargs)
     
-    def insert_from_motif(
-        self,
-        region: str,
-        prob_df,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Replace marker content with probability-sampled sequences."""
+    def insert_from_motif(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .base_ops.from_prob_motif import from_prob_motif
-        iter_order = kwargs.pop('iter_order', None)
-        return from_prob_motif(prob_df, bg_pool=self.pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return from_prob_motif(pool=self.pool, region=region, **kwargs)
     
-    def insert_kmers(
-        self,
-        region: str,
-        length: int,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Replace marker content with k-mer sequences."""
+    def insert_kmers(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .base_ops.get_kmers import get_kmers
-        iter_order = kwargs.pop('iter_order', None)
-        return get_kmers(length, bg_pool=self.pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return get_kmers(pool=self.pool, region=region, **kwargs)
     
     #########################################################################
     # Fixed operation convenience methods
     #########################################################################
     
-    def reverse_complement(
-        self,
-        region: Optional[str] = None,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply reverse_complement() to the pool or a marked region."""
+    def reverse_complement(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .fixed_ops.reverse_complement import reverse_complement
-        iter_order = kwargs.pop('iter_order', None)
-        return reverse_complement(self.pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return reverse_complement(pool=self.pool, region=region, **kwargs)
     
-    def swapcase(
-        self,
-        region: Optional[str] = None,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply swapcase() to the pool or a marked region."""
+    def swapcase(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .fixed_ops.swapcase import swapcase
-        iter_order = kwargs.pop('iter_order', None)
-        return swapcase(self.pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return swapcase(pool=self.pool, region=region, **kwargs)
     
-    def upper(
-        self,
-        region: Optional[str] = None,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply upper() to the pool or a marked region."""
+    def upper(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .fixed_ops.upper import upper
-        iter_order = kwargs.pop('iter_order', None)
-        return upper(self.pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return upper(pool=self.pool, region=region, **kwargs)
     
-    def lower(
-        self,
-        region: Optional[str] = None,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply lower() to the pool or a marked region."""
+    def lower(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .fixed_ops.lower import lower
-        iter_order = kwargs.pop('iter_order', None)
-        return lower(self.pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return lower(pool=self.pool, region=region, **kwargs)
     
-    def clear_gap_chars(
-        self,
-        region: Optional[str] = None,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply clear_gap_chars() to the pool or a marked region."""
+    def clear_gap_chars(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .fixed_ops.clear_gap_chars import clear_gap_chars
-        iter_order = kwargs.pop('iter_order', None)
-        return clear_gap_chars(self.pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return clear_gap_chars(pool=self.pool, region=region, **kwargs)
     
     #########################################################################
     # State operation convenience methods

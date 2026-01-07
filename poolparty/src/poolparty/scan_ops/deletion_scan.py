@@ -8,7 +8,7 @@ from ..pool import Pool
 
 @beartype
 def deletion_scan(
-    bg_pool: Union[Pool, str],
+    pool: Union[Pool, str],
     deletion_length: Integral,
     deletion_marker: Optional[str] = '-',
     region: RegionType = None,
@@ -31,7 +31,7 @@ def deletion_scan(
 
     Parameters
     ----------
-    bg_pool : Pool or str
+    pool : Pool or str
         Source pool or sequence string to delete from.
     deletion_length : Integral
         Number of characters to delete at each valid position.
@@ -63,19 +63,19 @@ def deletion_scan(
         )
 
     # Convert string to pool
-    bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+    pool = from_seq(pool) if isinstance(pool, str) else pool
 
     # Validate bg_pool has defined seq_length (only when no region specified)
-    bg_length = bg_pool.seq_length
+    bg_length = pool.seq_length
     if bg_length is None and region is None:
-        raise ValueError("bg_pool must have a defined seq_length")
+        raise ValueError("pool must have a defined seq_length")
 
     # Validate deletion_length
     if deletion_length <= 0:
         raise ValueError(f"del_length must be > 0, got {deletion_length}")
     if bg_length is not None and deletion_length >= bg_length:
         raise ValueError(
-            f"del_length ({deletion_length}) must be < bg_pool.seq_length ({bg_length})"
+            f"del_length ({deletion_length}) must be < pool.seq_length ({bg_length})"
         )
 
     # Resolve mark_changes from deletion_marker presence
@@ -94,7 +94,7 @@ def deletion_scan(
     # 1. Insert marker at scanning positions
     # positions are relative to region content (marker_scan handles this via Operation base)
     marked = marker_scan(
-        bg_pool,
+        pool,
         marker=marker_name,
         marker_length=marker_length,
         positions=positions,  # Let marker_scan validate positions relative to region
@@ -116,7 +116,7 @@ def deletion_scan(
     # Always remove the internal _del marker (it's our implementation detail)
     return from_seq(
         content_str,
-        bg_pool=marked,
+        pool=marked,
         region=marker_name,
         remove_marker=True,  # Always remove the internal _del marker
         spacer_str=spacer_str if mark_changes else '',

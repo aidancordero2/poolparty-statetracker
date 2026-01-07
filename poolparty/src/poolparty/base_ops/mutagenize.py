@@ -72,7 +72,7 @@ def mutagenize(
     from ..fixed_ops.from_seq import from_seq
     pool = from_seq(pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
     op = MutagenizeOp(
-        parent_pool=pool,
+        pool=pool,
         num_mutations=num_mutations,
         mutation_rate=mutation_rate,
         region=region,
@@ -107,7 +107,7 @@ class MutagenizeOp(Operation):
     
     def __init__(
         self,
-        parent_pool: Pool,
+        pool: Pool,
         num_mutations: Optional[Integral] = None,
         mutation_rate: Optional[Real] = None,
         region: RegionType = None,
@@ -173,7 +173,7 @@ class MutagenizeOp(Operation):
             for i, mut in enumerate(self.alphabet.mutation_map[wt]):
                 self._mutation_map[(wt, i)] = mut
         
-        self._seq_length = parent_pool.seq_length
+        self._seq_length = pool.seq_length
         self._sequential_cache = None
         self._num_mutable_positions = None  # Actual mutable positions, set on first use
         
@@ -206,7 +206,7 @@ class MutagenizeOp(Operation):
             num_states = 1
         
         super().__init__(
-            parent_pools=[parent_pool],
+            parent_pools=[pool],
             num_states=num_states,
             mode=mode,
             seq_length=self._seq_length,
@@ -369,7 +369,7 @@ class MutagenizeOp(Operation):
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
-            'parent_pool': self.parent_pools[0],
+            'pool': self.parent_pools[0],
             'num_mutations': self.num_mutations,
             'mutation_rate': self.mutation_rate,
             'region': self._region,

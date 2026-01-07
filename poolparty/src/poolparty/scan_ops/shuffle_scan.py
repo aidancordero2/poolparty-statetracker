@@ -8,7 +8,7 @@ from ..pool import Pool
 
 @beartype
 def shuffle_scan(
-    bg_pool: Union[Pool, str],
+    pool: Union[Pool, str],
     shuffle_length: Integral,
     positions: PositionsType = None,
     region: RegionType = None,
@@ -30,7 +30,7 @@ def shuffle_scan(
 
     Parameters
     ----------
-    bg_pool : Pool or str
+    pool : Pool or str
         Source pool or sequence string to shuffle regions of.
     shuffle_length : Integral
         Length of the region to shuffle at each position.
@@ -56,19 +56,19 @@ def shuffle_scan(
     from ..marker_ops import marker_scan
 
     # Convert string inputs to pools
-    bg_pool = from_seq(bg_pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(bg_pool, str) else bg_pool
+    pool = from_seq(pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
 
-    # Validate bg_pool has defined seq_length (only when no region specified)
-    bg_length = bg_pool.seq_length
+    # Validate pool has defined seq_length (only when no region specified)
+    bg_length = pool.seq_length
     if bg_length is None and region is None:
-        raise ValueError("bg_pool must have a defined seq_length")
+        raise ValueError("pool must have a defined seq_length")
 
     # Validate shuffle_length
     if shuffle_length <= 0:
         raise ValueError(f"shuffle_length must be > 0, got {shuffle_length}")
     if bg_length is not None and shuffle_length >= bg_length:
         raise ValueError(
-            f"shuffle_length ({shuffle_length}) must be < bg_pool.seq_length ({bg_length})"
+            f"shuffle_length ({shuffle_length}) must be < pool.seq_length ({bg_length})"
         )
 
     # Resolve defaults from party
@@ -81,7 +81,7 @@ def shuffle_scan(
 
     # 1. Insert marker at scanning positions
     marked = marker_scan(
-        bg_pool,
+        pool,
         marker=marker_name,
         marker_length=marker_length,
         positions=positions,

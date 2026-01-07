@@ -7,7 +7,7 @@ from ..pool import Pool
 @beartype
 def from_seq(
     seq: str,
-    bg_pool: Optional[Union[Pool, str]] = None,
+    pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
@@ -20,17 +20,17 @@ def from_seq(
     """
     Create a Pool containing a single, fixed sequence.
 
-    If bg_pool and region are provided, the sequence replaces the region content
-    in bg_pool. Otherwise, creates a standalone pool with the sequence.
+    If pool and region are provided, the sequence replaces the region content
+    in pool. Otherwise, creates a standalone pool with the sequence.
 
     Parameters
     ----------
     seq : str
         The sequence to include in the pool (or to insert at region).
-    bg_pool : Optional[Union[Pool, str]], default=None
-        Background pool or sequence. If provided with region, seq replaces the region.
+    pool : Optional[Union[Pool, str]], default=None
+        Pool or sequence. If provided with region, seq replaces the region.
     region : RegionType, default=None
-        Region to replace in bg_pool. Can be marker name (str) or [start, stop].
+        Region to replace in pool. Can be marker name (str) or [start, stop].
     remove_marker : Optional[bool], default=None
         If True and region is a marker name, remove marker tags from output.
 
@@ -55,12 +55,12 @@ def from_seq(
     seq_length = party._alphabet.get_length_without_markers(seq)
     
     # If bg_pool and region provided, replace region content with seq
-    if (bg_pool is not None) and (region is None):
-        raise ValueError("region is required when bg_pool is provided")
+    if (pool is not None) and (region is None):
+        raise ValueError("region is required when pool is provided")
     
     # Create the pool
-    pool = fixed_operation(
-        parent_pools=[bg_pool] if bg_pool is not None else [],
+    result_pool = fixed_operation(
+        parent_pools=[pool] if pool is not None else [],
         seq_from_seqs_fn=lambda _: seq,
         seq_length_from_pool_lengths_fn=lambda _: seq_length,
         region=region,
@@ -75,6 +75,6 @@ def from_seq(
     
     # Add validated markers to the pool
     for marker in markers:
-        pool.add_marker(marker)
+        result_pool.add_marker(marker)
     
-    return pool
+    return result_pool

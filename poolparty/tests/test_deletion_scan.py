@@ -257,7 +257,7 @@ class TestDeletionScanValidation:
             # breakpoint_scan outputs have seq_length=None (variable length)
             left, right = pp.breakpoint_scan('AAAAAAAAAA', num_breakpoints=1)
             
-            with pytest.raises(ValueError, match="bg_pool must have a defined seq_length"):
+            with pytest.raises(ValueError, match="pool must have a defined seq_length"):
                 deletion_scan(left, deletion_length=3)
     
     def test_deletion_length_must_be_positive(self):
@@ -276,10 +276,10 @@ class TestDeletionScanValidation:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             
-            with pytest.raises(ValueError, match="del_length .* must be < bg_pool.seq_length"):
+            with pytest.raises(ValueError, match="del_length .* must be < pool.seq_length"):
                 deletion_scan(bg, deletion_length=10)
             
-            with pytest.raises(ValueError, match="del_length .* must be < bg_pool.seq_length"):
+            with pytest.raises(ValueError, match="del_length .* must be < pool.seq_length"):
                 deletion_scan(bg, deletion_length=15)
     
     def test_position_exceeds_maximum(self):

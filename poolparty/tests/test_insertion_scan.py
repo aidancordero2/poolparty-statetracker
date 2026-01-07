@@ -249,7 +249,7 @@ class TestInsertionScanValidation:
             left, right = pp.breakpoint_scan('AAAAAAAAAA', num_breakpoints=1)
             ins = pp.from_seqs(['TTT'])
             
-            with pytest.raises(ValueError, match="bg_pool must have a defined seq_length"):
+            with pytest.raises(ValueError, match="pool must have a defined seq_length"):
                 insertion_scan(left, ins)
     
     def test_ins_pool_requires_seq_length(self):
