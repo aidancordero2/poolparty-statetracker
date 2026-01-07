@@ -214,7 +214,7 @@ class TestDeletionScanSpacerStr:
             assert '.---.' in seq
     
     def test_spacer_str_without_marker(self):
-        """Test custom spacer string without marker."""
+        """Test that spacer_str is ignored when deletion_marker=None."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             result = deletion_scan(bg, deletion_length=3, deletion_marker=None, 
@@ -222,9 +222,9 @@ class TestDeletionScanSpacerStr:
         
         df = result.generate_library(num_seqs=3)
         for seq in df['seq']:
-            # Should have one dot where deletion occurred
-            assert '.' in seq
-            assert seq.count('.') == 1
+            # spacer_str is ignored when mark_changes=False; segment is simply removed
+            assert '.' not in seq
+            assert len(seq) == 7  # 10 - 3
 
 
 class TestDeletionScanNaming:
@@ -287,9 +287,11 @@ class TestDeletionScanValidation:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             # max_position = 10 - 3 = 7
+            # Error raised during generation (positions validated by marker_scan)
+            result = deletion_scan(bg, deletion_length=3, positions=[8])
             
             with pytest.raises(ValueError, match="out of range"):
-                deletion_scan(bg, deletion_length=3, positions=[8])
+                result.generate_library(num_seqs=1)
 
 
 class TestDeletionScanWithMultipleSeqs:

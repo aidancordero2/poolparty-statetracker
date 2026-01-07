@@ -1,5 +1,5 @@
 """MarkerScan operation - insert XML markers at scanning positions."""
-from poolparty.types import Union, Optional, Literal
+from poolparty.types import Union, Optional, Literal, RegionType
 from numbers import Integral, Real
 import numpy as np
 
@@ -16,6 +16,8 @@ def marker_scan(
     pool,
     marker: str = 'marker',
     positions: PositionsType = None,
+    region: RegionType = None,
+    remove_marker: Optional[bool] = None,
     strand: str = '+',
     marker_length: int = 0,
     seq_name_prefix: Optional[str] = None,
@@ -37,46 +39,22 @@ def marker_scan(
         Name for the marker to insert.
     positions : PositionsType, default=None
         Valid insertion positions (0-based). If None, all positions are valid.
+    region : RegionType, default=None
+        Region to constrain the scan to. Can be marker name (str) or [start, stop].
+    remove_marker : Optional[bool], default=None
+        If True and region is a marker name, remove marker tags from output.
     strand : StrandType, default='+'
         Strand for the marker: '+', '-', or 'both'.
-        If 'both', creates 2x states scanning both strands.
     marker_length : Integral, default=0
         Length of sequence to encompass. 0 creates zero-length markers (<name/>),
         >0 creates region markers (<name>BASES</name>).
     mode : ModeType, default='random'
         Position selection mode: 'random', 'sequential', or 'hybrid'.
-    num_hybrid_states : Optional[Integral], default=None
-        Number of pool states when using 'hybrid' mode.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
-    iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
 
     Returns
     -------
     Pool
         A Pool yielding sequences with the marker inserted at selected positions.
-
-    Examples
-    --------
-    >>> with pp.Party():
-    ...     # Zero-length marker at all positions
-    ...     result = pp.marker_scan('ACGT', marker='ins', mode='sequential')
-    ...     # Creates: '<ins/>ACGT', 'A<ins/>CGT', 'AC<ins/>GT', etc.
-    ...
-    ...     # Region marker of length 3
-    ...     result = pp.marker_scan('ACGTACGT', marker='region',
-    ...                              positions=[2], marker_length=3)
-    ...     # Result: 'AC<region>GTA</region>CGT'
-    ...
-    ...     # Scan both strands
-    ...     result = pp.marker_scan('ACGT', marker='site', strand='both',
-    ...                              mode='sequential')
-    ...     # Creates states for strand='+' and strand='-' at each position
     """
     from ..fixed_ops.from_seq import from_seq
     from ..pool import Pool
@@ -97,6 +75,8 @@ def marker_scan(
         parent_pool=pool,
         marker_name=marker,
         positions=positions,
+        region=region,
+        remove_marker=remove_marker,
         strand=strand,
         marker_length=int(marker_length),
         seq_name_prefix=seq_name_prefix,
@@ -143,6 +123,8 @@ class MarkerScanOp(Operation):
         parent_pool,
         marker_name: str,
         positions: PositionsType = None,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
         strand: str = '+',
         marker_length: int = 0,
         seq_name_prefix: Optional[str] = None,
@@ -188,6 +170,8 @@ class MarkerScanOp(Operation):
             name=name,
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
+            region=region,
+            remove_marker=remove_marker,
         )
     
     def _build_caches(self) -> int:
@@ -353,6 +337,8 @@ class MarkerScanOp(Operation):
             'parent_pool': self.parent_pools[0],
             'marker_name': self.marker_name,
             'positions': self._positions,
+            'region': self._region,
+            'remove_marker': self._remove_marker,
             'strand': self._strand,
             'marker_length': self._marker_length,
             'seq_name_prefix': self.name_prefix,
