@@ -1,6 +1,6 @@
 """GetKmers operation - generate k-mers from an alphabet."""
 from numbers import Real
-from ..types import Pool_type, ModeType, Optional, Literal, Union, RegionType, beartype
+from ..types import Pool_type, ModeType, Optional, Literal, Union, RegionType, Integral, beartype
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
@@ -9,8 +9,8 @@ import numpy as np
 
 @beartype
 def get_kmers(
-    length: int,
-    bg_pool: Optional[Union[Pool, str]] = None,
+    length: Integral,
+    pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
@@ -18,7 +18,7 @@ def get_kmers(
     case: Literal['lower', 'upper'] = 'upper',
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[int] = None,
+    num_hybrid_states: Optional[Integral] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -31,14 +31,14 @@ def get_kmers(
 
     Parameters
     ----------
-    length : int
-        Length of k-mers to generate.
-    bg_pool : Optional[Union[Pool, str]], default=None
-        Background pool or sequence. If provided with region, generated k-mer
+    pool : Optional[Union[Pool, str]], default=None
+        Pool or sequence. If provided with region, generated k-mer
         replaces the region content.
     region : RegionType, default=None
-        Region to replace in bg_pool. Can be a marker name or [start, stop] interval.
-        Required if bg_pool is provided.
+        Region to replace in pool. Can be a marker name or [start, stop] interval.
+        Required if pool is provided.
+    length : int
+        Length of k-mers to generate.
     remove_marker : Optional[bool], default=None
         If True and region is a marker name, remove marker tags from output.
     case : Literal['lower', 'upper'], default='upper'
@@ -66,11 +66,11 @@ def get_kmers(
     RuntimeError
         If called outside of a Party context.
     ValueError
-        If bg_pool is provided without region.
+        If pool is provided without region.
     """
     from ..fixed_ops.from_seq import from_seq
-    bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
-    op = GetKmersOp(length, bg_pool=bg_pool_obj, region=region,
+    pool_obj = from_seq(pool) if isinstance(pool, str) else pool
+    op = GetKmersOp(length, pool=pool_obj, region=region,
                     remove_marker=remove_marker, spacer_str=spacer_str,
                     mark_changes=mark_changes,
                     case=case, seq_name_prefix=seq_name_prefix, mode=mode,
@@ -89,7 +89,7 @@ class GetKmersOp(Operation):
     def __init__(
         self,
         length: int,
-        bg_pool: Optional[Pool] = None,
+        pool: Optional[Pool] = None,
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         spacer_str: str = '',
@@ -111,10 +111,10 @@ class GetKmersOp(Operation):
             )
         
         # Validate bg_pool/region combination
-        if bg_pool is not None and region is None:
+        if pool is not None and region is None:
             raise ValueError(
-                "region is required when bg_pool is provided. "
-                "Specify which region of bg_pool to replace with the generated k-mer."
+                "region is required when pool is provided. "
+                "Specify which region of pool to replace with the generated k-mer."
             )
         
         if length < 1:
@@ -139,7 +139,7 @@ class GetKmersOp(Operation):
         else:
             num_states = 1
         
-        parent_pools = [bg_pool] if bg_pool is not None else []
+        parent_pools = [pool] if pool is not None else []
         super().__init__(
             parent_pools=parent_pools,
             num_states=num_states,
@@ -208,7 +208,7 @@ class GetKmersOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'length': self.length,
-            'bg_pool': self.parent_pools[0] if self.parent_pools else None,
+            'pool': self.parent_pools[0] if self.parent_pools else None,
             'region': self._region,
             'remove_marker': self._remove_marker,
             'spacer_str': self._spacer_str,

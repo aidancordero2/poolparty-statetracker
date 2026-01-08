@@ -53,7 +53,7 @@ class RepeatOp(Operation):
     
     def __init__(
         self,
-        parent_pool: Pool_type,
+        pool: Pool_type,
         times: int,
         seq_name_prefix: Optional[str] = None,
         name: Optional[str] = None,
@@ -64,10 +64,10 @@ class RepeatOp(Operation):
             raise ValueError(f"times must be >= 1, got {times}")
         self.times = times
         super().__init__(
-            parent_pools=[parent_pool],
+            parent_pools=[pool],
             num_states=times,
             mode='sequential',
-            seq_length=parent_pool.seq_length,
+            seq_length=pool.seq_length,
             name=name,
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
@@ -94,7 +94,7 @@ class RepeatOp(Operation):
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
-            'parent_pool': self.parent_pools[0],
+            'pool': self.parent_pools[0],
             'times': self.times,
             'seq_name_prefix': self.name_prefix,
             'name': None,
