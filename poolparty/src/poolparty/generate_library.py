@@ -10,8 +10,8 @@ import pandas as pd
 @beartype
 def generate_library(
     pool: Pool_type,
+    num_cycles: int = 1,
     num_seqs: Optional[int] = None,
-    num_cycles: Optional[int] = None,
     seed: Optional[int] = None,
     init_state: Optional[int] = None,
     seqs_only: bool = False,
@@ -28,8 +28,8 @@ def generate_library(
     
     Args:
         pool: The pool to generate sequences from.
-        num_seqs: Number of sequences to generate.
         num_cycles: Number of complete iterations through all states.
+        num_seqs: Number of sequences to generate.
         seed: Random seed for reproducibility.
         init_state: Initial state to start generation from.
         seqs_only: Whether to include only sequence columns.
@@ -52,13 +52,8 @@ def generate_library(
     if not hasattr(pool, '_master_seed'):
         pool._master_seed = None
     
-    # Validate arguments
-    if num_seqs is not None and num_cycles is not None:
-        raise ValueError("Specify num_seqs OR num_cycles, not both")
-    if num_seqs is None and num_cycles is None:
-        raise ValueError("Must specify num_seqs or num_cycles")
-    
-    if num_cycles is not None:
+    # Validate arguments    
+    if num_seqs is None:
         num_seqs = num_cycles * pool.counter.num_states
     if init_state is not None:
         pool._current_state = init_state

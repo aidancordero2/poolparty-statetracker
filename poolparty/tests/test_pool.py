@@ -755,22 +755,6 @@ class TestPoolGenerate:
         assert 'A.seq' in seq_cols
         assert 'B.seq' in seq_cols
         assert 'C.seq' in seq_cols
-    
-    def test_generate_error_both_num_args(self):
-        """Test generate() raises error if both num_seqs and num_cycles given."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B'])
-        
-        with pytest.raises(ValueError, match="Specify num_seqs OR num_cycles"):
-            pool.generate_library(num_seqs=2, num_cycles=1)
-    
-    def test_generate_error_no_num_args(self):
-        """Test generate() raises error if neither num_seqs nor num_cycles given."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B'])
-        
-        with pytest.raises(ValueError, match="Must specify"):
-            pool.generate_library()
 
 
 # =============================================================================

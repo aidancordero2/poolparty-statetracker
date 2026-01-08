@@ -383,14 +383,6 @@ class TestErrors:
             # Outer party restored after exiting inner
             assert pp.get_active_party() is outer
     
-    def test_num_seqs_required(self):
-        """Test error when neither num_seqs nor num_cycles given."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(['AAA']).named('seq')
-        
-        with pytest.raises(ValueError, match="Must specify"):
-            pool.generate_library()
-    
     def test_pool_plus_string_raises(self):
         """Test that pool + string raises error (use join instead)."""
         with pp.Party() as party:
