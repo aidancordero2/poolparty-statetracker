@@ -301,7 +301,7 @@ class TestMutagenizeRandomModeWithRate:
         with pp.Party() as party:
             pool = mutagenize('ACGT', mutation_rate=0.5, op_name='mutate').named('mutant')
         
-        df = pool.generate_library(num_seqs=50, seed=42)
+        df = pool.generate_library(num_seqs=50, seed=42, report_design_cards=True)
         
         for _, row in df.iterrows():
             mutant = row['seq']
@@ -380,7 +380,7 @@ class TestMutagenizeRateStatistics:
         with pp.Party() as party:
             pool = mutagenize('ACGTACGTACGT', mutation_rate=0.001, mode='random').named('mutant')
         
-        df = pool.generate_library(num_seqs=100, seed=42)
+        df = pool.generate_library(num_seqs=100, seed=42, report_design_cards=True)
         
         # With very low rate, some sequences should have zero mutations
         zero_mut_count = 0
@@ -401,7 +401,7 @@ class TestMutagenizeRateStatistics:
         with pp.Party() as party:
             pool = mutagenize('A' * seq_len, mutation_rate=mutation_rate, mode='random').named('mutant')
         
-        df = pool.generate_library(num_seqs=num_samples, seed=42)
+        df = pool.generate_library(num_seqs=num_samples, seed=42, report_design_cards=True)
         
         total_mutations = 0
         for _, row in df.iterrows():
@@ -422,7 +422,7 @@ class TestMutagenizeRateStatistics:
         with pp.Party() as party:
             pool = mutagenize('A' * seq_len, mutation_rate=mutation_rate, mode='random').named('mutant')
         
-        df = pool.generate_library(num_seqs=100, seed=42)
+        df = pool.generate_library(num_seqs=100, seed=42, report_design_cards=True)
         
         total_mutations = 0
         for _, row in df.iterrows():
@@ -511,7 +511,7 @@ class TestMutagenizeDesignCards:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
-        df = pool.generate_library(num_seqs=4)
+        df = pool.generate_library(num_seqs=4, report_design_cards=True)
         assert 'mutant.op.key.positions' in df.columns
     
     def test_wt_chars_in_output(self):
@@ -519,7 +519,7 @@ class TestMutagenizeDesignCards:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
-        df = pool.generate_library(num_seqs=4)
+        df = pool.generate_library(num_seqs=4, report_design_cards=True)
         assert 'mutant.op.key.wt_chars' in df.columns
     
     def test_mut_chars_in_output(self):
@@ -527,7 +527,7 @@ class TestMutagenizeDesignCards:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
-        df = pool.generate_library(num_seqs=4)
+        df = pool.generate_library(num_seqs=4, report_design_cards=True)
         assert 'mutant.op.key.mut_chars' in df.columns
     
     def test_design_card_consistency_with_num(self):
@@ -535,7 +535,7 @@ class TestMutagenizeDesignCards:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
-        df = pool.generate_library(num_seqs=12)
+        df = pool.generate_library(num_seqs=12, report_design_cards=True)
         
         for _, row in df.iterrows():
             mutant = row['seq']
@@ -553,7 +553,7 @@ class TestMutagenizeDesignCards:
         with pp.Party() as party:
             pool = mutagenize('ACGT', mutation_rate=0.5, mode='random', op_name='mutate').named('mutant')
         
-        df = pool.generate_library(num_seqs=20, seed=42)
+        df = pool.generate_library(num_seqs=20, seed=42, report_design_cards=True)
         
         for _, row in df.iterrows():
             mutant = row['seq']
@@ -575,7 +575,7 @@ class TestMutagenizeMutationMap:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
-        df = pool.generate_library(num_cycles=1)
+        df = pool.generate_library(num_cycles=1, report_design_cards=True)
         
         for _, row in df.iterrows():
             positions = row['mutant.op.key.positions']
@@ -680,7 +680,7 @@ class TestMutagenizeCustomName:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, op_name='mutants').named('mypool')
         
-        df = pool.generate_library(num_seqs=1)
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
         assert 'mypool.op.key.positions' in df.columns
         assert 'mypool.op.key.wt_chars' in df.columns
         assert 'mypool.op.key.mut_chars' in df.columns
@@ -748,7 +748,7 @@ class TestMutagenizeMarkChanges:
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', mutation_rate=0.5, mark_changes=True).named('mutant')
         
-        df = pool.generate_library(num_seqs=50, seed=42)
+        df = pool.generate_library(num_seqs=50, seed=42, report_design_cards=True)
         # Check that mutations produce lowercase chars
         for _, row in df.iterrows():
             seq = row['seq']

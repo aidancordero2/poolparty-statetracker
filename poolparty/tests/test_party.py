@@ -122,7 +122,7 @@ class TestBreakpointScan:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_library(num_cycles=1, aux_pools=[right])
+        df = left.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[right])
         # 5 possible breakpoint positions (0, 1, 2, 3, 4)
         assert len(df) == 5
         
@@ -139,7 +139,7 @@ class TestBreakpointScan:
             mid = mid.named('mid')
             right = right.named('right')
         
-        df = left.generate_library(num_cycles=1, aux_pools=[mid, right])
+        df = left.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[mid, right])
         
         # Check all splits are valid
         for _, row in df.iterrows():
@@ -225,7 +225,7 @@ class TestDesignCards:
         with pp.Party() as party:
             mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
-        df = mutants.generate_library(num_seqs=3)
+        df = mutants.generate_library(num_seqs=3, report_design_cards=True)
         
         assert 'mutant.op.key.positions' in df.columns
         assert 'mutant.op.key.wt_chars' in df.columns
@@ -236,7 +236,7 @@ class TestDesignCards:
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], seq_names=['seq_a', 'seq_b'], op_name='seqs', mode='sequential').named('myseq')
         
-        df = pool.generate_library(num_seqs=2)
+        df = pool.generate_library(num_seqs=2, report_design_cards=True)
         
         assert 'myseq.op.key.seq_name' in df.columns
         assert 'myseq.op.key.seq_index' in df.columns

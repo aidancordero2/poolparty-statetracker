@@ -31,7 +31,7 @@ class TestFromProbMotifFactory:
         with pp.Party() as party:
             pool = from_prob_motif(prob_df, op_name='motif', name='mypool')
         
-        df = pool.generate_library(num_seqs=1, seed=42)
+        df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
         assert 'motif.key.prob_state' in df.columns
 
 
@@ -230,7 +230,7 @@ class TestFromProbMotifDesignCards:
         with pp.Party() as party:
             pool = from_prob_motif(prob_df, op_name='motif').named('mypool')
         
-        df = pool.generate_library(num_seqs=1, seed=42)
+        df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
         assert 'mypool.op.key.prob_state' in df.columns
     
     def test_prob_state_is_indices(self):
@@ -240,7 +240,7 @@ class TestFromProbMotifDesignCards:
         with pp.Party() as party:
             pool = from_prob_motif(prob_df, op_name='motif').named('mypool')
         
-        df = pool.generate_library(num_seqs=1, seed=42)
+        df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
         prob_state = df['mypool.op.key.prob_state'].iloc[0]
         assert prob_state == [0, 0]
     

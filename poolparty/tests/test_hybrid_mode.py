@@ -89,7 +89,7 @@ class TestHybridModeOperationIsolation:
             # Two mutagenize operations with same config but different op.id
             pool1 = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant1')
             pool2 = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant2')
-            df = pool1.generate_library(num_cycles=1, seed=42, aux_pools=[pool2])
+            df = pool1.generate_library(num_cycles=1, seed=42, report_design_cards=True, aux_pools=[pool2])
         
         # They should produce different results because op.id is part of the seed
         results1 = list(df['mutant1.seq'])
@@ -242,7 +242,7 @@ class TestHybridModeBreakpointScan:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_library(num_cycles=1, seed=42, aux_pools=[right])
+        df = left.generate_library(num_cycles=1, seed=42, report_design_cards=True, aux_pools=[right])
         
         assert len(df) == 30
         for i, row in df.iterrows():

@@ -27,7 +27,7 @@ class TestFromSeqsFactory:
         with pp.Party() as party:
             pool = from_seqs(['AAA', 'TTT'], seq_names=['seq_a', 'seq_b'], op_name='seqs', mode='sequential').named('mypool')
         
-        df = pool.generate_library(num_seqs=2)
+        df = pool.generate_library(num_seqs=2, report_design_cards=True)
         assert list(df['mypool.op.key.seq_name']) == ['seq_a', 'seq_b']
 
 
@@ -120,7 +120,7 @@ class TestFromSeqsNames:
         with pp.Party() as party:
             pool = from_seqs(['AAA', 'TTT', 'GGG'], op_name='seqs', mode='sequential').named('mypool')
         
-        df = pool.generate_library(num_seqs=3)
+        df = pool.generate_library(num_seqs=3, report_design_cards=True)
         assert list(df['mypool.op.key.seq_name']) == ['seq_0', 'seq_1', 'seq_2']
     
     def test_custom_names(self):
@@ -128,7 +128,7 @@ class TestFromSeqsNames:
         with pp.Party() as party:
             pool = from_seqs(['AAA', 'TTT'], seq_names=['first', 'second'], op_name='seqs', mode='sequential').named('mypool')
         
-        df = pool.generate_library(num_seqs=2)
+        df = pool.generate_library(num_seqs=2, report_design_cards=True)
         assert list(df['mypool.op.key.seq_name']) == ['first', 'second']
 
 
@@ -140,7 +140,7 @@ class TestFromSeqsDesignCards:
         with pp.Party() as party:
             pool = from_seqs(['AAA'], seq_names=['test'], op_name='seqs').named('mypool')
         
-        df = pool.generate_library(num_seqs=1)
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
         assert 'mypool.op.key.seq_name' in df.columns
         assert df['mypool.op.key.seq_name'].iloc[0] == 'test'
     
@@ -149,7 +149,7 @@ class TestFromSeqsDesignCards:
         with pp.Party() as party:
             pool = from_seqs(['A', 'B', 'C'], op_name='seqs', mode='sequential').named('mypool')
         
-        df = pool.generate_library(num_seqs=3)
+        df = pool.generate_library(num_seqs=3, report_design_cards=True)
         assert 'mypool.op.key.seq_index' in df.columns
         assert list(df['mypool.op.key.seq_index']) == [0, 1, 2]
     
@@ -238,6 +238,6 @@ class TestFromSeqsCustomName:
         with pp.Party() as party:
             pool = from_seqs(['AAA'], op_name='my_seqs').named('mypool')
         
-        df = pool.generate_library(num_seqs=1)
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
         assert 'mypool.op.key.seq_name' in df.columns
         assert 'mypool.op.key.seq_index' in df.columns

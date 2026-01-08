@@ -282,6 +282,7 @@ class Pool:
             num_seqs=num_seqs,
             num_cycles=num_cycles,
             seqs_only=False,
+            report_design_cards=True,
             init_state=0,
             seed=seed,
         )

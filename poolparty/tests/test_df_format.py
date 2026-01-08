@@ -208,7 +208,7 @@ class TestIntegrationWithGenerate:
             pool = pp.from_seqs(['AAA', 'TTT', 'GGG'], mode='sequential')
             pool.name = "test_pool"
             
-            df = pool.generate_library(num_cycles=1)
+            df = pool.generate_library(num_cycles=1, report_design_cards=True)
             
             # Should have 'seq' as first column
             assert list(df.columns)[0] == 'seq'
@@ -223,6 +223,7 @@ class TestIntegrationWithGenerate:
             
             df = child.generate_library(
                 num_seqs=5,
+                report_design_cards=True,
                 organize_columns_by='pool',
             )
             

@@ -127,8 +127,8 @@ class TestPoolCopy:
             pool = pp.from_seqs(['A', 'B', 'C'], name='original', mode='sequential')
             copied = pool.copy(name='copied')
         
-        df_original = pool.generate_library(num_cycles=1, seed=0, init_state=0)
-        df_copied = copied.generate_library(num_cycles=1, seed=0, init_state=0)
+        df_original = pool.generate_library(num_cycles=1, seed=0, init_state=0, report_design_cards=True)
+        df_copied = copied.generate_library(num_cycles=1, seed=0, init_state=0, report_design_cards=True)
         
         assert list(df_original['original.seq']) == list(df_copied['copied.seq'])
     
@@ -139,9 +139,9 @@ class TestPoolCopy:
             copied = pool.copy(name='copied')
         
         # Generate from original
-        df1 = pool.generate_library(num_seqs=2, init_state=0)
+        df1 = pool.generate_library(num_seqs=2, init_state=0, report_design_cards=True)
         # Generate from copy (should start fresh)
-        df2 = copied.generate_library(num_seqs=2, init_state=0)
+        df2 = copied.generate_library(num_seqs=2, init_state=0, report_design_cards=True)
         
         assert list(df1['original.seq']) == ['A', 'B']
         assert list(df2['copied.seq']) == ['A', 'B']
@@ -153,8 +153,8 @@ class TestPoolCopy:
             mutants = pp.mutagenize(seq, num_mutations=1, name='mutants', mode='sequential')
             copied = mutants.copy(name='copied')
         
-        df_mutants = mutants.generate_library(num_seqs=5, seed=42, init_state=0)
-        df_copied = copied.generate_library(num_seqs=5, seed=42, init_state=0)
+        df_mutants = mutants.generate_library(num_seqs=5, seed=42, init_state=0, report_design_cards=True)
+        df_copied = copied.generate_library(num_seqs=5, seed=42, init_state=0, report_design_cards=True)
         
         assert list(df_mutants['mutants.seq']) == list(df_copied['copied.seq'])
     
@@ -166,8 +166,8 @@ class TestPoolCopy:
             stacked = (a + b).named('stacked')
             copied = stacked.copy(name='copied')
         
-        df_stacked = stacked.generate_library(num_cycles=1, init_state=0)
-        df_copied = copied.generate_library(num_cycles=1, init_state=0)
+        df_stacked = stacked.generate_library(num_cycles=1, init_state=0, report_design_cards=True)
+        df_copied = copied.generate_library(num_cycles=1, init_state=0, report_design_cards=True)
         
         assert list(df_stacked['stacked.seq']) == list(df_copied['copied.seq'])
     
@@ -178,8 +178,8 @@ class TestPoolCopy:
             repeated = (pool * 2).named('repeated')
             copied = repeated.copy(name='copied')
         
-        df_repeated = repeated.generate_library(num_cycles=1, init_state=0)
-        df_copied = copied.generate_library(num_cycles=1, init_state=0)
+        df_repeated = repeated.generate_library(num_cycles=1, init_state=0, report_design_cards=True)
+        df_copied = copied.generate_library(num_cycles=1, init_state=0, report_design_cards=True)
         
         assert list(df_repeated['repeated.seq']) == list(df_copied['copied.seq'])
     
@@ -191,8 +191,8 @@ class TestPoolCopy:
             sliced.name = 'sliced'
             copied = sliced.copy(name='copied')
         
-        df_sliced = sliced.generate_library(num_cycles=1, init_state=0)
-        df_copied = copied.generate_library(num_cycles=1, init_state=0)
+        df_sliced = sliced.generate_library(num_cycles=1, init_state=0, report_design_cards=True)
+        df_copied = copied.generate_library(num_cycles=1, init_state=0, report_design_cards=True)
         
         assert list(df_sliced['sliced.seq']) == list(df_copied['copied.seq'])
     
@@ -275,8 +275,8 @@ class TestPoolDeepCopy:
             pool = pp.from_seqs(['A', 'B', 'C'], name='original', mode='sequential')
             copied = pool.deepcopy(name='copied')
         
-        df_original = pool.generate_library(num_cycles=1, seed=0, init_state=0)
-        df_copied = copied.generate_library(num_cycles=1, seed=0, init_state=0)
+        df_original = pool.generate_library(num_cycles=1, seed=0, init_state=0, report_design_cards=True)
+        df_copied = copied.generate_library(num_cycles=1, seed=0, init_state=0, report_design_cards=True)
         
         assert list(df_original['original.seq']) == list(df_copied['copied.seq'])
     
@@ -319,8 +319,8 @@ class TestPoolDeepCopy:
         assert copied.parents[1] is not b
         
         # But should produce same sequences
-        df_stacked = stacked.generate_library(num_cycles=1, init_state=0)
-        df_copied = copied.generate_library(num_cycles=1, init_state=0)
+        df_stacked = stacked.generate_library(num_cycles=1, init_state=0, report_design_cards=True)
+        df_copied = copied.generate_library(num_cycles=1, init_state=0, report_design_cards=True)
         assert list(df_stacked['stacked.seq']) == list(df_copied['copied.seq'])
     
     def test_deepcopy_mutagenize_produces_same(self):
@@ -330,8 +330,8 @@ class TestPoolDeepCopy:
             mutants = pp.mutagenize(seq, num_mutations=1, name='mutants', mode='sequential')
             copied = mutants.deepcopy(name='copied')
         
-        df_mutants = mutants.generate_library(num_seqs=5, seed=42, init_state=0)
-        df_copied = copied.generate_library(num_seqs=5, seed=42, init_state=0)
+        df_mutants = mutants.generate_library(num_seqs=5, seed=42, init_state=0, report_design_cards=True)
+        df_copied = copied.generate_library(num_seqs=5, seed=42, init_state=0, report_design_cards=True)
         
         assert list(df_mutants['mutants.seq']) == list(df_copied['copied.seq'])
 
@@ -646,7 +646,7 @@ class TestPoolGenerate:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='X', mode='sequential')
         
-        df = pool.generate_library(num_seqs=3)
+        df = pool.generate_library(num_seqs=3, report_design_cards=True)
         assert len(df) == 3
         assert 'X.seq' in df.columns
         assert list(df['X.seq']) == ['A', 'B', 'C']
@@ -656,7 +656,7 @@ class TestPoolGenerate:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B'], name='X', mode='sequential')
         
-        df = pool.generate_library(num_cycles=2)
+        df = pool.generate_library(num_cycles=2, report_design_cards=True)
         assert len(df) == 4
         assert list(df['X.seq']) == ['A', 'B', 'A', 'B']
     
@@ -666,7 +666,7 @@ class TestPoolGenerate:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', mode='sequential')
             b = pp.mutagenize(a, num_mutations=1, name='B', mode='sequential')
         
-        df = b.generate_library(num_cycles=1, aux_pools=[a])
+        df = b.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a])
         assert 'B.seq' in df.columns
         assert 'A.seq' in df.columns
         # A.seq should contain the parent sequences
@@ -679,7 +679,7 @@ class TestPoolGenerate:
             b = pp.from_seqs(['X', 'Y'], name='B', mode='sequential')
             stacked = a + b
         
-        df = stacked.generate_library(num_cycles=1, aux_pools=[a, b])
+        df = stacked.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b])
         # stacked pool uses StackOp class name since no name given
         seq_cols = [c for c in df.columns if c.endswith('.seq')]
         assert len(seq_cols) == 3  # main pool + 2 aux pools
@@ -691,8 +691,8 @@ class TestPoolGenerate:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='X', mode='sequential')
         
-        df1 = pool.generate_library(num_seqs=3, seed=42)
-        df2 = pool.generate_library(num_seqs=3, seed=42, init_state=0)
+        df1 = pool.generate_library(num_seqs=3, seed=42, report_design_cards=True)
+        df2 = pool.generate_library(num_seqs=3, seed=42, init_state=0, report_design_cards=True)
         assert list(df1['X.seq']) == list(df2['X.seq'])
     
     def test_generate_with_init_state(self):
@@ -700,7 +700,7 @@ class TestPoolGenerate:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='X', mode='sequential')
         
-        df = pool.generate_library(num_seqs=2, init_state=1)
+        df = pool.generate_library(num_seqs=2, init_state=1, report_design_cards=True)
         assert list(df['X.seq']) == ['B', 'C']
     
     def test_generate_state_continuation(self):
@@ -708,8 +708,8 @@ class TestPoolGenerate:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C', 'D'], name='X', mode='sequential')
         
-        df1 = pool.generate_library(num_seqs=2, init_state=0)
-        df2 = pool.generate_library(num_seqs=2)  # Should continue from state 2
+        df1 = pool.generate_library(num_seqs=2, init_state=0, report_design_cards=True)
+        df2 = pool.generate_library(num_seqs=2, report_design_cards=True)  # Should continue from state 2
         
         assert list(df1['X.seq']) == ['A', 'B']
         assert list(df2['X.seq']) == ['C', 'D']
@@ -720,7 +720,7 @@ class TestPoolGenerate:
             pool = pp.from_seqs(['AAA', 'TTT'])
             mutants = pp.mutagenize(pool, num_mutations=1)
         
-        df = mutants.generate_library(num_seqs=5)
+        df = mutants.generate_library(num_seqs=5, report_design_cards=True)
         # Should have design card columns from mutagenize
         design_cols = [c for c in df.columns if '.' in c]
         assert len(design_cols) > 0
@@ -731,7 +731,7 @@ class TestPoolGenerate:
             pool = pp.from_seqs(['AAA'], name='A')
             mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
-        df = mutants.generate_library(num_seqs=3)
+        df = mutants.generate_library(num_seqs=3, report_design_cards=True)
         assert df.columns[0] == 'seq'
         assert df.columns[1] == 'B.seq'
     
@@ -743,7 +743,7 @@ class TestPoolGenerate:
             c = pp.from_seqs(['C'], name='C')
             combined = (a + b + c)
         
-        df = combined.generate_library(num_seqs=3, aux_pools=[a, b])
+        df = combined.generate_library(num_seqs=3, report_design_cards=True, aux_pools=[a, b])
         # First column should be 'seq', then .seq columns
         assert df.columns[0] == 'seq'
         assert df.columns[1].endswith('.seq')
@@ -769,7 +769,7 @@ class TestPoolGenerateRecordStates:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='X')
         
-        df = pool.generate_library(num_seqs=3, report_pool_states=False, report_op_states=False)
+        df = pool.generate_library(num_seqs=3, report_design_cards=True, report_pool_states=False, report_op_states=False)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
         assert len(counter_cols) == 0
     
@@ -778,7 +778,7 @@ class TestPoolGenerateRecordStates:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='X')
         
-        df = pool.generate_library(num_seqs=3, report_pool_states=True)
+        df = pool.generate_library(num_seqs=3, report_design_cards=True, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
         assert len(counter_cols) > 0
     
@@ -787,7 +787,7 @@ class TestPoolGenerateRecordStates:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='X')
         
-        df = pool.generate_library(num_seqs=3, report_pool_states=True)
+        df = pool.generate_library(num_seqs=3, report_design_cards=True, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
         
         # All counter columns should end with '.state'
@@ -801,7 +801,7 @@ class TestPoolGenerateRecordStates:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='X', mode='sequential')
         
-        df = pool.generate_library(num_cycles=1, report_pool_states=True)
+        df = pool.generate_library(num_cycles=1, report_design_cards=True, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
         
         # The root counter should iterate 0, 1, 2
@@ -820,7 +820,7 @@ class TestPoolGenerateRecordStates:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
             mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
-        df = mutants.generate_library(num_seqs=5, report_pool_states=True)
+        df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_pool_states=True)
         
         # 'seq' should be first, then 'B.seq'
         assert df.columns[0] == 'seq'
@@ -842,7 +842,7 @@ class TestPoolGenerateRecordStates:
             a = pp.from_seqs(['A', 'B'], name='A', mode='sequential')
             b = a + a  # Stack creates a sum counter
         
-        df = b.generate_library(num_cycles=1, aux_pools=[a], report_pool_states=True)
+        df = b.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a], report_pool_states=True)
         
         # Check for seq columns (main pool uses StackOp name, aux uses 'A')
         seq_cols = [c for c in df.columns if c.endswith('.seq')]
@@ -856,7 +856,7 @@ class TestPoolGenerateRecordStates:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B'], name='my_pool')
         
-        df = pool.generate_library(num_seqs=2, report_pool_states=True)
+        df = pool.generate_library(num_seqs=2, report_design_cards=True, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
         
         # Should find columns like 'my_pool.state' or 'my_pool.op.state'
@@ -878,7 +878,7 @@ class TestPoolGenerateRecordKeys:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
             mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
-        df = mutants.generate_library(num_seqs=5)
+        df = mutants.generate_library(num_seqs=5, report_design_cards=True)
         # Should have design card columns (contain '.key.')
         key_cols = [c for c in df.columns if '.key.' in c]
         assert len(key_cols) > 0
@@ -889,7 +889,7 @@ class TestPoolGenerateRecordKeys:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
             mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
-        df = mutants.generate_library(num_seqs=5, report_op_keys=False)
+        df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_op_keys=False)
         # Should NOT have design card columns
         key_cols = [c for c in df.columns if '.key.' in c]
         assert len(key_cols) == 0
@@ -900,7 +900,7 @@ class TestPoolGenerateRecordKeys:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
             mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
-        df = mutants.generate_library(num_seqs=5, report_op_keys=False)
+        df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_op_keys=False)
         assert 'B.seq' in df.columns
     
     def test_report_op_keys_false_with_report_pool_states(self):
@@ -909,7 +909,7 @@ class TestPoolGenerateRecordKeys:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
             mutants = pp.mutagenize(pool, num_mutations=1, name='B')
         
-        df = mutants.generate_library(num_seqs=5, report_op_keys=False, report_pool_states=True)
+        df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_op_keys=False, report_pool_states=True)
         
         # Should have seq and state columns but no key columns
         assert 'B.seq' in df.columns
@@ -932,7 +932,7 @@ class TestPoolGeneratePoolsToRecord:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
             b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
         
-        df = b.generate_library(num_seqs=5)
+        df = b.generate_library(num_seqs=5, report_design_cards=True)
         
         # Should have state columns from both A and B
         state_cols = [c for c in df.columns if c.endswith('.state')]
@@ -950,7 +950,7 @@ class TestPoolGeneratePoolsToRecord:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
             b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
         
-        df = b.generate_library(num_seqs=5, pools_to_report='self')
+        df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self')
         
         # Should have state columns only from B (self)
         state_cols = [c for c in df.columns if c.endswith('.state')]
@@ -969,7 +969,7 @@ class TestPoolGeneratePoolsToRecord:
             b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
         
         # Record only A's info
-        df = b.generate_library(num_seqs=5, pools_to_report=[a])
+        df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report=[a])
         
         # Should have state columns only from A
         state_cols = [c for c in df.columns if c.endswith('.state')]
@@ -987,7 +987,7 @@ class TestPoolGeneratePoolsToRecord:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
             b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
         
-        df = b.generate_library(num_seqs=5, pools_to_report='self', report_pool_states=False, report_op_states=False)
+        df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self', report_pool_states=False, report_op_states=False)
         
         # Should have no state columns
         state_cols = [c for c in df.columns if c.endswith('.state')]
@@ -1003,7 +1003,7 @@ class TestPoolGeneratePoolsToRecord:
             a = pp.from_seqs(['AAA', 'TTT'], name='A')
             b = pp.mutagenize(a, num_mutations=1, name='B')
         
-        df = b.generate_library(num_seqs=5, pools_to_report='self', report_op_keys=False)
+        df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self', report_op_keys=False)
         
         # Should have no key columns
         key_cols = [c for c in df.columns if '.key.' in c]
@@ -1019,7 +1019,7 @@ class TestPoolGeneratePoolsToRecord:
             a = pp.from_seqs(['AAA', 'TTT'], name='A')
             b = pp.mutagenize(a, num_mutations=1, name='B')
         
-        df = b.generate_library(num_seqs=5, pools_to_report='self')
+        df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self')
         assert 'B.seq' in df.columns
 
 
@@ -1038,7 +1038,7 @@ class TestPoolStateMinusOneReturnsNone:
             b = pp.from_seqs(['CCCCC'], name='B', mode='sequential')
             c = (a + b).named('C')
         
-        df = c.generate_library(num_cycles=1, aux_pools=[a, b])
+        df = c.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b])
         
         # C has 3 states: 0, 1 from A and 2 from B
         # When A is active (states 0, 1), B should be inactive (state=None -> NaN)
@@ -1067,7 +1067,7 @@ class TestPoolStateMinusOneReturnsNone:
             c = (a + b).named('C')
             d = pp.mutagenize(c, num_mutations=1, name='D', mode='sequential')
         
-        df = d.generate_library(num_cycles=1, aux_pools=[a, b, c])
+        df = d.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b, c])
         
         # Verify B.seq is None when B.state is None/NaN
         b_inactive_rows = df[pd.isna(df['B.state'])]
@@ -1087,7 +1087,7 @@ class TestPoolStateMinusOneReturnsNone:
             b = pp.from_seqs(['CCC'], name='B', mode='sequential')
             c = (a + b).named('C')
         
-        df = c.generate_library(num_cycles=1, aux_pools=[a, b])
+        df = c.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b])
         
         # Check that C.seq is never None (C is always active as the output pool)
         assert df['C.seq'].notna().all(), "C.seq should never be None"
@@ -1108,7 +1108,7 @@ class TestPoolStateMinusOneReturnsNone:
             c = pp.from_seqs(['C'], name='C', mode='sequential')
             stacked = (a + b + c).named('stacked')
         
-        df = stacked.generate_library(num_cycles=1, aux_pools=[a, b, c])
+        df = stacked.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b, c])
         
         # 3 states total, order preserves input A, B, C
         assert len(df) == 3
@@ -1136,7 +1136,7 @@ class TestPoolStateMinusOneReturnsNone:
             b = pp.from_seqs(['CCCCC'], name='B', op_name='op_B', mode='sequential')
             c = (a + b).named('C')
         
-        df = c.generate_library(num_cycles=1, aux_pools=[a, b])
+        df = c.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b])
         
         # from_seqs has design_card_keys: ['seq_name', 'seq_index']
         # When op_A.state is None, op_A.key.seq_name and op_A.key.seq_index should be None
@@ -1176,7 +1176,7 @@ class TestPoolStateMinusOneReturnsNone:
             c = (a + b).named('C')
             d = pp.mutagenize(c, num_mutations=1, name='D', op_name='op_D', mode='sequential')
         
-        df = d.generate_library(num_cycles=1, aux_pools=[a, b, c])
+        df = d.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b, c])
         
         # op_A and op_B are from_seqs with design_card_keys: ['seq_name', 'seq_index']
         # When op_A is inactive (state=None), its keys should be None
@@ -1203,7 +1203,7 @@ class TestPoolStateMinusOneReturnsNone:
             b = pp.from_seqs(['CCC'], name='B', op_name='op_B', mode='sequential')
             c = (a + b).named('C')
         
-        df = c.generate_library(num_cycles=1, aux_pools=[a, b])
+        df = c.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b])
         
         op_a_key_cols = [c for c in df.columns if c.startswith('op_A.key.')]
         op_b_key_cols = [c for c in df.columns if c.startswith('op_B.key.')]

@@ -270,7 +270,7 @@ class TestMutagenizeOrfMutationTypes:
         with pp.Party() as party:
             pool = mutagenize_orf('ATGAAA', num_mutations=1, mode='sequential').named('mutant')
         
-        df = pool.generate_library(num_cycles=1)
+        df = pool.generate_library(num_cycles=1, report_design_cards=True)
         ct = CodonTable('standard')
         
         for _, row in df.iterrows():
@@ -289,7 +289,7 @@ class TestMutagenizeOrfMutationTypes:
                 'ATGAAA', num_mutations=1, mutation_type='nonsense', mode='sequential'
             ).named('mutant')
         
-        df = pool.generate_library(num_cycles=1)
+        df = pool.generate_library(num_cycles=1, report_design_cards=True)
         
         for _, row in df.iterrows():
             mut_aas = row['mutant.op.key.mut_aas']
@@ -305,7 +305,7 @@ class TestMutagenizeOrfMutationTypes:
                 'CTGCTG', num_mutations=1, mutation_type='synonymous', mode='random'
             ).named('mutant')
         
-        df = pool.generate_library(num_seqs=20, seed=42)
+        df = pool.generate_library(num_seqs=20, seed=42, report_design_cards=True)
         ct = CodonTable('standard')
         
         for _, row in df.iterrows():
@@ -350,7 +350,7 @@ class TestMutagenizeOrfSequentialMode:
                 'ATGAAATTT', num_mutations=1, mode='sequential', op_name='mutate'
             ).named('mutant')
         
-        df = pool.generate_library(num_cycles=1)
+        df = pool.generate_library(num_cycles=1, report_design_cards=True)
         
         for _, row in df.iterrows():
             mutant = row['seq']
@@ -377,7 +377,7 @@ class TestMutagenizeOrfRandomMode:
                 'ATGAAATTTGGG', num_mutations=2, mode='random'
             ).named('mutant')
         
-        df = pool.generate_library(num_seqs=50, seed=42)
+        df = pool.generate_library(num_seqs=50, seed=42, report_design_cards=True)
         
         for _, row in df.iterrows():
             positions = row['mutant.op.key.codon_positions']
@@ -391,7 +391,7 @@ class TestMutagenizeOrfRandomMode:
                 'ATGAAATTTGGGCCCAAA', mutation_rate=0.5, mode='random'
             ).named('mutant')
         
-        df = pool.generate_library(num_seqs=100, seed=42)
+        df = pool.generate_library(num_seqs=100, seed=42, report_design_cards=True)
         
         # Should have variable number of mutations
         num_mutations_list = [len(row['mutant.op.key.codon_positions']) for _, row in df.iterrows()]
@@ -448,7 +448,7 @@ class TestMutagenizeOrfDesignCards:
                 'ATGAAATTT', num_mutations=1, mode='sequential', op_name='mutate'
             ).named('mutant')
         
-        df = pool.generate_library(num_seqs=4)
+        df = pool.generate_library(num_seqs=4, report_design_cards=True)
         
         assert 'mutant.op.key.codon_positions' in df.columns
         assert 'mutant.op.key.wt_codons' in df.columns
@@ -463,7 +463,7 @@ class TestMutagenizeOrfDesignCards:
                 'ATGAAATTT', num_mutations=1, mode='sequential', op_name='mutate'
             ).named('mutant')
         
-        df = pool.generate_library(num_seqs=20)
+        df = pool.generate_library(num_seqs=20, report_design_cards=True)
         ct = CodonTable('standard')
         
         for _, row in df.iterrows():

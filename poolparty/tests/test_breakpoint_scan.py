@@ -32,7 +32,7 @@ class TestBreakpointScanFactory:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_library(num_seqs=1, aux_pools=[right])
+        df = left.generate_library(num_seqs=1, report_design_cards=True, aux_pools=[right])
         assert df['seq'].iloc[0] + df['right.seq'].iloc[0] == 'ACGT'
     
     def test_accepts_pool_input(self):
@@ -43,7 +43,7 @@ class TestBreakpointScanFactory:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_library(num_seqs=1, aux_pools=[right])
+        df = left.generate_library(num_seqs=1, report_design_cards=True, aux_pools=[right])
         assert df['seq'].iloc[0] + df['right.seq'].iloc[0] == 'ACGT'
 
 
@@ -57,7 +57,7 @@ class TestBreakpointScanSingleBreakpoint:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_library(num_cycles=1, aux_pools=[right])
+        df = left.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[right])
         # 5 possible breakpoint positions (0, 1, 2, 3, 4)
         assert len(df) == 5
     
@@ -68,7 +68,7 @@ class TestBreakpointScanSingleBreakpoint:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_library(num_cycles=1, aux_pools=[right])
+        df = left.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[right])
         
         # All splits should reconstruct original
         for _, row in df.iterrows():
@@ -81,7 +81,7 @@ class TestBreakpointScanSingleBreakpoint:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_library(num_cycles=1, aux_pools=[right])
+        df = left.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[right])
         
         splits = set(zip(df['seq'], df['right.seq']))
         expected = {('', 'ABCD'), ('A', 'BCD'), ('AB', 'CD'), ('ABC', 'D'), ('ABCD', '')}
@@ -106,7 +106,7 @@ class TestBreakpointScanMultipleBreakpoints:
             mid = mid.named('mid')
             right = right.named('right')
         
-        df = left.generate_library(num_seqs=10, aux_pools=[mid, right])
+        df = left.generate_library(num_seqs=10, report_design_cards=True, aux_pools=[mid, right])
         
         for _, row in df.iterrows():
             assert row['seq'] + row['mid.seq'] + row['right.seq'] == 'ACGTACGT'
@@ -122,7 +122,7 @@ class TestBreakpointScanMultipleBreakpoints:
             seg2 = pools[2].named('seg2')
             seg3 = pools[3].named('seg3')
         
-        df = seg0.generate_library(num_seqs=10, aux_pools=[seg1, seg2, seg3])
+        df = seg0.generate_library(num_seqs=10, report_design_cards=True, aux_pools=[seg1, seg2, seg3])
         
         for _, row in df.iterrows():
             reconstructed = row['seq'] + row['seg1.seq'] + row['seg2.seq'] + row['seg3.seq']
@@ -167,7 +167,7 @@ class TestBreakpointScanRandomMode:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_library(num_seqs=100, seed=42, aux_pools=[right])
+        df = left.generate_library(num_seqs=100, seed=42, report_design_cards=True, aux_pools=[right])
         
         # All should be valid splits
         for _, row in df.iterrows():
@@ -201,7 +201,7 @@ class TestBreakpointScanPositions:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_library(num_cycles=1, aux_pools=[right])
+        df = left.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[right])
         assert len(df) == 2  # Only 2 positions
         
         splits = set(zip(df['seq'], df['right.seq']))
@@ -290,7 +290,7 @@ class TestBreakpointScanDesignCards:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential', op_name='split')
             left = left.named('left')
         
-        df = left.generate_library(num_seqs=3)
+        df = left.generate_library(num_seqs=3, report_design_cards=True)
         assert 'left.op.key.breakpoints' in df.columns
     
     def test_breakpoints_values(self):
@@ -300,7 +300,7 @@ class TestBreakpointScanDesignCards:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_library(num_cycles=1, aux_pools=[right])
+        df = left.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[right])
         
         for _, row in df.iterrows():
             breakpoints = row['right.op.key.breakpoints']
@@ -444,7 +444,7 @@ class TestBreakpointScanCustomName:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, op_name='split')
             left = left.named('left')
         
-        df = left.generate_library(num_seqs=1)
+        df = left.generate_library(num_seqs=1, report_design_cards=True)
         assert 'left.op.key.breakpoints' in df.columns
 
 
@@ -465,7 +465,7 @@ class TestBreakpointScanSpacing:
             seg1 = seg1.named('seg1')
             seg2 = seg2.named('seg2')
         
-        df = seg0.generate_library(num_cycles=1, aux_pools=[seg1, seg2])
+        df = seg0.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[seg1, seg2])
         
         # Verify all generated combinations have spacing >= 3
         for _, row in df.iterrows():
@@ -487,7 +487,7 @@ class TestBreakpointScanSpacing:
             seg1 = seg1.named('seg1')
             seg2 = seg2.named('seg2')
         
-        df = seg0.generate_library(num_cycles=1, aux_pools=[seg1, seg2])
+        df = seg0.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[seg1, seg2])
         
         # Verify all generated combinations have spacing <= 2
         for _, row in df.iterrows():
@@ -508,7 +508,7 @@ class TestBreakpointScanSpacing:
             seg1 = seg1.named('seg1')
             seg2 = seg2.named('seg2')
         
-        df = seg0.generate_library(num_cycles=1, aux_pools=[seg1, seg2])
+        df = seg0.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[seg1, seg2])
         
         # Verify all generated combinations have 2 <= spacing <= 4
         for _, row in df.iterrows():
@@ -562,7 +562,7 @@ class TestBreakpointScanSpacing:
             seg1 = seg1.named('seg1')
             seg2 = seg2.named('seg2')
         
-        df = seg0.generate_library(num_seqs=50, seed=42, aux_pools=[seg1, seg2])
+        df = seg0.generate_library(num_seqs=50, seed=42, report_design_cards=True, aux_pools=[seg1, seg2])
         
         # All random samples should satisfy spacing constraints
         for _, row in df.iterrows():
@@ -583,7 +583,7 @@ class TestBreakpointScanSpacing:
             seg2 = pools[2].named('seg2')
             seg3 = pools[3].named('seg3')
         
-        df = seg0.generate_library(num_cycles=1, aux_pools=[seg1, seg2, seg3])
+        df = seg0.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[seg1, seg2, seg3])
         
         # Verify all spacings are within constraints
         for _, row in df.iterrows():

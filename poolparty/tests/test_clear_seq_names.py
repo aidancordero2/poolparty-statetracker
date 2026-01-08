@@ -177,7 +177,7 @@ class TestClearSeqNamesDoesNotAffectSequences:
                 mode='sequential',
             ).named('pool').clear_seq_names()
         
-        df = pool.generate_library(num_cycles=1)
+        df = pool.generate_library(num_cycles=1, report_design_cards=True)
         # Design card columns should still be present (uses pool.op naming)
         key_cols = [c for c in df.columns if '.key.seq_index' in c]
         assert len(key_cols) == 1

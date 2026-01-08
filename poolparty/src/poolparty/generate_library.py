@@ -15,6 +15,7 @@ def generate_library(
     seed: Optional[int] = None,
     init_state: Optional[int] = None,
     seqs_only: bool = False,
+    report_design_cards: bool = False,
     aux_pools: Sequence[Pool_type] = (),
     report_seq: bool = True,
     report_pool_seqs: bool = True,
@@ -32,19 +33,12 @@ def generate_library(
         num_seqs: Number of sequences to generate.
         seed: Random seed for reproducibility.
         init_state: Initial state to start generation from.
-        seqs_only: Whether to include only sequence columns.
-        aux_pools: Additional pools to include in output.
-        report_seq: Whether to include the main sequence column.
-        report_pool_seqs: Whether to include per-pool sequence columns.
-        report_pool_states: Whether to include pool state columns.
-        report_op_states: Whether to include operation state columns.
-        report_op_keys: Whether to include operation key columns.
-        pools_to_report: Which pools to report ('all', 'self', or a list).
-        organize_columns_by: How to organize columns ('pool' or 'type').
-        seqs_only: Whether to include only sequence columns.
+        seqs_only: If True, return list of sequences instead of DataFrame.
+        report_design_cards: If True, include detailed design card info in output.
+            When False (default), returns minimal DataFrame with "name" and "seq".
     
     Returns:
-        DataFrame with generated sequences and metadata.
+        DataFrame with generated sequences, or list of sequences if seqs_only=True.
     """
     # Initialize state tracking on pool if not present
     if not hasattr(pool, '_current_state'):
@@ -64,29 +58,35 @@ def generate_library(
     
     # Build outputs dict
     outputs: dict[str, Pool_type] = {f'{pool.name}.seq': pool}
-    for aux_pool in aux_pools:
-        outputs[f'{aux_pool.name}.seq'] = aux_pool
+    if report_design_cards:
+        for aux_pool in aux_pools:
+            outputs[f'{aux_pool.name}.seq'] = aux_pool
     
     sorted_ops = _topo_sort_operations(outputs)
     _seed_random_operations(sorted_ops, pool._master_seed)
     
-    # Determine which pools to report
-    if pools_to_report == 'all':
-        pools_filter = _collect_all_pools(outputs)
-    elif pools_to_report == 'self':
-        pools_filter = {pool}
+    # Determine which pools to report (only used when report_design_cards=True)
+    if report_design_cards:
+        if pools_to_report == 'all':
+            pools_filter = _collect_all_pools(outputs)
+        elif pools_to_report == 'self':
+            pools_filter = {pool}
+        else:
+            pools_filter = set(pools_to_report)
+        
+        ops_to_report = {p.operation.id for p in pools_filter}
+        
+        # Add filtered pools to outputs if not already present
+        for p in pools_filter:
+            key = f'{p.name}.seq'
+            if key not in outputs:
+                outputs[key] = p
+        
+        counters = _collect_counters(pools_filter, report_pool_states, report_op_states)
     else:
-        pools_filter = set(pools_to_report)
-    
-    ops_to_report = {p.operation.id for p in pools_filter}
-    
-    # Add filtered pools to outputs if not already present
-    for p in pools_filter:
-        key = f'{p.name}.seq'
-        if key not in outputs:
-            outputs[key] = p
-    
-    counters = _collect_counters(pools_filter, report_pool_states, report_op_states)
+        pools_filter = {pool}
+        ops_to_report = set()
+        counters = []
     
     # Generate rows
     rows = []
@@ -94,7 +94,8 @@ def generate_library(
         global_state = pool._current_state + i
         row = _compute_one(
             pool, sorted_ops, outputs, global_state, 
-            counters, report_op_keys, ops_to_report, pools_filter
+            counters, report_op_keys if report_design_cards else False, 
+            ops_to_report, pools_filter
         )
         rows.append(row)
     
@@ -102,6 +103,15 @@ def generate_library(
     
     # Build and format DataFrame
     df = pd.DataFrame(rows)
+    
+    if not report_design_cards:
+        # Minimal output: just "name" and "seq" columns
+        df = df[['name', f'{pool.name}.seq']].rename(columns={f'{pool.name}.seq': 'seq'})
+        if seqs_only:
+            return list(df['seq'])
+        return df
+    
+    # Full design card output
     df = clean_df_int_columns(df)
     df = organize_columns(df, pools_filter, organize_columns_by)
     df = finalize_generate_df(df, pool.name, report_seq, report_pool_seqs, pools_filter)

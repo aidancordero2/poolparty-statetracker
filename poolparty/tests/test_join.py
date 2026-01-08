@@ -191,7 +191,7 @@ class TestJoinDesignCards:
             b = pp.from_seqs(['TTT'], seq_names=['seq_b'])
             combined = join([a, b]).named('seq')
         
-        df = combined.generate_library(num_seqs=1)
+        df = combined.generate_library(num_seqs=1, report_design_cards=True)
         # Parent design cards should be present
         assert 'from_seqs.seq_name' in df.columns or len([c for c in df.columns if 'seq_name' in c]) > 0
 
