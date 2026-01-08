@@ -142,6 +142,8 @@ class MarkerScanOp(Operation):
         _factory_name: Optional[str] = None,
     ) -> None:
         """Initialize MarkerScanOp."""
+        from ..party import get_active_party
+        
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
         
@@ -150,9 +152,23 @@ class MarkerScanOp(Operation):
         self._mode = mode
         self._strand = strand
         self._marker_length = marker_length
-        self._seq_length = parent_pool.seq_length
+        self._region = region  # Store early for logging
         self._valid_positions = None
         self._sequential_cache = None
+        
+        # Determine effective seq_length for cache building:
+        # If region is a marker name, use the marker's registered length
+        # Otherwise, use the parent pool's seq_length
+        if isinstance(region, str):
+            party = get_active_party()
+            try:
+                region_marker = party.get_marker_by_name(region)
+                self._seq_length = region_marker.seq_length
+            except (ValueError, KeyError):
+                # Marker not yet registered, fall back to parent seq_length
+                self._seq_length = parent_pool.seq_length
+        else:
+            self._seq_length = parent_pool.seq_length
         
         # Set factory name if provided
         if _factory_name is not None:
