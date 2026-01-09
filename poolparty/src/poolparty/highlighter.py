@@ -23,6 +23,9 @@ ANSI_ESCAPE_PATTERN = re.compile(r'\033\[[0-9;]*m')
 # Default gap characters (from alphabet.py DEFAULT_IGNORE_CHARS)
 DEFAULT_GAP_CHARS = '-. '
 
+# Foreground colors are mutually exclusive (only one can be active at a time)
+FOREGROUND_CODES = {'91', '92', '93', '94', '95', '96'}
+
 
 @beartype
 class Highlighter:
@@ -203,12 +206,29 @@ class Highlighter:
         return f"Highlighter({', '.join(parts)})"
 
 
+def _resolve_styles(styles_with_priority: dict[str, int]) -> list[str]:
+    """Resolve conflicting styles using priority (higher wins for foreground colors)."""
+    # Separate foreground colors from other styles
+    fg_codes = {c: p for c, p in styles_with_priority.items() if c in FOREGROUND_CODES}
+    other_codes = [c for c in styles_with_priority if c not in FOREGROUND_CODES]
+    
+    result = other_codes  # All non-foreground codes (additive)
+    
+    if fg_codes:
+        # Pick the foreground color with highest priority (later highlighter wins)
+        winner = max(fg_codes.items(), key=lambda x: x[1])[0]
+        result.append(winner)
+    
+    return sorted(result)  # Sort for consistent output
+
+
 @beartype
 def apply_highlights(text: str, highlighters: Sequence[Highlighter]) -> str:
     """Apply multiple highlighters with proper overlap handling.
     
-    Uses character-by-character style tracking so overlapping regions
-    get all applicable styles combined (e.g., red + underline).
+    Uses character-by-character style tracking. For overlapping regions:
+    - Foreground colors: later-added highlight takes precedence
+    - Other styles (bold, underline): all are combined
     """
     if not highlighters:
         return text
@@ -222,11 +242,11 @@ def apply_highlights(text: str, highlighters: Sequence[Highlighter]) -> str:
     # Get tag positions once (shared across highlighters that need it)
     tag_positions = Highlighter._get_tag_positions(clean_text)
     
-    # Track styles for each character position
-    char_styles: list[set[str]] = [set() for _ in range(n)]
+    # Track styles for each character position: code -> priority (highlighter index)
+    char_styles: list[dict[str, int]] = [{} for _ in range(n)]
     
     # Apply each highlighter's matches to the style tracking
-    for hl in highlighters:
+    for priority, hl in enumerate(highlighters):
         # Determine bounds for this highlighter
         bounds = hl._get_region_bounds(clean_text)
         
@@ -243,25 +263,25 @@ def apply_highlights(text: str, highlighters: Sequence[Highlighter]) -> str:
                 # Skip tag positions if this highlighter excludes them
                 if hl._excludes_tags and pos in tag_positions:
                     continue
-                char_styles[pos].add(hl._code)
+                char_styles[pos][hl._code] = priority
     
     # Build output with combined ANSI codes
     result = []
-    current_styles: set[str] = set()
+    current_codes: list[str] = []
     
     for i, char in enumerate(clean_text):
-        new_styles = char_styles[i]
-        if new_styles != current_styles:
-            if current_styles:
+        new_codes = _resolve_styles(char_styles[i]) if char_styles[i] else []
+        if new_codes != current_codes:
+            if current_codes:
                 result.append('\033[0m')  # Reset previous styles
-            if new_styles:
-                codes = ';'.join(sorted(new_styles))
+            if new_codes:
+                codes = ';'.join(new_codes)
                 result.append(f'\033[{codes}m')
-            current_styles = new_styles
+            current_codes = new_codes
         result.append(char)
     
     # Reset at end if we have active styles
-    if current_styles:
+    if current_codes:
         result.append('\033[0m')
     
     return ''.join(result)
@@ -290,3 +310,12 @@ def clear_highlights() -> None:
     """Clear all highlights from the active party."""
     from .party import get_active_party
     get_active_party()._highlights.clear()
+
+
+@beartype
+def set_highlights(highlighters: Sequence[Highlighter]) -> None:
+    """Replace the active party's highlights with the given list."""
+    from .party import get_active_party
+    party = get_active_party()
+    party._highlights.clear()
+    party._highlights.extend(highlighters)

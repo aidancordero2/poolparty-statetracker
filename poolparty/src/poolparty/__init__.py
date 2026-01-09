@@ -66,7 +66,7 @@ from .marker_ops import (
     remove_marker,
 )
 # Import highlighting utilities
-from .seq_highlighter import Highlighter, apply_highlights, add_highlight, clear_highlights
+from .highlighter import Highlighter, apply_highlights, add_highlight, clear_highlights, set_highlights
 # Import from multiscan_ops module
 from .multiscan_ops import (
     deletion_multiscan,
@@ -127,6 +127,7 @@ __all__ = [
     'apply_highlights',
     'add_highlight',
     'clear_highlights',
+    'set_highlights',
 ]
 
 # Re-export statecounter primitives for backward compatibility
