@@ -375,7 +375,7 @@ def add_highlight(
     region: Optional[str] = None,
     which: str = 'contents',
     regex: Optional[str] = None,
-) -> Highlighter | list[Highlighter]:
+) -> None:
     """Create Highlighter(s) and add to the active party's highlight list.
     
     Each of style, region, and which can contain whitespace-separated values.
@@ -396,12 +396,9 @@ def add_highlight(
     regions = region.split() if region is not None else [None]
     whiches = which.split()
     
-    highlighters = []
     for s, r, w in product(styles, regions, whiches):
         hl = Highlighter(s, r, w, regex)  # type: ignore
         get_active_party()._highlights.append(hl)
-        highlighters.append(hl)
-    return highlighters[0] if len(highlighters) == 1 else highlighters
 
 
 @beartype

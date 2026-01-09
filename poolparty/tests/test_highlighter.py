@@ -9,7 +9,7 @@ from poolparty.highlighter import (
     clear_highlights,
     set_highlights,
     STYLE_CODES,
-    FOREGROUND_CODES,
+    _BASIC_FG_CODES,
     _resolve_styles,
 )
 
@@ -273,16 +273,19 @@ class TestPartyIntegration:
     def test_add_highlight_creates_and_adds(self):
         """Test add_highlight creates Highlighter and adds to party."""
         pp.clear_highlights()
-        hl = pp.add_highlight('red')
+        pp.add_highlight('red')
         party = pp.get_active_party()
-        assert hl in party._highlights
+        assert len(party._highlights) == 1
+        hl = party._highlights[-1]
         assert isinstance(hl, Highlighter)
         assert hl.style == 'red'
 
     def test_add_highlight_with_params(self):
         """Test add_highlight with all parameters."""
         pp.clear_highlights()
-        hl = pp.add_highlight('green', region='M', which='lower')
+        pp.add_highlight('green', region='M', which='lower')
+        party = pp.get_active_party()
+        hl = party._highlights[-1]
         assert hl.style == 'green'
         assert hl.region == 'M'
         assert hl.which == 'lower'
