@@ -1,6 +1,6 @@
 """Pool class for poolparty."""
 import statecounter as sc
-from .types import Pool_type, Operation_type, Union, Optional, Real, Integral, beartype
+from .types import Pool_type, Operation_type, Union, Optional, Real, Integral, Sequence, beartype
 from .marker import Marker
 from .ops_container import OpsContainer
 import pandas as pd
@@ -263,6 +263,7 @@ class Pool:
         show_seq: bool = True,
         pad_names: bool = True,
         seed: Optional[Integral] = None,
+        highlights: Optional[Sequence] = None,
     ) -> Pool_type:
         """Print preview sequences from this pool; returns self for chaining.
         
@@ -275,6 +276,7 @@ class Pool:
             show_seq: Whether to show the seq column.
             pad_names: Whether to pad names to align sequences.
             seed: Random seed for reproducibility.
+            highlights: List of Highlighter objects to apply to sequences.
         """
         if num_seqs is None and num_cycles is None:
             num_cycles = 1
@@ -314,7 +316,11 @@ class Pool:
                 else:
                     row_parts.append(f"{row['name']}")
             if show_seq:
-                row_parts.append(f"{row['seq']}")
+                seq = row['seq']
+                if highlights:
+                    from .seq_highlighter import apply_highlights
+                    seq = apply_highlights(seq, highlights)
+                row_parts.append(seq)
             print("  ".join(row_parts))
         print('')
         return self # For chaining

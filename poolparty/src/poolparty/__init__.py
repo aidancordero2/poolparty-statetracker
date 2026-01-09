@@ -20,6 +20,7 @@ from .fixed_ops import (
     swapcase,
     upper,
     lower,
+    color_chars,
     clear_gap_chars,
 )
 # Import other operations from base_ops module
@@ -64,6 +65,8 @@ from .marker_ops import (
     apply_at_marker,
     remove_marker,
 )
+# Import highlighting utilities
+from .seq_highlighter import Highlighter, apply_highlights
 # Import from multiscan_ops module
 from .multiscan_ops import (
     deletion_multiscan,
@@ -99,6 +102,7 @@ __all__ = [
     'swapcase',
     'upper',
     'lower',
+    'color_chars',
     'clear_gap_chars',
     'stack', 'StackOp',
     'repeat', 'RepeatOp',
@@ -118,6 +122,9 @@ __all__ = [
     'deletion_multiscan',
     'insertion_multiscan',
     'replacement_multiscan',
+    # Highlighting utilities
+    'Highlighter',
+    'apply_highlights',
 ]
 
 # Re-export statecounter primitives for backward compatibility
