@@ -48,6 +48,15 @@ def _init_default_party() -> None:
     if _default_party is None:
         init()
 
+
+@beartype
+def clear_pools() -> None:
+    """Clear all pools, operations, and markers from the active Party without resetting highlights."""
+    party = get_active_party()
+    if party is None:
+        raise RuntimeError("No active Party context.")
+    party.clear_pools()
+
 @beartype
 class Party:
     """Context manager for building and executing sequence libraries."""
@@ -297,6 +306,39 @@ class Party:
     def has_marker(self, name: str) -> bool:
         """Check if a marker with the given name is registered."""
         return name in self._markers_by_name
+    
+    def clear_pools(self) -> None:
+        """Clear all pools, operations, and markers without resetting highlights.
+        
+        Unlike init(), this preserves:
+        - Highlighting configuration (_highlights)
+        - Alphabet settings (_alphabet)
+        - Genetic code settings (_codon_table)
+        - Default parameter values (_defaults)
+        """
+        # Clear pool tracking
+        self._pools_by_id.clear()
+        self._pools_by_name.clear()
+        # Clear operation tracking
+        self._operations.clear()
+        self._ops_by_id.clear()
+        self._ops_by_name.clear()
+        # Clear marker tracking
+        self._markers_by_id.clear()
+        self._markers_by_name.clear()
+        # Reset ID counters
+        self._next_pool_id = 0
+        self._next_op_id = 0
+        self._next_marker_id = 0
+        # Clear outputs
+        self._outputs.clear()
+        # Reset counter manager to clear counter state
+        if self._is_active:
+            self._counter_manager.__exit__(None, None, None)
+            self._counter_manager = sc.Manager()
+            self._counter_manager.__enter__()
+        else:
+            self._counter_manager = sc.Manager()
     
     def output(self, pool: Pool_type, name: Optional[str] = None) -> None:
         """Mark a pool as an output of this library."""

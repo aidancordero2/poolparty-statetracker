@@ -4,7 +4,7 @@ __version__ = "0.3.0"
 
 import statecounter as sc
 
-from .party import Party, get_active_party, init, _init_default_party
+from .party import Party, get_active_party, init, clear_pools, _init_default_party
 from .pool import Pool
 from .operation import Operation
 from .marker import Marker
@@ -65,7 +65,7 @@ from .marker_ops import (
     remove_marker,
 )
 # Import highlighting utilities
-from .highlighter import Highlighter, apply_highlights, add_highlight, clear_highlights, set_highlights
+from .highlighter import Highlighter, apply_highlights, add_highlight, clear_highlights, set_highlights, print_named_colors
 # Import from multiscan_ops module
 from .multiscan_ops import (
     deletion_multiscan,
@@ -75,7 +75,7 @@ from .multiscan_ops import (
 
 __all__ = [
     '__version__',
-    'Party', 'get_active_party', 'init',
+    'Party', 'get_active_party', 'init', 'clear_pools',
     'set_default', 'load_defaults',
     'Pool', 'Operation', 'Marker', 'Counter', 'CounterManager', 'generate_library',
     'get_alphabet', 'NAMED_ALPHABETS',
@@ -126,6 +126,7 @@ __all__ = [
     'add_highlight',
     'clear_highlights',
     'set_highlights',
+    'print_named_colors',
 ]
 
 # Re-export statecounter primitives for backward compatibility

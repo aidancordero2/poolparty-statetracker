@@ -325,7 +325,7 @@ class Pool:
             if show_seq:
                 seq = row['seq']
                 if show_highlights and highlights:
-                    from .seq_highlighter import apply_highlights
+                    from .highlighter import apply_highlights
                     seq = apply_highlights(seq, highlights)
                 row_parts.append(seq)
             print("  ".join(row_parts))
