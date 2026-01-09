@@ -10,7 +10,6 @@ from .upper import upper
 from .lower import lower
 from .clear_gap_chars import clear_gap_chars
 from .clear_annotation import clear_annotation
-from .color_chars import color_chars
 
 __all__ = [
     'fixed_operation', 'FixedOp',
@@ -18,5 +17,4 @@ __all__ = [
     'swapcase', 'seq_slice',
     'upper', 'lower',
     'clear_gap_chars', 'clear_annotation',
-    'color_chars'
 ]

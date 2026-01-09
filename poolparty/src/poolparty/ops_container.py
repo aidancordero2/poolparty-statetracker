@@ -70,10 +70,6 @@ class OpsContainer:
         from .fixed_ops.lower import lower
         return lower(pool=self.pool, region=region, **kwargs)
     
-    def color_chars(self, region: Optional[str] = None, color=str, which=str, **kwargs) -> Pool_type:
-        from .fixed_ops.color_chars import color_chars
-        return color_chars(pool=self.pool, region=region, color=color, which=which, **kwargs)
-    
     def clear_gap_chars(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .fixed_ops.clear_gap_chars import clear_gap_chars
         return clear_gap_chars(pool=self.pool, region=region, **kwargs)

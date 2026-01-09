@@ -20,7 +20,6 @@ from .fixed_ops import (
     swapcase,
     upper,
     lower,
-    color_chars,
     clear_gap_chars,
 )
 # Import other operations from base_ops module
@@ -102,7 +101,6 @@ __all__ = [
     'swapcase',
     'upper',
     'lower',
-    'color_chars',
     'clear_gap_chars',
     'stack', 'StackOp',
     'repeat', 'RepeatOp',
