@@ -14,6 +14,7 @@ from .alphabet import get_alphabet, NAMED_ALPHABETS
 from .fixed_ops import (
     fixed_operation, FixedOp,
     from_seq,
+    from_fasta,
     join,
     seq_slice,
     reverse_complement,
@@ -81,6 +82,7 @@ __all__ = [
     'get_alphabet', 'NAMED_ALPHABETS',
     'fixed_operation', 'FixedOp',
     'from_seq',
+    'from_fasta',
     'from_seqs', 'FromSeqsOp',
     'from_iupac_motif', 'FromIupacMotifOp',
     'from_prob_motif', 'FromProbMotifOp',

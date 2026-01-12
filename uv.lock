@@ -1045,6 +1045,7 @@ dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pandas" },
+    { name = "pyfaidx" },
     { name = "statecounter" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
@@ -1060,6 +1061,7 @@ requires-dist = [
     { name = "beartype", specifier = ">=0.15" },
     { name = "numpy", specifier = ">=1.20" },
     { name = "pandas", specifier = ">=1.3" },
+    { name = "pyfaidx", specifier = ">=0.8.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0" },
     { name = "statecounter", editable = "statecounter" },
@@ -1163,6 +1165,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/fe/cf/d2d3b9f5699fb1e4615c8e32ff220203e43b248e1dfcc6736ad9057731ca/pycparser-2.23.tar.gz", hash = "sha256:78816d4f24add8f10a06d6f05b4d424ad9e96cfebf68a4ddc99c65c0720d00c2", size = 173734, upload-time = "2025-09-09T13:23:47.91Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a0/e3/59cd50310fc9b59512193629e1984c1f95e5c8ae6e5d8c69532ccc65a7fe/pycparser-2.23-py3-none-any.whl", hash = "sha256:e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934", size = 118140, upload-time = "2025-09-09T13:23:46.651Z" },
+]
+
+[[package]]
+name = "pyfaidx"
+version = "0.9.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8f/44/070fd3b8e7042d03c3e800f25e44ed3d95fb31a3297d784588c03f238c1a/pyfaidx-0.9.0.3.tar.gz", hash = "sha256:648b4b28d98dcb06f9a62d88a956ebb998297f4bd2f04e05609d935a2c314a79", size = 71549, upload-time = "2025-09-03T15:05:52.978Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ce/0b/fadfd7d0088efa3ba0cdcdbb51d093e18d3700f6f88634aa8387106394a4/pyfaidx-0.9.0.3-py3-none-any.whl", hash = "sha256:e494edffd644dbfa141ec63196c274cbb1f029acfc5977108c4fe51fdf5dc3ae", size = 29370, upload-time = "2025-09-03T15:05:51.469Z" },
 ]
 
 [[package]]

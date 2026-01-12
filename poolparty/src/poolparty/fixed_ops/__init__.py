@@ -1,6 +1,7 @@
 """Fixed operations for poolparty - deterministic transformations using FixedOp."""
 from .fixed import fixed_operation, FixedOp
 from .from_seq import from_seq
+from .from_fasta import from_fasta
 from .join import join
 from .reverse_complement import reverse_complement
 
@@ -13,7 +14,7 @@ from .clear_annotation import clear_annotation
 
 __all__ = [
     'fixed_operation', 'FixedOp',
-    'from_seq', 'join', 'reverse_complement',
+    'from_seq', 'from_fasta', 'join', 'reverse_complement',
     'swapcase', 'seq_slice',
     'upper', 'lower',
     'clear_gap_chars', 'clear_annotation',
