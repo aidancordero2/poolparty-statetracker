@@ -29,31 +29,33 @@ Counter Operations
 Product (Cartesian Product)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use ``*`` or ``product_counters()`` to create Cartesian products:
+Use :func:`~statecounter.product` to create Cartesian products:
 
 .. code-block:: python
 
-    from statecounter import Counter, Manager
+    from statecounter import Counter, Manager, product
 
     with Manager():
         A = Counter(num_states=2, name='A')
         B = Counter(num_states=3, name='B')
-        C = A * B  # 6 states
+        C = product([A, B])  # 6 states
         
         for _ in C:
             print(f"A={A.state}, B={B.state}")
 
-Stack
-~~~~~~~~~~~~~~~~~~~~
+Stack (Disjoint Union)
+~~~~~~~~~~~~~~~~~~~~~~
 
-Use ``+`` or ``sum_counters()`` to create disjoint unions:
+Use :func:`~statecounter.stack` to create disjoint unions:
 
 .. code-block:: python
+
+    from statecounter import stack
 
     with Manager():
         A = Counter(num_states=2, name='A')
         B = Counter(num_states=3, name='B')
-        C = stack([A,B])  # 5 states
+        C = stack([A, B])  # 5 states
         
         for _ in C:
             # Only one of A or B is active at a time
@@ -82,7 +84,7 @@ state automatically updates all parent counters:
     with Manager():
         A = Counter(num_states=2, name='A')
         B = Counter(num_states=3, name='B')
-        C = A * B
+        C = product([A, B])
         
         C.state = 5  # Set child state
         print(A.state)  # 1 (automatically updated)
@@ -91,18 +93,18 @@ state automatically updates all parent counters:
 Visualization
 -------------
 
-Use ``print_dag()`` to visualize counter dependencies:
+Use :meth:`~statecounter.Counter.print_dag` to visualize counter dependencies:
 
 .. code-block:: python
 
     with Manager():
         A = Counter(num_states=2, name='A')
         B = Counter(num_states=3, name='B')
-        C = A * B
-        C.name = 'C'
+        C = product([A, B], name='C')
         
         C.print_dag()
         # Output:
-        # C [Multiply, n=6]
-        # ├── A [Leaf, n=2]
-        # └── B [Leaf, n=3]
+        # C (counter, io=0, n=6)
+        # └── [op=Product]
+        #     ├── A (counter, io=0, n=2)
+        #     └── B (counter, io=0, n=3)

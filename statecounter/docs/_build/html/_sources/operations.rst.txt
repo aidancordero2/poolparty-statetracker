@@ -14,20 +14,20 @@ Product (Cartesian Product)
 The **product** operation creates a counter whose states enumerate all
 combinations of parent counter states—the Cartesian product.
 
-Using the ``*`` Operator
-~~~~~~~~~~~~~~~~~~~~~~~~
+Using ``product()``
+~~~~~~~~~~~~~~~~~~~
 
-The simplest way to create a product is with the ``*`` operator:
+Use the :func:`~statecounter.product` function to create a Cartesian product:
 
 .. code-block:: python
 
-    from statecounter import Counter, Manager
+    from statecounter import Counter, Manager, product
 
     with Manager():
         A = Counter(num_states=2, name='A')
         B = Counter(num_states=3, name='B')
         
-        C = A * B  # 6 states (2 × 3)
+        C = product([A, B])  # 6 states (2 × 3)
         
         for _ in C:
             print(f"A={A.state}, B={B.state}")
@@ -44,14 +44,9 @@ Output::
 The first counter (A) varies fastest, cycling through all its states before
 the second counter (B) advances.
 
-Using ``product()``
-~~~~~~~~~~~~~~~~~~~
-
-The :func:`~statecounter.product` function provides explicit control:
+You can combine more than two counters:
 
 .. code-block:: python
-
-    from statecounter import Counter, Manager, product
 
     with Manager():
         A = Counter(num_states=2, name='A')

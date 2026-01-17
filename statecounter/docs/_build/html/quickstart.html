@@ -49,7 +49,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#counter-operations">Counter Operations</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#product-cartesian-product">Product (Cartesian Product)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#stack">Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stack-disjoint-union">Stack (Disjoint Union)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#slicing">Slicing</a></li>
 </ul>
 </li>
@@ -113,26 +113,28 @@
 <h2>Counter Operations<a class="headerlink" href="#counter-operations" title="Link to this heading"></a></h2>
 <section id="product-cartesian-product">
 <h3>Product (Cartesian Product)<a class="headerlink" href="#product-cartesian-product" title="Link to this heading"></a></h3>
-<p>Use <code class="docutils literal notranslate"><span class="pre">*</span></code> or <code class="docutils literal notranslate"><span class="pre">product_counters()</span></code> to create Cartesian products:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">statecounter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">Manager</span>
+<p>Use <a class="reference internal" href="api.html#statecounter.product" title="statecounter.product"><code class="xref py py-func docutils literal notranslate"><span class="pre">product()</span></code></a> to create Cartesian products:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">statecounter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">Manager</span><span class="p">,</span> <span class="n">product</span>
 
 <span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
     <span class="n">B</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
-    <span class="n">C</span> <span class="o">=</span> <span class="n">A</span> <span class="o">*</span> <span class="n">B</span>  <span class="c1"># 6 states</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">product</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>  <span class="c1"># 6 states</span>
 
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">C</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A=</span><span class="si">{</span><span class="n">A</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">, B=</span><span class="si">{</span><span class="n">B</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
-<section id="stack">
-<h3>Stack<a class="headerlink" href="#stack" title="Link to this heading"></a></h3>
-<p>Use <code class="docutils literal notranslate"><span class="pre">+</span></code> or <code class="docutils literal notranslate"><span class="pre">sum_counters()</span></code> to create disjoint unions:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
+<section id="stack-disjoint-union">
+<h3>Stack (Disjoint Union)<a class="headerlink" href="#stack-disjoint-union" title="Link to this heading"></a></h3>
+<p>Use <a class="reference internal" href="api.html#statecounter.stack" title="statecounter.stack"><code class="xref py py-func docutils literal notranslate"><span class="pre">stack()</span></code></a> to create disjoint unions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">statecounter</span><span class="w"> </span><span class="kn">import</span> <span class="n">stack</span>
+
+<span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
     <span class="n">B</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
-    <span class="n">C</span> <span class="o">=</span> <span class="n">stack</span><span class="p">([</span><span class="n">A</span><span class="p">,</span><span class="n">B</span><span class="p">])</span>  <span class="c1"># 5 states</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">stack</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>  <span class="c1"># 5 states</span>
 
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">C</span><span class="p">:</span>
         <span class="c1"># Only one of A or B is active at a time</span>
@@ -158,7 +160,7 @@ state automatically updates all parent counters:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
     <span class="n">B</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
-    <span class="n">C</span> <span class="o">=</span> <span class="n">A</span> <span class="o">*</span> <span class="n">B</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">product</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
 
     <span class="n">C</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="mi">5</span>  <span class="c1"># Set child state</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>  <span class="c1"># 1 (automatically updated)</span>
@@ -168,18 +170,18 @@ state automatically updates all parent counters:</p>
 </section>
 <section id="visualization">
 <h2>Visualization<a class="headerlink" href="#visualization" title="Link to this heading"></a></h2>
-<p>Use <code class="docutils literal notranslate"><span class="pre">print_dag()</span></code> to visualize counter dependencies:</p>
+<p>Use <a class="reference internal" href="api.html#statecounter.Counter.print_dag" title="statecounter.Counter.print_dag"><code class="xref py py-meth docutils literal notranslate"><span class="pre">print_dag()</span></code></a> to visualize counter dependencies:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
     <span class="n">B</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
-    <span class="n">C</span> <span class="o">=</span> <span class="n">A</span> <span class="o">*</span> <span class="n">B</span>
-    <span class="n">C</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;C&#39;</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">product</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
 
     <span class="n">C</span><span class="o">.</span><span class="n">print_dag</span><span class="p">()</span>
     <span class="c1"># Output:</span>
-    <span class="c1"># C [Multiply, n=6]</span>
-    <span class="c1"># ├── A [Leaf, n=2]</span>
-    <span class="c1"># └── B [Leaf, n=3]</span>
+    <span class="c1"># C (counter, io=0, n=6)</span>
+    <span class="c1"># └── [op=Product]</span>
+    <span class="c1">#     ├── A (counter, io=0, n=2)</span>
+    <span class="c1">#     └── B (counter, io=0, n=3)</span>
 </pre></div>
 </div>
 </section>

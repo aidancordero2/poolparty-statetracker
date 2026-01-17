@@ -81,12 +81,12 @@
 <p><strong>StateCounter</strong> is a Python library for creating composable counters with
 unidirectional state propagation. It provides a powerful way to enumerate
 combinatorial spaces through counter algebra operations.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">statecounter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">Manager</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">statecounter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">Manager</span><span class="p">,</span> <span class="n">product</span>
 
 <span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
     <span class="n">B</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
-    <span class="n">C</span> <span class="o">=</span> <span class="n">A</span> <span class="o">*</span> <span class="n">B</span>  <span class="c1"># Cartesian product: 6 states</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">product</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>  <span class="c1"># Cartesian product: 6 states</span>
 
     <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">C</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;C=</span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2">, A=</span><span class="si">{</span><span class="n">A</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">, B=</span><span class="si">{</span><span class="n">B</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

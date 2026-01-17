@@ -7,12 +7,12 @@ combinatorial spaces through counter algebra operations.
 
 .. code-block:: python
 
-    from statecounter import Counter, Manager
+    from statecounter import Counter, Manager, product
 
     with Manager():
         A = Counter(num_states=2, name='A')
         B = Counter(num_states=3, name='B')
-        C = A * B  # Cartesian product: 6 states
+        C = product([A, B])  # Cartesian product: 6 states
         
         for state in C:
             print(f"C={state}, A={A.state}, B={B.state}")

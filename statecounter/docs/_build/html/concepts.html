@@ -139,13 +139,14 @@ The Manager tracks all counters and their relationships:</p>
 <p>The power of StateCounter comes from <strong>composing</strong> counters using operations.
 When you combine counters, you create a new “derived” counter that depends on
 its “parent” counters:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">statecounter</span><span class="w"> </span><span class="kn">import</span> <span class="n">product</span>
+
+<span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
     <span class="n">B</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
 
     <span class="c1"># C is derived from A and B via product</span>
-    <span class="n">C</span> <span class="o">=</span> <span class="n">A</span> <span class="o">*</span> <span class="n">B</span>  <span class="c1"># 6 states (2 × 3)</span>
-    <span class="n">C</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;C&#39;</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">product</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>  <span class="c1"># 6 states (2 × 3)</span>
 </pre></div>
 </div>
 <p>This creates a <strong>directed acyclic graph (DAG)</strong> of counter dependencies:</p>
@@ -168,7 +169,7 @@ computed and updated.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
     <span class="n">B</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
-    <span class="n">C</span> <span class="o">=</span> <span class="n">A</span> <span class="o">*</span> <span class="n">B</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">product</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
 
     <span class="n">C</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="mi">5</span>  <span class="c1"># Set the derived counter&#39;s state</span>
 

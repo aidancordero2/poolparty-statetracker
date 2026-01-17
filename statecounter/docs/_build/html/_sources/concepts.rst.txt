@@ -51,13 +51,14 @@ its "parent" counters:
 
 .. code-block:: python
 
+    from statecounter import product
+
     with Manager():
         A = Counter(num_states=2, name='A')
         B = Counter(num_states=3, name='B')
         
         # C is derived from A and B via product
-        C = A * B  # 6 states (2 × 3)
-        C.name = 'C'
+        C = product([A, B], name='C')  # 6 states (2 × 3)
 
 This creates a **directed acyclic graph (DAG)** of counter dependencies:
 
@@ -86,7 +87,7 @@ computed and updated.
     with Manager():
         A = Counter(num_states=2, name='A')
         B = Counter(num_states=3, name='B')
-        C = A * B
+        C = product([A, B])
         
         C.state = 5  # Set the derived counter's state
         
