@@ -214,3 +214,57 @@ class Counter:
     
     def get_ancestors(self):
         return self._manager.get_ancestors(self)
+    
+    def _has_auto_name(self) -> bool:
+        """Return True if this counter has an auto-generated name (Counter[N])."""
+        import re
+        return bool(re.match(r'^Counter\[\d+\]$', self._name or ''))
+    
+    def get_states(self, include_inactive: bool = True, named_only: bool = True) -> dict:
+        """Return dict of {name: state} for this counter and all ancestors.
+        
+        Args:
+            include_inactive: If True (default), include counters with None state.
+                If False, only include counters that are currently active.
+            named_only: If True (default), exclude counters with auto-generated 
+                names (Counter[N]). If False, include all counters.
+        
+        Returns:
+            Dictionary mapping counter names to their current states,
+            in reverse topological order (derived counters first, parents last).
+        """
+        from collections import deque
+        
+        # BFS for reverse topological order (self first, then parents, then grandparents...)
+        ordered = []
+        visited = set()
+        queue = deque([self])
+        
+        while queue:
+            counter = queue.popleft()
+            if counter.id in visited:
+                continue
+            visited.add(counter.id)
+            ordered.append(counter)
+            queue.extend(counter._parents)
+        
+        # Apply filters
+        if named_only:
+            ordered = [c for c in ordered if not c._has_auto_name()]
+        if not include_inactive:
+            ordered = [c for c in ordered if c.state is not None]
+        
+        return {c.name: c.state for c in ordered}
+    
+    def print_states(self, include_inactive: bool = True, named_only: bool = True) -> None:
+        """Print current states of this counter and its ancestors.
+        
+        Args:
+            include_inactive: If True (default), include counters with None state.
+                If False, only include counters that are currently active.
+            named_only: If True (default), exclude counters with auto-generated 
+                names (Counter[N]). If False, include all counters.
+        """
+        states = self.get_states(include_inactive=include_inactive, named_only=named_only)
+        parts = [f"{name}={state}" for name, state in states.items()]
+        print(", ".join(parts))

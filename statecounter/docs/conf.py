@@ -31,6 +31,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # -- Options for HTML output -------------------------------------------------
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+html_logo = 'statecounter_logo2.jpg'
+html_css_files = ['custom.css']
 
 # Create _static directory if it doesn't exist (avoids warning)
 os.makedirs(os.path.join(os.path.dirname(__file__), '_static'), exist_ok=True)

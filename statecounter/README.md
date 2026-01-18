@@ -6,6 +6,12 @@
 
 **StateCounter** is a Python library for creating composable counters with unidirectional state propagation. It provides a powerful way to enumerate combinatorial spaces through counter algebra operations.
 
+## Why StateCounter?
+
+StateCounter was developed to support the design of complex DNA sequence libraries (see [PoolParty](https://github.com/jkinney/poolparty)), but it solves a general problem: **random access to combinatorial spaces**.
+
+If you've ever written nested loops to enumerate a Cartesian product and then wished you could shuffle the order, sample a subset, or split into train/test sets—all while tracking which component indices correspond to each item—StateCounter is for you. Build your combinatorial structure once using counter algebra, and StateCounter handles the index math automatically.
+
 ## Features
 
 - **Composable Counters**: Build complex iteration patterns from simple counters
