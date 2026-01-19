@@ -27,73 +27,86 @@ StateCounter is a Python library created to solve a technical problem that can a
 
 # Statement of Need
 
-We encountered the need for StateCounter when creating PoolParty, a Python package for generating complex DNA sequence libraries. Fig. 1 shows one example application--creating a DNA sequence library comprising different types of variants of a cis-regulatory element (CRE). Each variant CRE is created using a specific mutational process applied to a wild-type sequence:
-- The first sequence is the wild-type sequence; no mutations are applied. 
-- The next 5 sequences comprise CREs with randomly scattered point mutations. 
-- The next 5 sequences comprise CREs containing 5 nt deletions at tiled positions. 
-- The next 10 sequences comprise CREs with one of two 5 nt binding sites inserted at tiled postions.
-Each one of these sequences is then repeated 3 times and linked to a random 5-mer serving as a barcode. The problem we faced was this: given a value $n$, how do we compute which mutations to introduce into the sequence and which barcode to attach? 
+We encountered the need for StateCounter when creating PoolParty, a Python package for generating complex DNA sequence libraries. Fig. 1 shows one example application--creating a DNA sequence library comprising different types of variants of a cis-regulatory element (CRE). Each variant CRE is created using a specific mutational process applied to a wild-type sequence. The first sequence is the wild-type sequence; no mutations are applied. The next 5 sequences comprise CREs with randomly scattered point mutations. The next 5 sequences comprise CREs containing 5 nt deletions at tiled positions. The next 10 sequences comprise CREs with one of two binding sites inserted at 5 tiled postions. Each one of these sequences is then repeated 2 times and linked to a random 5-mer serving as a barcode. The problem we faced was this: given a value $n$, how do we compute which mutations to introduce into the sequence and which barcode to attach? This computation is particularly useful for systematically naming the generated sequences. 
 
-To solve this problem, we 
+![Figure 1: Sequence Library genereated by PoolParty](fig1.png)
 
-Enumerating combinatorial spaces is a fundamental task in experimental design, machine learning, and scientific computing. Consider designing an experiment with multiple conditions: 3 treatments and 4 replicates yield 12 experimental samples. While nested loops make enumeration trivial, they fail when researchers need to:
+The need we encountered here is quite general -- how does one trace the state of a complex composite object back to the states of its components. This is the problem that StateCounter was created to solve. 
 
-- **Random access**: Given sample #7, determine its treatment and replicate indices
-- **Shuffle**: Randomize sample order while tracking component indices
-- **Sample**: Select a random subset while maintaining index correspondence
-- **Split**: Divide into training and test sets with proper bookkeeping
 
-The naive solution—manual index arithmetic using `divmod`—works for simple Cartesian products but does not compose. Real experimental designs often combine products *and* disjoint unions (e.g., 2 control samples plus a 3×4 treatment arm), and each additional operation (shuffle, slice, sample) requires rewriting all index logic. This approach is error-prone and tedious.
 
-Existing Python tools provide partial solutions. The `itertools` module offers `product` and `chain` but provides no state tracking or composition—you cannot ask "given index 4, what are the component values?" after shuffling. NumPy's `unravel_index` and `ravel_multi_index` handle rectangular arrays but cannot represent non-rectangular structures like stacks. Neither approach supports composable operations with automatic index propagation.
+# State of the Field
 
-StateCounter fills this gap by building a directed acyclic graph (DAG) of counters where setting the state of any derived counter automatically propagates to all ancestor counters. Users declare their combinatorial structure once, and StateCounter handles the index mathematics for every composed operation.
+Python provides several tools for working with combinatorial structures, but none address the state propagation problem that StateCounter solves. The `itertools` module provides `product` for Cartesian products and `chain` for concatenation, but these return iterators or tuples without any mechanism to trace a flat index back to component values. NumPy's `unravel_index` and `ravel_multi_index` functions convert between flat and multi-dimensional indices, but only for rectangular array shapes; they cannot represent structures like disjoint unions or nested combinations of products and unions. Manual index arithmetic using `divmod` works for simple products but does not compose—each additional operation (slicing, shuffling, sampling) requires rewriting the index logic from scratch. 
 
-# Functionality
+# Software Design
 
-StateCounter provides the following core operations:
+StateCounter addresses this gap by constructing a directed acyclic graph (DAG) of counters where setting the state of a derived counter automatically propagates to all parent counters. Thus, while users construct the DAG from leaves to root, state information flows from root to leaves. This enables arbitrary composition of products, stacks, slices, shuffles, samples, and splits while maintaining correct state tracking throughout.
+
+The basic unit is a Counter, which represents an object that can take on a finite number of discrete states numbered from 0 to $n-1$. Users first create "leaf" counters specifying the number of states, then compose them using operations to build derived counters. The following operations are supported:
 
 | Operation | Description |
 |-----------|-------------|
-| `product` | Cartesian product of counters (×) |
-| `stack` | Disjoint union where only one counter is active at a time (+) |
-| `slice` | Select subset of states using Python slice syntax |
-| `shuffle` | Randomly permute states with optional seed |
+| `product` | Cartesian product; all parent counters active |
+| `stack` | Disjoint union; one parent counter active at a time |
+| `slice` | Select subset of states |
+| `shuffle` | Randomly permute states |
 | `sample` | Sample states with or without replacement |
-| `split` | Divide into multiple sub-counters by count or proportion |
+| `split` | Divide into sub-counters by count or proportion |
 | `repeat` | Cycle through states multiple times |
-| `sync` | Keep multiple counters in lockstep |
-| `interleave` | Alternate between counters in round-robin fashion |
+| `sync` | Synchronize counters in lockstep |
+| `interleave` | Alternate between counters |
 
-These operations compose freely. For example, a shuffled train/test split of a stacked product requires only:
+All counters must be created within a `Manager` context that tracks counter relationships and assigns unique identifiers. When a counter appears in multiple branches of the DAG, StateCounter detects conflicting state assignments—situations where two paths would require the same parent counter to have different values simultaneously.
+
+## Example
+
+The following code constructs the counter DAG for the sequence library in Fig. 1. Five leaf counters represent the component dimensions: mutation index, deletion position, insertion site, insertion position, and barcode variant. These are composed using `product` and `stack` to build the full 40-state counter.
 
 ```python
-from statecounter import Counter, Manager, product, stack, shuffle, split
+from statecounter import Manager, Counter, product, stack
 
-with Manager():
-    control = Counter(num_states=2, name='control')
-    treatment = Counter(num_states=3, name='treatment')
-    replicate = Counter(num_states=4, name='replicate')
+# Initialize manager
+with Manager() as mgr:
     
-    samples = stack([control, product([treatment, replicate])])
-    train, test = split(shuffle(samples, seed=42), [0.8, 0.2])
+    # Define leaf counters
+    mut_counter = Counter(5).named('mut_counter')
+    del_counter = Counter(5).named('del_counter')
+    ins_site_counter = Counter(2).named('ins_site_counter')
+    ins_position_counter = Counter(5).named('ins_position_counter')
+    v_counter = Counter(2).named('v')
     
-    for _ in test:
-        print(f"control={control.state}, treatment={treatment.state}")
+    # Build composite counters
+    ins_counter = product([ins_position_counter, ins_site_counter]).named('ins_counter')
+    cre_counter = stack([mut_counter, del_counter, ins_counter]).named('cre_counter')
+    seq_counter = product([v_counter, cre_counter]).named('seq_counter')
+    
+# Print DAG
+seq_counter.print_dag('minimal')
 ```
 
-The key insight is **unidirectional state propagation**: iterating over any derived counter automatically updates all ancestor counters, with inactive counters (those not contributing to the current state) set to `None`. StateCounter also provides automatic conflict detection when a counter appears in multiple DAG branches with incompatible state requirements.
+The `print_dag()` method displays the counter hierarchy. The `cre` counter stacks three alternatives (5 mutations + 5 deletions + 10 insertions = 20 states), and `seq` takes the product with the 2-state barcode counter, yielding 40 total states.
 
-# Research Applications
+```
+seq (n=40)
+└── [Product]
+    ├── v (n=2)
+    └── cre (n=20)
+        └── [Stack]
+            ├── mut (n=5)
+            ├── del (n=5)
+            └── ins (n=10)
+                └── [Product]
+                    ├── ins_position (n=5)
+                    └── ins_site (n=2)
+```
 
-StateCounter was developed to support PoolParty [@poolparty], a library for designing complex DNA sequence libraries for massively parallel reporter assays (MPRAs) and other high-throughput experiments. In this domain, researchers must enumerate variant libraries that combine multiple mutation types, positions, and backgrounds while maintaining the ability to shuffle, sample, and split the library for experimental and computational workflows.
+![Figure 2: State tracking carried out by StateCounter](fig2.png)
 
-Beyond molecular biology, StateCounter applies to any domain requiring structured enumeration:
+# Research Impact Statement
 
-- **Experimental design**: Randomizing treatment/control order while tracking conditions
-- **Machine learning**: Creating stratified train/validation/test splits on combinatorial data
-- **Hyperparameter search**: Enumerating parameter combinations with structured indices
-- **Simulation studies**: Systematic exploration of parameter spaces with reproducible sampling
+# AI Usage Disclosure
+Z.L. and J.B.K. concieved the project and designed the software architecture. Code was written in Cursor by J.B.K. with iterative assisstance from Claude Opus 4.5. Tests and documentation were written by Opus 4.5 with human editing. Z.H. and J.B.K. wrote the paper using Claude Opus 4.5 for help with the initial draft. Z.L. and J.B.K. bear full responsibility for the text of the paper, the documentation, and the content of the software.   
 
 # Acknowledgements
 
