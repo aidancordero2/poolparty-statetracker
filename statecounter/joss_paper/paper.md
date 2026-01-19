@@ -61,6 +61,8 @@ All counters must be created within a `Manager` context that tracks counter rela
 
 ## Example
 
+![Figure 2: State tracking carried out by StateCounter](fig2.png)
+
 The following code constructs the counter DAG for the sequence library in Fig. 1. Five leaf counters represent the component dimensions: mutation index, deletion position, insertion site, insertion position, and barcode variant. These are composed using `product` and `stack` to build the full 40-state counter.
 
 ```python
@@ -70,38 +72,42 @@ from statecounter import Manager, Counter, product, stack
 with Manager() as mgr:
     
     # Define leaf counters
-    mut_counter = Counter(5).named('mut_counter')
-    del_counter = Counter(5).named('del_counter')
-    ins_site_counter = Counter(2).named('ins_site_counter')
-    ins_position_counter = Counter(5).named('ins_position_counter')
-    v_counter = Counter(2).named('v')
+    mut_counter = Counter(5, name='mut_counter')
+    del_counter = Counter(5, name='del_counter')
+    ins_site_counter = Counter(2, name='ins_site_counter')
+    ins_position_counter = Counter(5, name='ins_position_counter')
+    v_counter = Counter(2).named('v_counter')
     
     # Build composite counters
-    ins_counter = product([ins_position_counter, ins_site_counter]).named('ins_counter')
-    cre_counter = stack([mut_counter, del_counter, ins_counter]).named('cre_counter')
-    seq_counter = product([v_counter, cre_counter]).named('seq_counter')
+    ins_counter = product([ins_position_counter, ins_site_counter],
+        name='ins_counter')
+    cre_counter = stack([mut_counter, del_counter, ins_counter],
+        name='cre_counter')
+    seq_counter = product([v_counter, cre_counter],
+        name='seq_counter')
     
 # Print DAG
 seq_counter.print_dag('minimal')
+
+# Print sequences
+seq_counter.get_iteration_df()
 ```
 
 The `print_dag()` method displays the counter hierarchy. The `cre` counter stacks three alternatives (5 mutations + 5 deletions + 10 insertions = 20 states), and `seq` takes the product with the 2-state barcode counter, yielding 40 total states.
 
 ```
-seq (n=40)
+seq_counter (n=40)
 └── [Product]
-    ├── v (n=2)
-    └── cre (n=20)
+    ├── v_counter (n=2)
+    └── cre_counter (n=20)
         └── [Stack]
-            ├── mut (n=5)
-            ├── del (n=5)
-            └── ins (n=10)
+            ├── mut_counter (n=5)
+            ├── del_counter (n=5)
+            └── ins_counter (n=10)
                 └── [Product]
-                    ├── ins_position (n=5)
-                    └── ins_site (n=2)
+                    ├── ins_position_counter (n=5)
+                    └── ins_site_counter (n=2)
 ```
-
-![Figure 2: State tracking carried out by StateCounter](fig2.png)
 
 # Research Impact Statement
 
@@ -110,6 +116,6 @@ Z.L. and J.B.K. concieved the project and designed the software architecture. Co
 
 # Acknowledgements
 
-This work was supported by NIH grant R35 GM148235.
+This work was supported by NIH grant R01 HG011787.
 
 # References
