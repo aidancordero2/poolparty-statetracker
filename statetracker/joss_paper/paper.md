@@ -1,5 +1,5 @@
 ---
-title: 'StateTracker: state tracking for composite objects in complex combinatorial libraries'
+title: 'StateTracker: state tracking for composite objects in complex combinatorial collections'
 tags:
   - Python
   - combinatorics
