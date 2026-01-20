@@ -139,7 +139,8 @@ class TestSampleOperation:
             A = State(num_values=10, name='A')
             B = sample(A, sampled_states=[2, 5])
             B.value = None
-            assert A.value == 0
+            # Setting derived state to None doesn't propagate to parent
+            assert A.value is None  # A was never activated
             assert B.value is None
     
     def test_sample_single_state(self):

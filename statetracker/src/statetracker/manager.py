@@ -36,16 +36,16 @@ class Manager:
         self._states.append(state)
     
     def get_ancestors(self, state, visited=None):
-        """Recursively collect all ancestor states and synced parents."""
+        """Recursively collect all ancestor states and sync group peers."""
         if visited is None:
             visited = []
         if state in visited:
             return visited
         visited.append(state)
-        # Include synced parents first (so they appear in first columns)
-        for synced in getattr(state, '_synced_parents', []):
-            if synced not in visited:
-                visited.append(synced)
+        # Include sync group peers and recurse into their parents too
+        for peer in state._synced_group:
+            if peer not in visited and peer is not state:
+                self.get_ancestors(peer, visited)
         # Then recurse into computational parents
         for parent in state._parents:
             self.get_ancestors(parent, visited)

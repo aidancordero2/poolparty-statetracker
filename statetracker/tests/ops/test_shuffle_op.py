@@ -162,8 +162,7 @@ class TestShuffleOperation:
             B = shuffle(A, seed=42)
             B.value = None
             # Setting derived state to None doesn't propagate to parent
-            # A remains at its default state (0 for leaf state)
-            assert A.value == 0
+            assert A.value is None  # A was never activated
             assert B.value is None
     
     def test_shuffle_single_state(self):

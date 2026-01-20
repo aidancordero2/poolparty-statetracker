@@ -1,33 +1,34 @@
-"""synced_to - Create or pair synced parent states."""
-from ..imports import beartype, Optional, State_type
+"""synced_to - Create or pair synced states."""
+from ..imports import beartype, Optional, State_type, Integral
 
 
 @beartype
-def synced_to(child_state: State_type, name: Optional[str] = None) -> State_type:
-    """Create a synced parent state that receives the child's value.
+def synced_to(
+    child_state: State_type, 
+    name: Optional[str] = None,
+    num_values: Optional[Integral] = None
+) -> State_type:
+    """Create a new state synchronized with child_state.
     
-    The synced parent appears below child_state in the DAG but doesn't
-    contribute to its value computation.
+    Args:
+        child_state: The state to synchronize with.
+        name: Optional name for the new state.
+        num_values: Optional number of values for the new state.
+            If not provided, uses child_state.num_values.
+            Can be different from child_state.num_values - the group
+            will track the max and states receive None when out of range.
+    
+    Returns:
+        A new State synchronized with child_state.
     """
     from ..state import State
-    synced = State(num_values=child_state.num_values, name=name)
-    synced._synced_child = child_state
-    child_state._synced_parents.append(synced)
-    synced._value = child_state._value
+    nv = num_values if num_values is not None else child_state.num_values
+    synced = State(num_values=nv, name=name)
+    synced.sync_with(child_state)
     return synced
 
 
 @beartype
-def sync(child: State_type, parent: State_type) -> None:
-    """Pair two existing states so parent receives child's value.
-    
-    Raises ValueError if num_values don't match.
-    """
-    if child.num_values != parent.num_values:
-        raise ValueError(
-            f"Cannot sync states with different num_values: "
-            f"child has {child.num_values}, parent has {parent.num_values}"
-        )
-    parent._synced_child = child
-    child._synced_parents.append(parent)
-    parent._value = child._value
+def sync(a: State_type, b: State_type) -> None:
+    """Synchronize two existing states (bidirectional)."""
+    a.sync_with(b)

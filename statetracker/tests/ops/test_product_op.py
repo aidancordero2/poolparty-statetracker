@@ -20,8 +20,8 @@ class TestProductOperation:
             A = State(num_values=2, name='A')
             B = State(num_values=3, name='B')
             C = product([A, B])
-            assert A.value == 0  # Leaf state defaults to 0
-            assert B.value == 0  # Leaf state defaults to 0
+            assert A.value is None  # States default to None (inactive)
+            assert B.value is None  # States default to None (inactive)
             assert C.value is None  # Derived state defaults to inactive
     
     def test_product_state_propagation_down(self):

@@ -14,7 +14,7 @@ class TestStateCreation:
             A = State(num_values=5, name='A')
             assert A.num_values == 5
             assert A.name == 'A'
-            assert A.value == 0
+            assert A.value is None  # States default to None (inactive)
     
     def test_leaf_state_without_name(self):
         with Manager():
@@ -59,6 +59,7 @@ class TestStateManagement:
     def test_advance(self):
         with Manager():
             A = State(num_values=3, name='A')
+            A.reset()  # Activate state at value 0
             assert A.value == 0
             A.advance()
             assert A.value == 1
@@ -149,7 +150,7 @@ class TestRepr:
             A = State(num_values=3, name='A')
             assert "name='A'" in repr(A)
             assert "num_values=3" in repr(A)
-            assert "value=0" in repr(A)
+            assert "value=None" in repr(A)  # States default to None
     
     def test_composite_repr(self):
         with Manager():
@@ -228,6 +229,8 @@ class TestInactiveState:
         """is_active() returns True for active states."""
         with Manager():
             A = State(num_values=3, name='A')
+            assert A.is_active() is False  # States default to inactive
+            A.reset()  # Activate at value 0
             assert A.is_active() is True
             A.value = 2
             assert A.is_active() is True
@@ -240,9 +243,10 @@ class TestInactiveState:
             assert A.is_active() is False
     
     def test_is_active_after_inactive_method(self):
-        """is_active() returns False after calling inactive()."""
+        """is_active() returns False after setting to None."""
         with Manager():
             A = State(num_values=3, name='A')
+            A.reset()  # Activate first
             assert A.is_active() is True
             A.value = None
             assert A.is_active() is False
@@ -520,3 +524,177 @@ class TestConflictDetection:
             # Should work fine - iterate through all states
             for state in C:
                 pass
+
+
+class TestFlexibleSync:
+    """Test syncing states with different num_values."""
+    
+    def test_sync_different_num_values_basic(self):
+        """Sync states with different num_values - basic case."""
+        from statetracker import synced_to
+        with Manager():
+            A = State(num_values=5, name='A')
+            B = synced_to(A, name='B', num_values=3)
+            
+            # Group should have max num_values
+            assert A._synced_group.num_values == 5
+            assert A._synced_group is B._synced_group
+            
+            # Value in range for both
+            A.value = 2
+            assert A.value == 2
+            assert B.value == 2
+            
+            # Value out of range for B
+            A.value = 4
+            assert A.value == 4
+            assert B.value is None  # Out of range for B
+    
+    def test_sync_different_num_values_iteration(self):
+        """Iteration uses state's own num_values."""
+        from statetracker import synced_to
+        with Manager():
+            A = State(num_values=5, name='A')
+            B = synced_to(A, name='B', num_values=3)
+            
+            # Iterating A goes through A's 5 values
+            a_values = list(A)
+            assert a_values == [0, 1, 2, 3, 4]
+            
+            # Iterating B goes through only B's 3 values
+            b_values = list(B)
+            assert b_values == [0, 1, 2]
+    
+    def test_sync_different_num_values_bidirectional(self):
+        """Setting value on smaller state syncs to larger."""
+        from statetracker import synced_to
+        with Manager():
+            A = State(num_values=5, name='A')
+            B = synced_to(A, name='B', num_values=3)
+            
+            # Set via B (smaller)
+            B.value = 2
+            assert A.value == 2
+            assert B.value == 2
+    
+    def test_sync_different_num_values_group_value(self):
+        """Group tracks logical value even when some states are None."""
+        from statetracker import synced_to
+        with Manager():
+            A = State(num_values=5, name='A')
+            B = synced_to(A, name='B', num_values=3)
+            
+            A.value = 4
+            assert A._synced_group.value == 4
+            assert A.value == 4
+            assert B.value is None
+    
+    def test_sync_three_states_different_sizes(self):
+        """Sync three states with different num_values."""
+        from statetracker import synced_to
+        with Manager():
+            A = State(num_values=5, name='A')
+            B = synced_to(A, name='B', num_values=3)
+            C = synced_to(A, name='C', num_values=7)
+            
+            # Group should have max = 7
+            assert A._synced_group.num_values == 7
+            
+            # Value=2 in range for all
+            A.value = 2
+            assert A.value == 2
+            assert B.value == 2
+            assert C.value == 2
+            
+            # Value=4 out of range for B
+            A.value = 4
+            assert A.value == 4
+            assert B.value is None
+            assert C.value == 4
+            
+            # Value=6 out of range for A and B
+            A.value = 6
+            assert A.value is None
+            assert B.value is None
+            assert C.value == 6
+    
+    def test_sync_with_product_propagation(self):
+        """Synced states with product - propagation respects range."""
+        from statetracker import synced_to
+        with Manager():
+            A = State(num_values=5, name='A')
+            B = synced_to(A, name='B', num_values=3)
+            C = State(num_values=4, name='C')
+            D = product([A, C]).named('D')
+            
+            # D.value = 5 means A=0, C=1 (5 = 0 + 5*1, but actually 5 % 5 = 0, 5 // 5 = 1)
+            # Actually: D has 5*4=20 values
+            # value=5: A = 5 % 5 = 0, C = 5 // 5 = 1
+            D.value = 5
+            assert A.value == 0
+            assert B.value == 0  # In range
+            assert C.value == 1
+            
+            # value=8: A = 8 % 5 = 3, C = 8 // 5 = 1
+            D.value = 8
+            assert A.value == 3
+            assert B.value is None  # 3 >= 3, out of range
+            assert C.value == 1
+    
+    def test_sync_advance_uses_state_num_values(self):
+        """advance() wraps around using the state's own num_values."""
+        from statetracker import synced_to
+        with Manager():
+            A = State(num_values=3, name='A')
+            B = synced_to(A, name='B', num_values=5)
+            
+            # Set to value 2 (valid for both A and B)
+            A.value = 2
+            assert A.value == 2
+            assert B.value == 2
+            
+            # A.advance() wraps using A's num_values (3): 2 -> 0
+            A.advance()
+            assert A._synced_group.value == 0
+            assert A.value == 0
+            assert B.value == 0
+            
+            # B.advance() wraps using B's num_values (5): 0 -> 1
+            B.value = 4  # A is None (out of range), B is 4
+            assert A.value is None
+            assert B.value == 4
+            B.advance()  # 4 -> 0 (wraps at B's num_values=5)
+            assert B.value == 0
+            assert A.value == 0
+    
+    def test_sync_merge_different_sizes(self):
+        """Merging groups with different num_values takes max."""
+        with Manager():
+            A = State(num_values=5, name='A')
+            B = State(num_values=3, name='B')
+            
+            # Initially separate groups
+            assert A._synced_group.num_values == 5
+            assert B._synced_group.num_values == 3
+            
+            # Sync them
+            sync(A, B)
+            
+            # Merged group has max
+            assert A._synced_group.num_values == 5
+            assert A._synced_group is B._synced_group
+            
+            # Value out of range for B
+            A.value = 4
+            assert A.value == 4
+            assert B.value is None
+    
+    def test_synced_to_without_num_values_uses_default(self):
+        """synced_to without num_values parameter uses child's num_values."""
+        from statetracker import synced_to
+        with Manager():
+            A = State(num_values=5, name='A')
+            B = synced_to(A, name='B')  # No num_values specified
+            
+            assert B.num_values == 5
+            assert A._synced_group.num_values == 5

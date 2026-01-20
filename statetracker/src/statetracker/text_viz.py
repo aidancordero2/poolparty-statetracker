@@ -86,17 +86,10 @@ def format_operation_node(op, style: StyleType = 'clean') -> str:
 
 
 def print_dag(state, style: StyleType = 'clean') -> None:
-    """Print ASCII tree for a single State and its ancestors.
+    """Print ASCII tree for a single State and its ancestors."""
     
-    The tree alternates between State and Operation nodes:
-    - State -> its Operation -> Operation's parent States -> ...
-    
-    Args:
-        state: The root State to visualize.
-        style: Display style - 'clean', 'minimal', or 'repr'.
-    """
-    # We need to handle the alternating State/Operation structure.
-    # We'll wrap nodes to track their type.
+    # Track visited states to avoid infinite recursion with sync groups
+    visited_sync_peers: set = set()
     
     class StateNode:
         def __init__(self, state):
@@ -107,34 +100,28 @@ def print_dag(state, style: StyleType = 'clean') -> None:
             self.op = op
             self.parent_states = parent_states
     
-    class SyncedNode:
-        def __init__(self, synced_states):
-            self.synced_states = synced_states
-    
     def get_label(node):
         if isinstance(node, StateNode):
             return format_state_node(node.state, style)
-        elif isinstance(node, SyncedNode):
-            return "<synced>"
         else:
             return format_operation_node(node.op, style)
     
     def get_children(node):
         if isinstance(node, StateNode):
             children = []
-            # First, add synced parents under <synced> heading
-            synced_parents = getattr(node.state, '_synced_parents', [])
-            if synced_parents:
-                children.append(SyncedNode(synced_parents))
-            # Then, add operation (if non-leaf)
+            # Add sync peers (excluding self and already visited)
+            if node.state.id not in visited_sync_peers:
+                visited_sync_peers.add(node.state.id)
+                sync_peers = [s for s in node.state._synced_group 
+                             if s is not node.state and s.id not in visited_sync_peers]
+                for peer in sync_peers:
+                    visited_sync_peers.add(peer.id)
+                children.extend(StateNode(s) for s in sync_peers)
+            # Then add operation (if non-leaf)
             if node.state._op:
                 children.append(OpNode(node.state._op, node.state._parents))
             return children
-        elif isinstance(node, SyncedNode):
-            # SyncedNode's children are the synced parent states
-            return [StateNode(s) for s in node.synced_states]
         else:
-            # Operation's children are its parent states
             return [StateNode(s) for s in node.parent_states]
     
     lines = build_tree_lines(StateNode(state), get_label, get_children)

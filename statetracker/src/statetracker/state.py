@@ -1,6 +1,7 @@
 """State class for composable iteration."""
 from .imports import beartype, Sequence, Optional, Real, Integral, Operation_type, State_type, Union
 from .manager import Manager
+from .sync_group import SynchronizedGroup
 
 @beartype
 class ConflictingValueAssignmentError(RuntimeError):
@@ -28,8 +29,6 @@ class State:
         self._name = name
         self._parents = tuple(_parents) if _parents else ()
         self._op = _op
-        self._synced_child = None       # The state this is a synced parent of
-        self._synced_parents = []       # States that are synced parents of this state
         
         # Set iter_order
         if iter_order is None:
@@ -46,19 +45,19 @@ class State:
             if num_values is None:
                 raise ValueError("Leaf states require num_values")
             self._num_values = num_values
+        
+        # Each state starts in its own sync group
+        self._synced_group = SynchronizedGroup(self)
             
         # Register with Manager
         self._manager = Manager._active_manager
         self._manager.register(self)
         
-        # Set value
+        # Set value: default to None (inactive) unless explicitly provided
+        # States become active (value=0) when iteration starts via reset()
         if value is not None:
             self.value = value
-        elif not self._parents:
-            # Leaf state: default to active at value 0
-            self.value = 0
         else:
-            # Derived state: default to inactive (no propagation to parents)
             self._value = None
     
     @property
@@ -96,9 +95,18 @@ class State:
         return self
     
     def synced_parent(self, name: Optional[str] = None):
-        """Create a synced parent state that receives this state's value."""
+        """Create a synced state that shares this state's value."""
         from .ops import synced_to
         return synced_to(self, name=name)
+    
+    def sync_with(self, other: State_type) -> None:
+        """Synchronize this state with another (bidirectional)."""
+        if self._synced_group is other._synced_group:
+            return
+        if len(self._synced_group) >= len(other._synced_group):
+            self._synced_group.merge(other._synced_group)
+        else:
+            other._synced_group.merge(self._synced_group)
     
     @property
     def value(self):
@@ -107,70 +115,31 @@ class State:
     
     @value.setter
     def value(self, val: Optional[Integral]):
-        """Set value and propagate to parents with conflict detection."""
+        """Set value and propagate to parents."""
         if val is None:
-            self._value = None
-            for synced_parent in self._synced_parents:
-                synced_parent._value = None
+            self._synced_group.inactivate_trees()
         else:
-            self._inactivate_tree()
-            self._set_inactivated_values_in_tree(val)
-            # Propagate to synced parents
-            for synced_parent in self._synced_parents:
-                synced_parent._value = val
-    
-    def _set_inactivated_values_in_tree(self, val: Optional[Integral]):
-        """Set value in pre-inactivated tree with conflict detection."""
-        match (self._value, val):
-            case (None, None):
-                # Both inactive - nothing to do
-                pass
-            case (None, Integral()):
-                # Setting active value on inactive state - normal case
-                self._value = val
-                if self._parents:
-                    parent_num_values = tuple(p.num_values for p in self._parents)
-                    parent_values = self._op.decompose(self._value, parent_num_values)
-                    for parent, pv in zip(self._parents, parent_values):
-                        parent._set_inactivated_values_in_tree(pv)
-            case (Integral(), Integral()) if self._value == val:
-                # Already set to same value - no conflict, do nothing
-                pass
-            case (Integral(), Integral()):
-                # Different values - CONFLICT
-                raise ConflictingValueAssignmentError(
-                    f"State '{self.name}' received conflicting value assignments: "
-                    f"already set to {self._value}, now attempting to set to {val}."
-                )
-            case (Integral(), None):
-                # State already set by another path, this path doesn't need it
-                # (happens with StackOp where inactive branches return None)
-                pass
+            self._synced_group.inactivate_trees()
+            self._synced_group.set_inactivated_values_in_trees(val)
     
     def advance(self):
-        """Advance to next value (wraps around)."""
-        if self._value is None:
-            raise RuntimeError("Cannot advance an inactive state (value=None)")
-        self.value = (self._value + 1) % self._num_values
+        """Advance to next value (wraps around using this state's num_values)."""
+        if self._synced_group._value is None:
+            raise RuntimeError("Cannot advance an inactive state (group value=None)")
+        # Advance using this state's num_values for wrapping
+        new_val = (self._synced_group._value + 1) % self._num_values
+        self.value = new_val
     
     def reset(self, value: Integral = 0):
         """Reset to specified value (default 0)."""
         self.value = value
-    
-    def _inactivate_tree(self):
-        """Set this state and all parents to inactive value (None)."""
-        self._value = None
-        for parent in self._parents:
-            parent._inactivate_tree()
-        for synced_parent in self._synced_parents:
-            synced_parent._value = None
     
     def is_active(self):
         """Return True if state is active (value is not None)."""
         return self._value is not None
     
     def __iter__(self):
-        """Iterate through all values."""
+        """Iterate through all values of this state."""
         self.reset()
         for _ in range(self._num_values):
             yield self._value
