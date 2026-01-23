@@ -79,6 +79,7 @@ class StackOp(Operation):
         super().__init__(
             parent_pools=parent_pools,
             num_values=len(parent_pools),  # Number of branches
+            mode='sequential',  # Stack needs its own state to track active branch
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,

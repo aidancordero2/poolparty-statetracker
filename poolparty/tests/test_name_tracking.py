@@ -138,7 +138,8 @@ class TestOperationNameTracking:
     def test_op_rename_updates_counter_name(self):
         """Renaming an operation updates its counter's name."""
         with pp.Party() as party:
-            pool = pp.from_seq("ACGT")
+            # Use sequential mode operation which has its own state
+            pool = pp.from_seqs(["ACGT", "TGCA"], mode='sequential')
             op = pool.operation
             op.name = "renamed_op"
             assert op.state.name == "renamed_op.state"

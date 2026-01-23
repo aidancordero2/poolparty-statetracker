@@ -2,7 +2,7 @@
 import pytest
 from statetracker import (
     State, Manager, sync, product, stack,
-    ConflictingValueAssignmentError, passthrough
+    ConflictingValueAssignmentError
 )
 
 

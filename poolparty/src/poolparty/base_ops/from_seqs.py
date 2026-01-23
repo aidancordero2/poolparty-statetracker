@@ -176,8 +176,11 @@ class FromSeqsOp(Operation):
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
             idx = rng.integers(0, len(self.seqs))
+        elif self.state is None:
+            # Fixed mode - always use index 0
+            idx = 0
         else:
-            # Use state 0 when inactive (state is None)
+            # Sequential mode - use state value (0 when inactive)
             state = self.state.value
             idx = (0 if state is None else state) % len(self.seqs)
         return {

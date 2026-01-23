@@ -7,7 +7,6 @@ from .shuffle_op import ShuffleOp, shuffle
 from .sample_op import SampleOp, sample
 from .split_op import split
 from .interleave_op import InterleaveOp, interleave
-from .passthrough_op import PassthroughOp, passthrough
 from .synced_to_op import synced_to, sync
 
 __all__ = [
@@ -20,6 +19,5 @@ __all__ = [
     'SampleOp', 'sample',
     'split',
     'InterleaveOp', 'interleave',
-    'PassthroughOp', 'passthrough',
     'synced_to',
 ]

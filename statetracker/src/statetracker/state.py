@@ -118,12 +118,12 @@ class State:
         """Set value and propagate to parents."""
         if val is None:
             self._synced_group.inactivate_trees()
-        elif self._parents:
-            # Non-leaf state: clear all and propagate
+        elif any(s._parents for s in self._synced_group._states):
+            # At least one state in the sync group has parents: clear all and propagate
             self._manager.clear_all_values()
             self._synced_group.set_inactivated_values_in_trees(val)
         else:
-            # Leaf state: set sync group value (updates all peers, no propagation)
+            # All states are leaves: set sync group value directly (no propagation needed)
             self._synced_group._value = val
             for state in self._synced_group._states:
                 state._value = val if val < state.num_values else None

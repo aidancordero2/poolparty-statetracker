@@ -99,11 +99,6 @@ Interleave
 
 .. autofunction:: statetracker.interleave
 
-Passthrough
-~~~~~~~~~~~
-
-.. autofunction:: statetracker.passthrough
-
 Operation Classes
 -----------------
 
@@ -163,12 +158,5 @@ InterleaveOp
 ~~~~~~~~~~~~
 
 .. autoclass:: statetracker.InterleaveOp
-   :members:
-   :show-inheritance:
-
-PassthroughOp
-~~~~~~~~~~~~~
-
-.. autoclass:: statetracker.PassthroughOp
    :members:
    :show-inheritance:

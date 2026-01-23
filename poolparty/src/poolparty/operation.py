@@ -64,8 +64,8 @@ class Operation:
         # Track whether this operation's state is synced to parent states
         self._random_synced_to_parents = False
         
-        if validated_num_values is not None:
-            # Explicit num_values provided - create state as usual
+        if validated_num_values is not None and mode != 'fixed':
+            # Non-fixed ops with explicit num_values - create state
             self.state = st.State(num_values=validated_num_values, name=f"{self._name}.state", iter_order=iter_order)
         elif mode == 'random' and parent_pools:
             # Random mode with no explicit num_states - check for parent states
@@ -258,25 +258,38 @@ class Operation:
         self,
         parent_pools: Sequence[Pool_type],
     ) -> st.State | None:
-        """Build the output Pool's state from parent pool states, sorted by iteration_order."""
-        # When op.state is synced/derived from parent states (random mode with auto-sync),
-        # it already represents the parent states, so don't include them separately
-        if self._random_synced_to_parents and self.state is not None:
-            return st.passthrough(self.state)
-        
+        """Build the output Pool's state from parent pool states."""
+        # Collect parent states
         parent_states = [p.state for p in parent_pools if p.state is not None]
-        op_states = [self.state] if self.state is not None else []
-        all_states = parent_states + op_states
         
-        if not all_states:
-            # Fully random DAG - no states
-            return None
-        elif len(all_states) == 1:
-            # Single state - passthrough
-            return st.passthrough(all_states[0])
+        if self.mode == 'fixed':
+            # Fixed operations: derive pool state from parents only (op.state is None)
+            if not parent_states:
+                # No parents with state - create new state with this op's num_values
+                return st.State(num_values=self.num_values or 1)
+            elif len(parent_states) == 1:
+                # Single parent - use same state object (pass through)
+                return parent_states[0]
+            else:
+                # Multiple parents - product
+                return st.ordered_product(states=parent_states)
         else:
-            # Multiple states - product
-            return st.ordered_product(states=all_states)
+            # Non-fixed: include op.state in the product
+            if self._random_synced_to_parents and self.state is not None:
+                return st.synced_to(self.state)
+            
+            op_states = [self.state] if self.state is not None else []
+            all_states = parent_states + op_states
+            
+            if not all_states:
+                # Fully random DAG - no states
+                return None
+            elif len(all_states) == 1:
+                # Single state - synced
+                return st.synced_to(all_states[0])
+            else:
+                # Multiple states - product
+                return st.ordered_product(states=all_states)
 
     
     def compute_design_card(
