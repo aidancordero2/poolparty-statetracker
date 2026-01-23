@@ -268,8 +268,8 @@ class Operation:
                 # No parents with state - create new state with this op's num_values
                 return st.State(num_values=self.num_values or 1)
             elif len(parent_states) == 1:
-                # Single parent - use same state object (pass through)
-                return parent_states[0]
+                # Single parent - create synced state (don't share object to avoid name conflicts)
+                return st.synced_to(parent_states[0])
             else:
                 # Multiple parents - product
                 return st.ordered_product(states=parent_states)

@@ -25,6 +25,9 @@ def synced_to(
     nv = num_values if num_values is not None else child_state.num_values
     synced = State(num_values=nv, name=name)
     synced.sync_with(child_state)
+    # Set iter_order to minimum in the sync group (ensures earliest iteration priority)
+    min_iter_order = min(s.iter_order for s in synced._synced_group._states)
+    synced.iter_order = min_iter_order
     return synced
 
 
