@@ -368,8 +368,7 @@ class TestBreakpointScanCompute:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential')
         
         left.operation.state._value = 0
-        card = left.operation.compute_design_card(['ACGT'])
-        result = left.operation.compute_seq_from_card(['ACGT'], card)
+        result = left.operation.compute(['ACGT'])
         assert 'seq_0' in result
         assert 'seq_1' in result
         assert result['seq_0'] + result['seq_1'] == 'ACGT'
@@ -380,8 +379,7 @@ class TestBreakpointScanCompute:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='random')
         
         rng = np.random.default_rng(42)
-        card = left.operation.compute_design_card(['ACGT'], rng)
-        result = left.operation.compute_seq_from_card(['ACGT'], card)
+        result = left.operation.compute(['ACGT'], rng)
         assert result['seq_0'] + result['seq_1'] == 'ACGT'
 
 

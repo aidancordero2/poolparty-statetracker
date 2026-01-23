@@ -160,10 +160,10 @@ class TestValidateNumStates:
 
 
 class TestOperationCompute:
-    """Test Operation compute_design_card and compute_seq_from_card methods."""
+    """Test Operation compute method."""
     
-    def test_base_compute_design_card_raises(self):
-        """Test that base Operation.compute_design_card raises NotImplementedError."""
+    def test_base_compute_raises(self):
+        """Test that base Operation.compute raises NotImplementedError."""
         with pp.Party() as party:
             op = Operation(
                 parent_pools=[],
@@ -172,34 +172,20 @@ class TestOperationCompute:
             )
             
             with pytest.raises(NotImplementedError, match="Subclasses must implement"):
-                op.compute_design_card([])
-    
-    def test_base_compute_seq_from_card_raises(self):
-        """Test that base Operation.compute_seq_from_card raises NotImplementedError."""
-        with pp.Party() as party:
-            op = Operation(
-                parent_pools=[],
-                num_values=1,
-                mode='fixed',
-            )
-            
-            with pytest.raises(NotImplementedError, match="Subclasses must implement"):
-                op.compute_seq_from_card([], {})
+                op.compute([])
     
     def test_subclass_compute_works(self):
-        """Test that subclass compute_design_card and compute_seq_from_card work."""
+        """Test that subclass compute works."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], mode='sequential')
         
         # Set counter state and compute
         pool.operation.state._value = 0
-        card = pool.operation.compute_design_card([])
-        result = pool.operation.compute_seq_from_card([], card)
+        result = pool.operation.compute([])
         assert result['seq_0'] == 'AAA'
         
         pool.operation.state._value = 1
-        card = pool.operation.compute_design_card([])
-        result = pool.operation.compute_seq_from_card([], card)
+        result = pool.operation.compute([])
         assert result['seq_0'] == 'TTT'
 
 
@@ -362,8 +348,7 @@ class TestOperationCopy:
             
             # Verify copied op produces same results
             copied_op.state._value = 0
-            card = copied_op.compute_design_card([])
-            result = copied_op.compute_seq_from_card([], card)
+            result = copied_op.compute([])
             assert result['seq_0'] == 'A'
     
     def test_copy_mutagenize_op(self):

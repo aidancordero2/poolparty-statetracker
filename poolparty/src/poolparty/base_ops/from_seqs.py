@@ -166,12 +166,12 @@ class FromSeqsOp(Operation):
             spacer_str=spacer_str,
         )
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with sequence selection."""
+        """Return design card and sequence together."""
         if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
@@ -183,23 +183,17 @@ class FromSeqsOp(Operation):
             # Sequential mode - use state value (0 when inactive)
             state = self.state.value
             idx = (0 if state is None else state) % len(self.seqs)
-        return {
-            'seq_name': self.seq_names[idx],
-            'seq_index': idx,
-        }
-    
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Return the sequence based on design card."""
-        idx = card['seq_index']
+        
         seq = self.seqs[idx]
         # Apply mark_changes swapcase only when inserting into a region
         if self.mark_changes and self._region is not None:
             seq = seq.swapcase()
-        return {'seq_0': seq}
+        
+        return {
+            'seq_name': self.seq_names[idx],
+            'seq_index': idx,
+            'seq_0': seq,
+        }
     
     def compute_seq_names(
         self,

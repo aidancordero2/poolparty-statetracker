@@ -206,8 +206,7 @@ class TestJoinCompute:
             b = pp.from_seqs(['TTT'])
             combined = join([a, b])
         
-        card = combined.operation.compute_design_card(['AAA', 'TTT'])
-        result = combined.operation.compute_seq_from_card(['AAA', 'TTT'], card)
+        result = combined.operation.compute(['AAA', 'TTT'])
         assert result['seq_0'] == 'AAATTT'
     
     def test_compute_empty_string(self):
@@ -217,8 +216,7 @@ class TestJoinCompute:
             b = pp.from_seqs([''])
             combined = join([a, b])
         
-        card = combined.operation.compute_design_card(['AAA', ''])
-        result = combined.operation.compute_seq_from_card(['AAA', ''], card)
+        result = combined.operation.compute(['AAA', ''])
         assert result['seq_0'] == 'AAA'
     
     def test_compute_many_parents(self):
@@ -227,8 +225,7 @@ class TestJoinCompute:
             pools = [pp.from_seqs([c]) for c in 'ABCDE']
             combined = join(pools)
         
-        card = combined.operation.compute_design_card(['A', 'B', 'C', 'D', 'E'])
-        result = combined.operation.compute_seq_from_card(['A', 'B', 'C', 'D', 'E'], card)
+        result = combined.operation.compute(['A', 'B', 'C', 'D', 'E'])
         assert result['seq_0'] == 'ABCDE'
 
 
@@ -368,14 +365,13 @@ class TestJoinSpacerStr:
         assert df['seq'].iloc[0] == 'A-B-C'
     
     def test_spacer_str_compute_method(self):
-        """Test that compute_seq_from_card uses spacer_str."""
+        """Test that compute uses spacer_str."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA'])
             b = pp.from_seqs(['TTT'])
             combined = join([a, b], spacer_str='.')
         
-        card = combined.operation.compute_design_card(['AAA', 'TTT'])
-        result = combined.operation.compute_seq_from_card(['AAA', 'TTT'], card)
+        result = combined.operation.compute(['AAA', 'TTT'])
         assert result['seq_0'] == 'AAA.TTT'
     
     def test_spacer_str_with_single_pool(self):

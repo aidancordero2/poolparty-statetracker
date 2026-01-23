@@ -393,16 +393,18 @@ class MutagenizeOp(Operation):
         
         return positions, tuple(wt_chars), tuple(mut_chars)
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with mutation positions (logical) and characters.
+        """Return design card and mutated sequence together.
         
         Note: Region handling is done by base class wrapper methods.
         parent_seqs[0] is the region content when region is specified.
         """
+        from ..marker_ops.parsing import transform_nonmarker_chars
+        
         seq = parent_seqs[0]
         valid_char_positions = self._get_molecular_positions(seq)
         
@@ -458,31 +460,7 @@ class MutagenizeOp(Operation):
         if self.mark_changes:
             mut_chars = tuple(c.swapcase() for c in mut_chars)
         
-        return {
-            'positions': positions,
-            'wt_chars': wt_chars,
-            'mut_chars': mut_chars,
-        }
-    
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Apply mutations to the sequence based on design card.
-        
-        Note: Region handling is done by base class wrapper methods.
-        parent_seqs[0] is the region content when region is specified.
-        """
-        from ..marker_ops.parsing import transform_nonmarker_chars
-        
-        seq = parent_seqs[0]
-        positions = card['positions']  # Logical positions
-        mut_chars = card['mut_chars']
-        
-        valid_char_positions = self._get_molecular_positions(seq)
-        
-        # Apply mutations
+        # Apply mutations to sequence
         seq_list = list(seq)
         for logical_pos, mut in zip(positions, mut_chars):
             raw_pos = valid_char_positions[logical_pos]
@@ -491,7 +469,13 @@ class MutagenizeOp(Operation):
         
         if self.swapcase:
             result_seq = transform_nonmarker_chars(result_seq, str.swapcase)
-        return {'seq_0': result_seq}
+        
+        return {
+            'positions': positions,
+            'wt_chars': wt_chars,
+            'mut_chars': mut_chars,
+            'seq_0': result_seq,
+        }
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

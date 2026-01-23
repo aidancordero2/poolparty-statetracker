@@ -94,32 +94,23 @@ class StackOp(Operation):
         parent_states = [p.state for p in parent_pools]
         return st.stack(parent_states)
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with active parent index."""
+        """Return design card and sequence from active parent together."""
         for i, parent in enumerate(self.parent_pools):
             if parent.state.value is not None:
                 # Set operation counter to branch index (safe for leaf counter)
                 self.state.value = i
-                return {'active_parent': i}
+                active = i
+                seq = parent_seqs[active]
+                return {'active_parent': active, 'seq_0': seq}
         self.state.value = None
-        return {'active_parent': None}
-    
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Return the sequence from the active parent."""
-        active = card['active_parent']
-        if active is None:
-            seq = parent_seqs[0] if parent_seqs else ''
-        else:
-            seq = parent_seqs[active]
-        return {'seq_0': seq}
+        active = None
+        seq = parent_seqs[0] if parent_seqs else ''
+        return {'active_parent': active, 'seq_0': seq}
     
     def compute_seq_names(
         self,

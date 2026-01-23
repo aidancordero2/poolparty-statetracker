@@ -564,10 +564,9 @@ class TestMutagenizeCompute:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential')
         
         pool.operation.state._value = 0
-        card = pool.operation.compute_design_card(['ACGT'])
-        result = pool.operation.compute_seq_from_card(['ACGT'], card)
+        result = pool.operation.compute(['ACGT'])
         assert len(result['seq_0']) == 4
-        assert card['positions'] is not None
+        assert result['positions'] is not None
     
     def test_compute_random_with_num(self):
         """Test compute in random mode with num_mutations."""
@@ -575,8 +574,7 @@ class TestMutagenizeCompute:
             pool = mutagenize('ACGT', num_mutations=1, mode='random')
         
         rng = np.random.default_rng(42)
-        card = pool.operation.compute_design_card(['ACGT'], rng)
-        result = pool.operation.compute_seq_from_card(['ACGT'], card)
+        result = pool.operation.compute(['ACGT'], rng)
         assert len(result['seq_0']) == 4
         
         # Verify exactly one mutation
@@ -589,8 +587,7 @@ class TestMutagenizeCompute:
             pool = mutagenize('ACGT', mutation_rate=0.5, mode='random')
         
         rng = np.random.default_rng(42)
-        card = pool.operation.compute_design_card(['ACGT'], rng)
-        result = pool.operation.compute_seq_from_card(['ACGT'], card)
+        result = pool.operation.compute(['ACGT'], rng)
         assert len(result['seq_0']) == 4
 
 

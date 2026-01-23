@@ -204,16 +204,14 @@ class TestGetKmersCompute:
             pool = get_kmers(length=2, mode='sequential')
         
         pool.operation.state._value = 0
-        card = pool.operation.compute_design_card([])
-        result = pool.operation.compute_seq_from_card([], card)
+        result = pool.operation.compute([])
         assert result['seq_0'] == 'AA'
-        assert card['kmer_index'] == 0
+        assert result['kmer_index'] == 0
         
         pool.operation.state._value = 1
-        card = pool.operation.compute_design_card([])
-        result = pool.operation.compute_seq_from_card([], card)
+        result = pool.operation.compute([])
         assert result['seq_0'] == 'AC'
-        assert card['kmer_index'] == 1
+        assert result['kmer_index'] == 1
     
     def test_compute_random(self):
         """Test compute in random mode."""
@@ -221,8 +219,7 @@ class TestGetKmersCompute:
             pool = get_kmers(length=4, mode='random')
         
         rng = np.random.default_rng(42)
-        card = pool.operation.compute_design_card([], rng)
-        result = pool.operation.compute_seq_from_card([], card)
+        result = pool.operation.compute([], rng)
         assert len(result['seq_0']) == 4
         assert all(c in 'ACGT' for c in result['seq_0'])
 

@@ -187,17 +187,15 @@ class TestFromSeqsCompute:
         
         # Set counter state to 0
         pool.operation.state._value = 0
-        card = pool.operation.compute_design_card([])
-        result = pool.operation.compute_seq_from_card([], card)
+        result = pool.operation.compute([])
         assert result['seq_0'] == 'AAA'
-        assert card['seq_index'] == 0
+        assert result['seq_index'] == 0
         
         # Set counter state to 1
         pool.operation.state._value = 1
-        card = pool.operation.compute_design_card([])
-        result = pool.operation.compute_seq_from_card([], card)
+        result = pool.operation.compute([])
         assert result['seq_0'] == 'TTT'
-        assert card['seq_index'] == 1
+        assert result['seq_index'] == 1
     
     def test_compute_random(self):
         """Test compute in random mode uses RNG."""
@@ -205,8 +203,7 @@ class TestFromSeqsCompute:
             pool = from_seqs(['AAA', 'TTT', 'GGG'], mode='random')
         
         rng = np.random.default_rng(42)
-        card = pool.operation.compute_design_card([], rng)
-        result = pool.operation.compute_seq_from_card([], card)
+        result = pool.operation.compute([], rng)
         assert result['seq_0'] in ['AAA', 'TTT', 'GGG']
 
 

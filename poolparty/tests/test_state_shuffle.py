@@ -137,23 +137,13 @@ class TestStateShuffleCustomName:
 class TestStateShuffleCompute:
     """Test StateShuffleOp compute methods directly."""
     
-    def test_compute_design_card_empty(self):
-        """Test compute_design_card returns empty dict."""
+    def test_compute_returns_parent_sequence(self):
+        """Test compute returns parent sequence."""
         with pp.Party() as party:
             pool = pp.from_seqs(['ACGT'], mode='sequential')
             shuffled = state_shuffle(pool, seed=42)
         
-        card = shuffled.operation.compute_design_card(['ACGT'])
-        assert card == {}
-    
-    def test_compute_seq_from_card(self):
-        """Test compute_seq_from_card returns parent sequence."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(['ACGT'], mode='sequential')
-            shuffled = state_shuffle(pool, seed=42)
-        
-        card = shuffled.operation.compute_design_card(['ACGT'])
-        result = shuffled.operation.compute_seq_from_card(['ACGT'], card)
+        result = shuffled.operation.compute(['ACGT'])
         assert result == {'seq_0': 'ACGT'}
 
 

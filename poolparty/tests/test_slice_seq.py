@@ -136,8 +136,7 @@ class TestSliceSeqCompute:
             pool = pp.from_seqs(['ACGT'])
             sliced = slice_seq(pool, slice(0, 2))
         
-        card = sliced.operation.compute_design_card(['ACGT'])
-        result = sliced.operation.compute_seq_from_card(['ACGT'], card)
+        result = sliced.operation.compute(['ACGT'])
         assert result['seq_0'] == 'AC'
     
     def test_compute_with_int(self):
@@ -146,8 +145,7 @@ class TestSliceSeqCompute:
             pool = pp.from_seqs(['ACGT'])
             sliced = slice_seq(pool, 0)
         
-        card = sliced.operation.compute_design_card(['ACGT'])
-        result = sliced.operation.compute_seq_from_card(['ACGT'], card)
+        result = sliced.operation.compute(['ACGT'])
         assert result['seq_0'] == 'A'
 
 

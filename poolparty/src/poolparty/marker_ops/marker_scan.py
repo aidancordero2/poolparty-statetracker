@@ -268,12 +268,12 @@ class MarkerScanOp(Operation):
         
         return all_valid_indices, nonmarker_positions
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with insertion position and strand."""
+        """Return design card and sequence with marker inserted together."""
         seq = parent_seqs[0]
         
         valid_indices, nonmarker_positions = self._get_valid_marker_positions(seq)
@@ -332,30 +332,7 @@ class MarkerScanOp(Operation):
             stop = nonmarker_idx
             marked_seq = ''
         
-        return {
-            'position_index': position_index,
-            'start': start,
-            'stop': stop,
-            'length': self._marker_length,
-            'region_name': self.marker_name,
-            'region_content': marked_seq,
-            'strand': strand,
-            'region_seq': marker_tag,
-        }
-    
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Insert marker at position based on design card."""
-        seq = parent_seqs[0]
-        position_index = card['position_index']
-        marker_tag = card['region_seq']
-        
-        valid_indices, nonmarker_positions = self._get_valid_marker_positions(seq)
-        nonmarker_idx = valid_indices[position_index]
-        
+        # Insert marker at position
         if self._marker_length > 0:
             # Region marker: replace content with marker
             # Get literal start and end positions from non-marker indices
@@ -376,7 +353,17 @@ class MarkerScanOp(Operation):
                 raw_position = len(seq)  # Insert at end
             result_seq = seq[:raw_position] + marker_tag + seq[raw_position:]
         
-        return {'seq_0': result_seq}
+        return {
+            'position_index': position_index,
+            'start': start,
+            'stop': stop,
+            'length': self._marker_length,
+            'region_name': self.marker_name,
+            'region_content': marked_seq,
+            'strand': strand,
+            'region_seq': marker_tag,
+            'seq_0': result_seq,
+        }
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

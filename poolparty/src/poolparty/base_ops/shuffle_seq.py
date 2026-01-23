@@ -129,12 +129,12 @@ class SeqShuffleOp(Operation):
             spacer_str=spacer_str,
         )
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card containing the permutation for the shuffle.
+        """Return design card and shuffled sequence together.
         
         Note: Region handling is done by base class wrapper methods.
         parent_seqs[0] is the region content when region is specified.
@@ -153,6 +153,7 @@ class SeqShuffleOp(Operation):
         
         if num_molecular == 0:
             permutation = tuple()
+            shuffled_seq = seq
         else:
             order = rng.permutation(num_molecular)
             # Convert order (new positions holding original indices) to mapping original->new
@@ -160,54 +161,30 @@ class SeqShuffleOp(Operation):
             for new_pos, orig_idx in enumerate(order):
                 permutation[orig_idx] = int(new_pos)
             permutation = tuple(permutation)
-        return {'permutation': permutation}
-    
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Apply the permutation to the sequence (molecular chars only).
+            
+            # Extract molecular characters
+            molecular_chars = [seq[pos] for pos in molecular_positions]
+            
+            # Apply permutation: permutation[i] tells us where char i should go
+            shuffled_molecular = [''] * num_molecular
+            for i, ch in enumerate(molecular_chars):
+                dest = permutation[i]
+                shuffled_molecular[dest] = ch
+            
+            # Apply swapcase to shuffled molecular chars if mark_changes is True
+            if self.mark_changes:
+                shuffled_molecular = [ch.swapcase() for ch in shuffled_molecular]
+            
+            # Place shuffled molecular chars back at their original positions
+            seq_list = list(seq)
+            for i, pos in enumerate(molecular_positions):
+                seq_list[pos] = shuffled_molecular[i]
+            shuffled_seq = ''.join(seq_list)
         
-        Note: Region handling is done by base class wrapper methods.
-        parent_seqs[0] is the region content when region is specified.
-        """
-        seq = parent_seqs[0]
-        permutation = card['permutation']
-        
-        # Get molecular positions (excludes markers and ignore_chars)
-        molecular_positions = self._get_molecular_positions(seq)
-        num_molecular = len(molecular_positions)
-        
-        if len(permutation) != num_molecular:
-            raise ValueError(
-                f"Permutation length ({len(permutation)}) does not match "
-                f"molecular character count ({num_molecular})"
-            )
-        
-        if num_molecular == 0:
-            return {'seq_0': seq}
-        
-        # Extract molecular characters
-        molecular_chars = [seq[pos] for pos in molecular_positions]
-        
-        # Apply permutation: permutation[i] tells us where char i should go
-        shuffled_molecular = [''] * num_molecular
-        for i, ch in enumerate(molecular_chars):
-            dest = permutation[i]
-            shuffled_molecular[dest] = ch
-        
-        # Apply swapcase to shuffled molecular chars if mark_changes is True
-        if self.mark_changes:
-            shuffled_molecular = [ch.swapcase() for ch in shuffled_molecular]
-        
-        # Place shuffled molecular chars back at their original positions
-        seq_list = list(seq)
-        for i, pos in enumerate(molecular_positions):
-            seq_list[pos] = shuffled_molecular[i]
-        shuffled_seq = ''.join(seq_list)
-        
-        return {'seq_0': shuffled_seq}
+        return {
+            'permutation': permutation,
+            'seq_0': shuffled_seq,
+        }
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

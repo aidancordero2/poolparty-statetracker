@@ -243,29 +243,28 @@ class TestFromMotifDesignCards:
 class TestFromMotifCompute:
     """Test FromMotif compute methods directly."""
     
-    def test_compute_design_card_requires_rng(self):
-        """Test that compute_design_card requires RNG."""
+    def test_compute_requires_rng(self):
+        """Test that compute requires RNG."""
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
             pool = from_motif(prob_df, mode='random')
         
         with pytest.raises(RuntimeError, match="requires RNG"):
-            pool.operation.compute_design_card([])
+            pool.operation.compute([])
     
-    def test_compute_seq_from_card(self):
-        """Test compute_seq_from_card produces correct sequence."""
+    def test_compute_produces_correct_sequence(self):
+        """Test compute produces correct sequence."""
         prob_df = pd.DataFrame({'A': [0.25], 'C': [0.25], 'G': [0.25], 'T': [0.25]})
         with pp.Party() as party:
             pool = from_motif(prob_df, mode='random')
         
-        # Index 0 = A, 1 = C, 2 = G, 3 = T
-        card = {'prob_state': [0]}
-        result = pool.operation.compute_seq_from_card([], card)
-        assert result['seq_0'] == 'A'
-        
-        card = {'prob_state': [3]}
-        result = pool.operation.compute_seq_from_card([], card)
-        assert result['seq_0'] == 'T'
+        # For testing, we can't directly set prob_state, but we can verify
+        # the structure of the result
+        rng = np.random.default_rng(42)
+        result = pool.operation.compute([], rng)
+        assert 'seq_0' in result
+        assert 'prob_state' in result
+        assert result['seq_0'] in ['A', 'C', 'G', 'T']
     
     def test_compute_with_rng(self):
         """Test compute in random mode uses RNG correctly."""
@@ -274,8 +273,7 @@ class TestFromMotifCompute:
             pool = from_motif(prob_df, mode='random')
         
         rng = np.random.default_rng(42)
-        card = pool.operation.compute_design_card([], rng)
-        result = pool.operation.compute_seq_from_card([], card)
+        result = pool.operation.compute([], rng)
         assert result['seq_0'] == 'A'
 
 

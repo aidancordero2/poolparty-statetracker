@@ -183,12 +183,12 @@ class FromIupacOp(Operation):
             spacer_str=spacer_str,
         )
 
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with IUPAC state index."""
+        """Return design card and DNA sequence together."""
         if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
@@ -196,15 +196,7 @@ class FromIupacOp(Operation):
         else:
             state_value = self.state.value
             state = (0 if state_value is None else state_value) % self._total_states
-        return {'iupac_state': state}
-
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Return the DNA sequence for the given state."""
-        state = card['iupac_state']
+        
         # Mixed-radix conversion: map state to specific sequence
         result = []
         remaining = state
@@ -218,7 +210,10 @@ class FromIupacOp(Operation):
         if self.mark_changes and self._region is not None:
             seq = seq.swapcase()
         
-        return {'seq_0': seq}
+        return {
+            'iupac_state': state,
+            'seq_0': seq,
+        }
 
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

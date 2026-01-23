@@ -73,23 +73,15 @@ class RepeatOp(Operation):
             seq_name_prefix=seq_name_prefix,
         )
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with repeat index."""
+        """Return design card and parent sequence together."""
         state = self.state.value
         repeat_index = 0 if state is None else state
-        return {'repeat_index': repeat_index}
-    
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Return the parent sequence (state mapping handled by counter)."""
-        return {'seq_0': parent_seqs[0]}
+        return {'repeat_index': repeat_index, 'seq_0': parent_seqs[0]}
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

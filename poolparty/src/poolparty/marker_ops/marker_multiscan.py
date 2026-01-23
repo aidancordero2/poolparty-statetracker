@@ -319,11 +319,12 @@ class MarkerMultiScanOp(Operation):
             tags.append(build_marker_tag(name, content, strand))
         return tags
 
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
+        """Return design card and sequence with markers inserted together."""
         seq = parent_seqs[0]
         if rng is None:
             raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
@@ -332,29 +333,15 @@ class MarkerMultiScanOp(Operation):
         indices = self._select_indices(valid_indices, rng)
         strands = self._select_strands(rng)
         marker_tags = self._select_marker_tags(seq, indices, strands, rng)
-
-        return {
-            'indices': indices,  # nonmarker indices, not literal positions
-            'strands': strands,
-            'marker_tags': marker_tags,
-        }
-
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Build result sequence with markers inserted at nonmarker indices.
         
-        Uses single-pass construction to avoid position corruption issues
-        when inserting multiple overlapping markers.
-        """
-        seq = parent_seqs[0]
-        indices = list(card['indices'])
-        marker_tags = list(card['marker_tags'])
+        # Build result sequence with markers inserted at nonmarker indices
+        # Uses single-pass construction to avoid position corruption issues
+        # when inserting multiple overlapping markers
+        indices_list = list(indices)
+        marker_tags_list = list(marker_tags)
         
         # Sort by index ascending for left-to-right processing
-        inserts = sorted(zip(indices, marker_tags), key=lambda x: x[0])
+        inserts = sorted(zip(indices_list, marker_tags_list), key=lambda x: x[0])
         
         # Build result string from left to right
         result_parts = []
@@ -390,7 +377,14 @@ class MarkerMultiScanOp(Operation):
             if last_nonmarker_literal + 1 < len(seq):
                 result_parts.append(seq[last_nonmarker_literal + 1:])
         
-        return {'seq_0': ''.join(result_parts)}
+        result_seq = ''.join(result_parts)
+        
+        return {
+            'indices': indices_list,  # nonmarker indices, not literal positions
+            'strands': strands,
+            'marker_tags': marker_tags_list,
+            'seq_0': result_seq,
+        }
 
     def _get_copy_params(self) -> dict:
         return {

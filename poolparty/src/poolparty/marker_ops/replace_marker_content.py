@@ -160,18 +160,10 @@ class ReplaceMarkerContentOp(Operation):
         self._spacer_str = spacer_str
 
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-    ) -> dict:
-        """Return empty design card (no design decisions)."""
-        return {}
-    
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
     ) -> dict:
         """Replace marker in bg_seq with content_seq."""
         bg_seq = parent_seqs[0]

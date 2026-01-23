@@ -155,23 +155,13 @@ class TestStateSampleCustomName:
 class TestStateSampleCompute:
     """Test StateSampleOp compute methods directly."""
     
-    def test_compute_design_card_empty(self):
-        """Test compute_design_card returns empty dict."""
+    def test_compute_returns_parent_sequence(self):
+        """Test compute returns parent sequence."""
         with pp.Party() as party:
             pool = pp.from_seqs(['ACGT'], mode='sequential')
             sampled = state_sample(pool, sampled_states=[0])
         
-        card = sampled.operation.compute_design_card(['ACGT'])
-        assert card == {}
-    
-    def test_compute_seq_from_card(self):
-        """Test compute_seq_from_card returns parent sequence."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(['ACGT'], mode='sequential')
-            sampled = state_sample(pool, sampled_states=[0])
-        
-        card = sampled.operation.compute_design_card(['ACGT'])
-        result = sampled.operation.compute_seq_from_card(['ACGT'], card)
+        result = sampled.operation.compute(['ACGT'])
         assert result == {'seq_0': 'ACGT'}
 
 

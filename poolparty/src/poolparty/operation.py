@@ -292,61 +292,35 @@ class Operation:
                 return st.ordered_product(states=all_states)
 
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: np.random.Generator | None = None,
     ) -> dict:
-        """Compute design card containing all design decisions.
+        """Compute design card and output sequences together.
         
-        Returns a dictionary with the design decisions (matching design_card_keys).
-        Does NOT include output sequences.
+        Returns a dictionary containing:
+        - Design card keys (matching design_card_keys)
+        - Output sequence keys (seq_0, seq_1, ...)
         """
-        raise NotImplementedError("Subclasses must implement compute_design_card()")
+        raise NotImplementedError("Subclasses must implement compute()")
     
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Compute output sequences from design card.
-        
-        Returns a dictionary with seq_0, seq_1, ... keys.
-        """
-        raise NotImplementedError("Subclasses must implement compute_seq_from_card()")
-    
-    def wrapped_compute_design_card(
+    def wrapped_compute(
         self,
         parent_seqs: list[str],
         rng: np.random.Generator | None = None,
     ) -> dict:
-        """Compute design card with automatic region handling.
-        
-        If region is specified, extracts region content from parent_seqs[0]
-        before calling compute_design_card.
-        """
-        if self._region is not None:
-            _, region_content, _ = self._extract_region_parts(parent_seqs[0], self._region)
-            modified_seqs = [region_content] + parent_seqs[1:]
-            return self.compute_design_card(modified_seqs, rng)
-        return self.compute_design_card(parent_seqs, rng)
-    
-    def wrapped_compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Compute sequences with automatic region handling, spacer insertion, and marker removal.
+        """Compute with automatic region handling, spacer insertion, and marker removal.
         
         If region is specified:
         1. Extracts region content from parent_seqs[0]
-        2. Calls compute_seq_from_card with modified sequences
-        3. Wraps result with spacer_str if specified
+        2. Calls compute with modified sequences
+        3. Wraps result sequences with spacer_str if specified
         4. Reassembles prefix + result + suffix
         5. Removes marker tags if remove_marker=True and region is a marker name
         """
         if self._region is None:
-            return self.compute_seq_from_card(parent_seqs, card)
+            return self.compute(parent_seqs, rng)
         
         # Extract region parts from parent_seqs[0]
         prefix, region_content, suffix = self._extract_region_parts(
@@ -355,12 +329,17 @@ class Operation:
         
         # Call subclass with region content as first sequence
         modified_seqs = [region_content] + parent_seqs[1:]
-        result = self.compute_seq_from_card(modified_seqs, card)
+        result = self.compute(modified_seqs, rng)
+        
+        # Helper to identify sequence output keys (seq_0, seq_1, etc.)
+        def is_seq_output(key: str) -> bool:
+            return key.startswith('seq_') and len(key) > 4 and key[4:].isdigit()
         
         # Reassemble each output sequence
         reassembled = {}
-        for key, seq in result.items():
-            if key.startswith('seq_'):
+        for key, value in result.items():
+            if is_seq_output(key):
+                seq = value
                 # Apply spacer_str if specified
                 if self._spacer_str:
                     seq = self._spacer_str + seq + self._spacer_str
@@ -382,7 +361,8 @@ class Operation:
                     # Region is [start, stop] interval - just reassemble
                     reassembled[key] = prefix + seq + suffix
             else:
-                reassembled[key] = seq
+                # Keep design card keys as-is
+                reassembled[key] = value
         
         return reassembled
     

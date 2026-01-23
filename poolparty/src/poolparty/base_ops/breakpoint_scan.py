@@ -198,12 +198,12 @@ class BreakpointScanOp(Operation):
                 return positions
         raise RuntimeError("Could not find valid breakpoint positions after 1000 attempts")
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with breakpoint positions (logical)."""
+        """Return design card and split sequences together."""
         seq = parent_seqs[0]
         seq_len = self._get_length_without_markers(seq)
         if self.mode == 'random':
@@ -219,32 +219,26 @@ class BreakpointScanOp(Operation):
             state = self.state.value
             state = 0 if state is None else state
             breakpoints = self._sequential_cache[state % len(self._sequential_cache)]
-        return {'breakpoints': breakpoints}
-    
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Split sequence at breakpoints based on design card."""
-        seq = parent_seqs[0]
+        
+        # Split sequence at breakpoints
         raw_len = len(seq)
-        logical_breakpoints = card['breakpoints']  # Logical positions (in marker-free seq)
+        logical_breakpoints = breakpoints  # Logical positions (in marker-free seq)
         nonmarker_positions = self._get_nonmarker_positions(seq)
-        seq_len = len(nonmarker_positions)
+        seq_len_actual = len(nonmarker_positions)
         
         # Translate logical breakpoints to raw positions
         # Logical position k means "split before the k-th char in marker-free sequence"
         raw_breakpoints = []
         for logical_pos in logical_breakpoints:
-            if logical_pos >= seq_len:
+            if logical_pos >= seq_len_actual:
                 raw_breakpoints.append(raw_len)
             else:
                 raw_breakpoints.append(nonmarker_positions[logical_pos])
         
         boundaries = [0] + raw_breakpoints + [raw_len]
         segments = [seq[boundaries[i]:boundaries[i+1]] for i in range(self.num_outputs)]
-        result = {}
+        
+        result = {'breakpoints': breakpoints}
         for i, segment in enumerate(segments):
             result[f'seq_{i}'] = segment
         return result

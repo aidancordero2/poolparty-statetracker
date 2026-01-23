@@ -125,11 +125,7 @@ class FixedOp(Operation):
             spacer_str=spacer_str,
         )
 
-    def compute_design_card(self, parent_seqs: list[str], rng=None) -> dict:
-        """Return empty design card (no design decisions)."""
-        return {}
-
-    def compute_seq_from_card(self, parent_seqs: list[str], card: dict) -> dict:
+    def compute(self, parent_seqs: list[str], rng=None) -> dict:
         """Compute output sequence using the user-defined function.
         
         Note: Region handling is done by the base class wrapper methods.

@@ -110,20 +110,12 @@ class StateSliceOp(Operation):
             step=self.step,
         )
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return empty design card (no design decisions)."""
-        return {}
-    
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Return the parent sequence (state mapping handled by counter)."""
+        """Return parent sequence (state mapping handled by counter)."""
         return {'seq_0': parent_seqs[0]}
     
     def _get_copy_params(self) -> dict:

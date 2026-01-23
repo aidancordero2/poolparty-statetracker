@@ -188,43 +188,36 @@ class GetKmersOp(Operation):
         indices = rng.integers(0, self.alpha_size, size=self.length)
         return ''.join(dna.BASES[i] for i in indices)
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with kmer selection."""
+        """Return design card and kmer together."""
         if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
             kmer = self._random_kmer(rng)
-            return {'kmer_index': None, 'kmer': kmer}
+            kmer_index = None
         else:
             # Use state 0 when inactive (state is None)
             idx = self.state.value
             idx = 0 if idx is None else idx
             kmer = self._value_to_kmer(idx)
-            return {'kmer_index': idx, 'kmer': kmer}
-    
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Return the kmer based on design card."""
-        if 'kmer' in card:
-            # Random mode: kmer was pre-computed
-            kmer = card['kmer']
-        else:
-            # Sequential mode: compute from index
-            kmer = self._value_to_kmer(card['kmer_index'])
+            kmer_index = idx
+        
         # Apply case transformation
         if self.case == 'lower':
             kmer = kmer.lower()
         # Apply mark_changes swapcase only when inserting into a region
         if self.mark_changes and self._region is not None:
             kmer = kmer.swapcase()
-        return {'seq_0': kmer}
+        
+        return {
+            'kmer_index': kmer_index,
+            'kmer': kmer,
+            'seq_0': kmer,
+        }
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

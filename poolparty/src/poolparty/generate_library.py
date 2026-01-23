@@ -251,9 +251,16 @@ def _compute_one(
         else:
             op_rng = op.rng
         
-        # Compute design card, sequences, and names (using wrapped methods for region handling)
-        card = op.wrapped_compute_design_card(parent_seqs, op_rng)
-        seqs = op.wrapped_compute_seq_from_card(parent_seqs, card)
+        # Compute design card and sequences together (using wrapped method for region handling)
+        result = op.wrapped_compute(parent_seqs, op_rng)
+        
+        # Extract sequences (keys like 'seq_0', 'seq_1', etc.) and design card (other keys)
+        # Note: 'seq_name', 'seq_index' etc. are design card keys, not sequence outputs
+        def is_seq_output(key: str) -> bool:
+            return key.startswith('seq_') and len(key) > 4 and key[4:].isdigit()
+        seqs = {k: v for k, v in result.items() if is_seq_output(k)}
+        card = {k: v for k, v in result.items() if not is_seq_output(k)}
+        
         names = op.compute_seq_names(parent_names, card)
         
         # Store in caches for downstream operations

@@ -156,31 +156,26 @@ class FromMotifOp(Operation):
             spacer_str=spacer_str,
         )
 
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with sampled position indices."""
+        """Return design card and sampled sequence together."""
         if rng is None:
             raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
         length = len(self.prob_df)
         random_vals = rng.random(length)
         indices = (random_vals[:, np.newaxis] < self._cumprobs).argmax(axis=1)
-        return {'prob_state': indices.tolist()}
-
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Return the sequence based on design card indices."""
-        indices = card['prob_state']
-        seq = ''.join(dna.BASES[i] for i in indices)
+        indices_list = indices.tolist()
+        seq = ''.join(dna.BASES[i] for i in indices_list)
         # Apply mark_changes swapcase only when inserting into a region
         if self.mark_changes and self._region is not None:
             seq = seq.swapcase()
-        return {'seq_0': seq}
+        return {
+            'prob_state': indices_list,
+            'seq_0': seq,
+        }
 
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

@@ -25,8 +25,7 @@ class TestPoolCreation:
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA'])
             assert pool.operation is not None
-            assert hasattr(pool.operation, 'compute_design_card')
-            assert hasattr(pool.operation, 'compute_seq_from_card')
+            assert hasattr(pool.operation, 'compute')
     
     def test_pool_output_index_default(self):
         """Test that output_index defaults to 0."""

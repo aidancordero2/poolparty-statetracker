@@ -303,15 +303,15 @@ class MutagenizeOrfOp(Operation):
         
         return positions, tuple(wt_codons), tuple(mut_codons), tuple(wt_aas), tuple(mut_aas)
     
-    def compute_design_card(
+    def compute(
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with codon mutation details."""
+        """Return design card and mutated sequence together."""
         seq = parent_seqs[0]
-        # Strip markers before extracting codons
-        clean_seq, _ = self._strip_markers(seq)
+        # Strip markers and record their positions
+        clean_seq, markers = self._strip_markers(seq)
         _, codons, _ = self._extract_codons(clean_seq)
         
         if self.mode in ('random', 'hybrid'):
@@ -337,37 +337,24 @@ class MutagenizeOrfOp(Operation):
             wt_codons, mut_codons = tuple(wt_codons), tuple(mut_codons)
             wt_aas, mut_aas = tuple(wt_aas), tuple(mut_aas)
         
+        # Apply mutations to codons
+        upstream, codons, downstream = self._extract_codons(clean_seq)
+        mutated_codons = codons.copy()
+        for pos, mut in zip(positions, mut_codons):
+            mutated_codons[pos] = mut
+        mutated_clean_seq = upstream + ''.join(mutated_codons) + downstream
+        
+        # Restore markers at original positions
+        result_seq = self._restore_markers(mutated_clean_seq, markers)
+        
         return {
             'codon_positions': positions,
             'wt_codons': wt_codons,
             'mut_codons': mut_codons,
             'wt_aas': wt_aas,
             'mut_aas': mut_aas,
+            'seq_0': result_seq,
         }
-    
-    def compute_seq_from_card(
-        self,
-        parent_seqs: list[str],
-        card: dict,
-    ) -> dict:
-        """Apply mutations from design card to produce output sequence.
-        
-        Markers are stripped before codon processing and restored afterward.
-        """
-        seq = parent_seqs[0]
-        # Strip markers and record their positions
-        clean_seq, markers = self._strip_markers(seq)
-        
-        # Extract and mutate codons on clean sequence
-        upstream, codons, downstream = self._extract_codons(clean_seq)
-        mutated_codons = codons.copy()
-        for pos, mut in zip(card['codon_positions'], card['mut_codons']):
-            mutated_codons[pos] = mut
-        mutated_clean_seq = upstream + ''.join(mutated_codons) + downstream
-        
-        # Restore markers at original positions
-        result_seq = self._restore_markers(mutated_clean_seq, markers)
-        return {'seq_0': result_seq}
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
