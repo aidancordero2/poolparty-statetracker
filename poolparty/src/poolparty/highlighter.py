@@ -1,7 +1,8 @@
 """Sequence highlighting with regex-based ANSI styling."""
 import re
-from .types import Literal, Sequence, Optional, beartype
+from .types import Literal, Sequence, Optional, beartype, StyleList
 from . import dna
+import numpy as np
 
 # ANSI escape codes for styling
 STYLE_CODES = {
@@ -364,6 +365,200 @@ def apply_highlights(text: str, highlighters: Sequence[Highlighter]) -> str:
         result.append(char)
     
     # Reset at end if we have active styles
+    if current_codes:
+        result.append('\033[0m')
+    
+    return ''.join(result)
+
+
+@beartype
+def validate_style_positions(seq_len: int, styles: StyleList) -> None:
+    """Validate that all style positions are within bounds.
+    
+    Parameters
+    ----------
+    seq_len : int
+        Length of the sequence being styled.
+    styles : StyleList
+        List of (spec, positions) tuples to validate.
+    
+    Raises
+    ------
+    ValueError
+        If any position is negative or >= seq_len, with detailed context.
+    """
+    for spec, positions in styles:
+        if len(positions) == 0:
+            continue
+        min_pos, max_pos = int(positions.min()), int(positions.max())
+        if min_pos < 0:
+            raise ValueError(
+                f"Style '{spec}' has negative position(s): min={min_pos}"
+            )
+        if max_pos >= seq_len:
+            raise ValueError(
+                f"Style '{spec}' has position(s) >= seq_len={seq_len}: max={max_pos}"
+            )
+
+
+@beartype
+def apply_inline_styles(seq: str, styles: StyleList, validate: bool = True) -> str:
+    """Apply per-sequence inline styles to a sequence.
+    
+    Each style tuple in `styles` is (spec, positions) where:
+    - spec: Style specification string (e.g., 'bold blue', '#ff7f50', 'coral')
+    - positions: np.ndarray of character positions to style
+    
+    Styles are applied in order. Later styles override foreground colors
+    but combine with modifiers (bold, underline).
+    
+    Parameters
+    ----------
+    seq : str
+        The sequence to style.
+    styles : StyleList
+        List of (spec, positions) tuples.
+    validate : bool, default=True
+        If True, validate positions are within bounds before applying.
+    """
+    if not styles:
+        return seq
+    
+    # Strip any existing ANSI codes
+    clean_seq = Highlighter.reset(seq)
+    n = len(clean_seq)
+    if n == 0:
+        return clean_seq
+    
+    # Validate positions if requested
+    if validate:
+        validate_style_positions(n, styles)
+    
+    # Track styles for each character: code -> priority (style index)
+    char_styles: list[dict[str, int]] = [{} for _ in range(n)]
+    
+    # Apply each style tuple
+    for priority, (spec, positions) in enumerate(styles):
+        # Parse the style spec (can be space-separated like 'bold blue')
+        codes = [_parse_style(s) for s in spec.split()]
+        
+        # Apply codes to specified positions
+        for pos in positions:
+            if 0 <= pos < n:
+                for code in codes:
+                    char_styles[pos][code] = priority
+    
+    # Build output with combined ANSI codes
+    result = []
+    current_codes: list[str] = []
+    
+    for i, char in enumerate(clean_seq):
+        new_codes = _resolve_styles(char_styles[i]) if char_styles[i] else []
+        if new_codes != current_codes:
+            if current_codes:
+                result.append('\033[0m')  # Reset previous styles
+            if new_codes:
+                codes_str = ';'.join(new_codes)
+                result.append(f'\033[{codes_str}m')
+            current_codes = new_codes
+        result.append(char)
+    
+    # Reset at end if we have active styles
+    if current_codes:
+        result.append('\033[0m')
+    
+    return ''.join(result)
+
+
+@beartype
+def apply_inline_styles_and_highlights(
+    seq: str,
+    inline_styles: StyleList,
+    highlighters: Sequence[Highlighter],
+    validate: bool = True,
+) -> str:
+    """Apply inline styles first, then global highlighters.
+    
+    Inline styles are applied first and act as a base layer.
+    Highlighters are then applied on top, following the same rules
+    for combining styles (later colors override, modifiers combine).
+    
+    Parameters
+    ----------
+    seq : str
+        The sequence to style.
+    inline_styles : StyleList
+        List of (spec, positions) tuples for per-sequence styling.
+    highlighters : Sequence[Highlighter]
+        Global highlighters to apply on top.
+    validate : bool, default=True
+        If True, validate inline_styles positions are within bounds.
+    """
+    if not inline_styles and not highlighters:
+        return seq
+    
+    # Strip any existing ANSI codes
+    clean_seq = Highlighter.reset(seq)
+    n = len(clean_seq)
+    if n == 0:
+        return clean_seq
+    
+    # Validate inline style positions if requested
+    if validate and inline_styles:
+        validate_style_positions(n, inline_styles)
+    
+    # Get tag positions for highlighters that need it
+    tag_positions = Highlighter._get_tag_positions(clean_seq)
+    
+    # Track styles for each character: code -> priority
+    # Inline styles get priorities 0 to len(inline_styles)-1
+    # Highlighters get priorities starting at len(inline_styles)
+    char_styles: list[dict[str, int]] = [{} for _ in range(n)]
+    
+    # Apply inline styles first
+    for priority, (spec, positions) in enumerate(inline_styles):
+        codes = [_parse_style(s) for s in spec.split()]
+        for pos in positions:
+            if 0 <= pos < n:
+                for code in codes:
+                    char_styles[pos][code] = priority
+    
+    # Apply highlighters on top
+    base_priority = len(inline_styles)
+    for hl_idx, hl in enumerate(highlighters):
+        priority = base_priority + hl_idx
+        bounds = hl._get_region_bounds(clean_seq)
+        
+        if bounds is None:
+            if hl.region is not None:
+                continue
+            eligible_start, eligible_end = 0, n
+        else:
+            eligible_start, eligible_end = bounds
+        
+        search_text = clean_seq[eligible_start:eligible_end]
+        for match in hl._pattern.finditer(search_text):
+            for i in range(match.start(), match.end()):
+                pos = eligible_start + i
+                if hl._excludes_tags and pos in tag_positions:
+                    continue
+                char_styles[pos][hl._code] = priority
+    
+    # Build output with combined ANSI codes
+    result = []
+    current_codes: list[str] = []
+    
+    for i, char in enumerate(clean_seq):
+        new_codes = _resolve_styles(char_styles[i]) if char_styles[i] else []
+        if new_codes != current_codes:
+            if current_codes:
+                result.append('\033[0m')
+            if new_codes:
+                codes_str = ';'.join(new_codes)
+                result.append(f'\033[{codes_str}m')
+            current_codes = new_codes
+        result.append(char)
+    
     if current_codes:
         result.append('\033[0m')
     

@@ -272,6 +272,7 @@ class MarkerScanOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list | None = None,
     ) -> dict:
         """Return design card and sequence with marker inserted together."""
         seq = parent_seqs[0]
@@ -353,6 +354,7 @@ class MarkerScanOp(Operation):
                 raw_position = len(seq)  # Insert at end
             result_seq = seq[:raw_position] + marker_tag + seq[raw_position:]
         
+        # Marker scan modifies sequence structure, so styles not meaningful
         return {
             'position_index': position_index,
             'start': start,
@@ -363,6 +365,7 @@ class MarkerScanOp(Operation):
             'strand': strand,
             'region_seq': marker_tag,
             'seq_0': result_seq,
+            'style_0': [],
         }
     
     def _get_copy_params(self) -> dict:

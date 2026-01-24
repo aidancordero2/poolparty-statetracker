@@ -323,6 +323,7 @@ class MarkerMultiScanOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list | None = None,
     ) -> dict:
         """Return design card and sequence with markers inserted together."""
         seq = parent_seqs[0]
@@ -379,11 +380,13 @@ class MarkerMultiScanOp(Operation):
         
         result_seq = ''.join(result_parts)
         
+        # Marker multiscan modifies sequence structure, so styles not meaningful
         return {
             'indices': indices_list,  # nonmarker indices, not literal positions
             'strands': strands,
             'marker_tags': marker_tags_list,
             'seq_0': result_seq,
+            'style_0': [],
         }
 
     def _get_copy_params(self) -> dict:

@@ -335,9 +335,12 @@ class Pool:
                     row_parts.append(f"{row['name']}")
             if show_seq:
                 seq = row['seq']
-                if show_highlights and highlights:
-                    from .highlighter import apply_highlights
-                    seq = apply_highlights(seq, highlights)
+                if show_highlights:
+                    from .highlighter import apply_inline_styles_and_highlights
+                    # Get per-sequence inline styles (from operation changes_style parameters)
+                    inline_styles = row.get('_inline_styles', [])
+                    # Apply both inline styles and global highlights
+                    seq = apply_inline_styles_and_highlights(seq, inline_styles, highlights or [])
                 row_parts.append(seq)
             print("  ".join(row_parts))
         print('')

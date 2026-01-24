@@ -4,6 +4,7 @@ from collections.abc import Sequence, Callable
 from beartype import beartype
 from beartype.typing import Tuple
 from numbers import Real, Integral
+import numpy as np
 
 # Forward reference type aliases (resolve circular imports)
 Pool_type: TypeAlias = "poolparty.pool.Pool"
@@ -26,6 +27,11 @@ PositionsType: TypeAlias = Union[Sequence[Integral], slice, None]
 # str = marker name, Sequence[Integral] = [start, stop] interval, None = full sequence
 RegionType: TypeAlias = Union[str, Sequence[Integral], None]
 
+# Inline styling types for per-sequence style tracking
+# StyleTuple: (style_spec, positions) where style_spec is parsed like highlighter.py
+StyleTuple: TypeAlias = tuple[str, np.ndarray]
+StyleList: TypeAlias = list[StyleTuple]
+
 __all__ = [
     'beartype',
     'Union',
@@ -44,4 +50,6 @@ __all__ = [
     'FilterFunc',
     'PositionsType',
     'RegionType',
+    'StyleTuple',
+    'StyleList',
 ]

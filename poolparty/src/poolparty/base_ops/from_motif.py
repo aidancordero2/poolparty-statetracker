@@ -160,6 +160,7 @@ class FromMotifOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list | None = None,
     ) -> dict:
         """Return design card and sampled sequence together."""
         if rng is None:
@@ -175,6 +176,7 @@ class FromMotifOp(Operation):
         return {
             'prob_state': indices_list,
             'seq_0': seq,
+            'style_0': [],  # Source operation - start with empty styles
         }
 
     def _get_copy_params(self) -> dict:

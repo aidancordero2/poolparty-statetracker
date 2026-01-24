@@ -1,7 +1,7 @@
 """Mutagenize operation - apply mutations to a sequence."""
 from itertools import combinations
 from math import comb, prod
-from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, beartype
+from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, beartype, StyleList
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
@@ -20,6 +20,7 @@ def mutagenize(
     spacer_str: str = '',
     mark_changes: Optional[bool] = None,
     swapcase: bool = False,
+    changes_style: Optional[str] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
@@ -86,6 +87,7 @@ def mutagenize(
         spacer_str=spacer_str,
         mark_changes=mark_changes,
         swapcase=swapcase,
+        changes_style=changes_style,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_states=num_states,
@@ -122,6 +124,7 @@ class MutagenizeOp(Operation):
         spacer_str: str = '',
         mark_changes: Optional[bool] = None,
         swapcase: bool = False,
+        changes_style: Optional[str] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
@@ -166,6 +169,7 @@ class MutagenizeOp(Operation):
             mark_changes = party.get_default('mark_changes', False)
         self.mark_changes = mark_changes
         self.swapcase = swapcase
+        self._changes_style = changes_style
         self.alpha_size = len(dna.BASES)
         self._mode = mode
         
@@ -397,8 +401,9 @@ class MutagenizeOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list[StyleList] | None = None,
     ) -> dict:
-        """Return design card and mutated sequence together.
+        """Return design card, mutated sequence, and styles together.
         
         Note: Region handling is done by base class wrapper methods.
         parent_seqs[0] is the region content when region is specified.
@@ -470,11 +475,23 @@ class MutagenizeOp(Operation):
         if self.swapcase:
             result_seq = transform_nonmarker_chars(result_seq, str.swapcase)
         
+        # Build output styles: pass through parent styles (mutagenize preserves length)
+        # and add mutation style if _changes_style is set
+        output_styles: StyleList = []
+        if parent_styles and len(parent_styles) > 0:
+            output_styles.extend(parent_styles[0])
+        
+        if self._changes_style is not None and len(positions) > 0:
+            # Convert logical positions to raw positions for styling
+            raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
+            output_styles.append((self._changes_style, raw_positions))
+        
         return {
             'positions': positions,
             'wt_chars': wt_chars,
             'mut_chars': mut_chars,
             'seq_0': result_seq,
+            'style_0': output_styles,
         }
     
     def _get_copy_params(self) -> dict:
@@ -489,6 +506,7 @@ class MutagenizeOp(Operation):
             'spacer_str': self._spacer_str,
             'mark_changes': self.mark_changes,
             'swapcase': self.swapcase,
+            'changes_style': self._changes_style,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,

@@ -307,6 +307,7 @@ class MutagenizeOrfOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list | None = None,
     ) -> dict:
         """Return design card and mutated sequence together."""
         seq = parent_seqs[0]
@@ -347,6 +348,8 @@ class MutagenizeOrfOp(Operation):
         # Restore markers at original positions
         result_seq = self._restore_markers(mutated_clean_seq, markers)
         
+        # Pass through parent styles (mutagenize_orf preserves sequence length)
+        output_styles = parent_styles[0] if parent_styles and len(parent_styles) > 0 else []
         return {
             'codon_positions': positions,
             'wt_codons': wt_codons,
@@ -354,6 +357,7 @@ class MutagenizeOrfOp(Operation):
             'wt_aas': wt_aas,
             'mut_aas': mut_aas,
             'seq_0': result_seq,
+            'style_0': output_styles,
         }
     
     def _get_copy_params(self) -> dict:

@@ -60,7 +60,7 @@ def format_state_node(state, style: StyleType = 'clean') -> str:
         return f"{name} (n={n})"
     
     # style == 'clean'
-    return f"{name} (state, io={order}, n={n})"
+    return f"{name} (o={order}, n={n})"
 
 
 def format_operation_node(op, style: StyleType = 'clean') -> str:

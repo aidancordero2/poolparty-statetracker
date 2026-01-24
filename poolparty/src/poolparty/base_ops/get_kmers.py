@@ -192,6 +192,7 @@ class GetKmersOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list | None = None,
     ) -> dict:
         """Return design card and kmer together."""
         if self.mode == 'random':
@@ -217,6 +218,7 @@ class GetKmersOp(Operation):
             'kmer_index': kmer_index,
             'kmer': kmer,
             'seq_0': kmer,
+            'style_0': [],  # Source operation - start with empty styles
         }
     
     def _get_copy_params(self) -> dict:

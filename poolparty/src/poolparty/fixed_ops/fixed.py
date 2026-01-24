@@ -1,6 +1,6 @@
 """Fixed operation - create a pool from a fixed transformation of parent sequences."""
 from numbers import Real, Integral
-from ..types import Pool_type, Union, Optional, Sequence, Callable, RegionType, beartype
+from ..types import Pool_type, Union, Optional, Sequence, Callable, RegionType, beartype, StyleList
 from ..operation import Operation
 from ..pool import Pool
 
@@ -125,14 +125,23 @@ class FixedOp(Operation):
             spacer_str=spacer_str,
         )
 
-    def compute(self, parent_seqs: list[str], rng=None) -> dict:
+    def compute(
+        self,
+        parent_seqs: list[str],
+        rng=None,
+        parent_styles: list[StyleList] | None = None,
+    ) -> dict:
         """Compute output sequence using the user-defined function.
         
         Note: Region handling is done by the base class wrapper methods.
         parent_seqs[0] is the region content when region is specified.
         """
         result = self.seq_from_seqs_fn(parent_seqs)
-        return {'seq_0': result}
+        # Pass through parent styles (fixed operations preserve sequence length)
+        output_styles: StyleList = []
+        if parent_styles and len(parent_styles) > 0:
+            output_styles.extend(parent_styles[0])
+        return {'seq_0': result, 'style_0': output_styles}
 
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

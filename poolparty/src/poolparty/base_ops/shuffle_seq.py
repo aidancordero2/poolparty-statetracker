@@ -133,6 +133,7 @@ class SeqShuffleOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list | None = None,
     ) -> dict:
         """Return design card and shuffled sequence together.
         
@@ -181,9 +182,11 @@ class SeqShuffleOp(Operation):
                 seq_list[pos] = shuffled_molecular[i]
             shuffled_seq = ''.join(seq_list)
         
+        # Note: Shuffle changes character positions, so parent styles not meaningful
         return {
             'permutation': permutation,
             'seq_0': shuffled_seq,
+            'style_0': [],
         }
     
     def _get_copy_params(self) -> dict:

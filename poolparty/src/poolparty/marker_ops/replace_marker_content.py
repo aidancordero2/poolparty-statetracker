@@ -164,6 +164,7 @@ class ReplaceMarkerContentOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list | None = None,
     ) -> dict:
         """Replace marker in bg_seq with content_seq."""
         bg_seq = parent_seqs[0]
@@ -185,7 +186,8 @@ class ReplaceMarkerContentOp(Operation):
         suffix = bg_seq[marker.end:]
         result_seq = prefix + content_seq + suffix
         
-        return {'seq_0': result_seq}
+        # Marker replacement modifies sequence structure, so styles not meaningful
+        return {'seq_0': result_seq, 'style_0': []}
     
     def compute_seq_names(
         self,

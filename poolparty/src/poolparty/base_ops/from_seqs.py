@@ -1,6 +1,6 @@
 """FromSeqs operation - create a pool from a list of sequences."""
 from numbers import Real
-from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
+from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype, StyleList
 from ..operation import Operation
 from ..pool import Pool
 from .. import dna
@@ -170,6 +170,7 @@ class FromSeqsOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list[StyleList] | None = None,
     ) -> dict:
         """Return design card and sequence together."""
         if self.mode == 'random':
@@ -189,10 +190,12 @@ class FromSeqsOp(Operation):
         if self.mark_changes and self._region is not None:
             seq = seq.swapcase()
         
+        # Source operation - start with empty styles
         return {
             'seq_name': self.seq_names[idx],
             'seq_index': idx,
             'seq_0': seq,
+            'style_0': [],
         }
     
     def compute_seq_names(

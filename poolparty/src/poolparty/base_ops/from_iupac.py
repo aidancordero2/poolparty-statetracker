@@ -187,6 +187,7 @@ class FromIupacOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list | None = None,
     ) -> dict:
         """Return design card and DNA sequence together."""
         if self.mode == 'random':
@@ -213,6 +214,7 @@ class FromIupacOp(Operation):
         return {
             'iupac_state': state,
             'seq_0': seq,
+            'style_0': [],  # Source operation - start with empty styles
         }
 
     def _get_copy_params(self) -> dict:

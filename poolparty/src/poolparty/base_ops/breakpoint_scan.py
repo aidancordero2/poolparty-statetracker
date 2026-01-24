@@ -202,6 +202,7 @@ class BreakpointScanOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list | None = None,
     ) -> dict:
         """Return design card and split sequences together."""
         seq = parent_seqs[0]
@@ -241,6 +242,7 @@ class BreakpointScanOp(Operation):
         result = {'breakpoints': breakpoints}
         for i, segment in enumerate(segments):
             result[f'seq_{i}'] = segment
+            result[f'style_{i}'] = []  # Breakpoint splits sequence, styles not meaningful
         return result
     
     def _get_copy_params(self) -> dict:

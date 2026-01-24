@@ -1,7 +1,7 @@
 """Operation base class for poolparty."""
 from numbers import Real
 import statetracker as st
-from .types import Pool_type, Sequence, ModeType, Optional, RegionType, beartype
+from .types import Pool_type, Sequence, ModeType, Optional, RegionType, beartype, StyleList
 from . import dna
 import numpy as np
 
@@ -197,6 +197,57 @@ class Operation:
         start, stop = bounds
         return (seq[:start], seq[start:stop], seq[stop:])
     
+    def _compute_style_position_offset(
+        self,
+        parent_seq: str,
+        prefix: str,
+    ) -> int:
+        """Compute the offset to add to style positions for reassembly.
+        
+        This method calculates how many characters appear before the region
+        content in the final output sequence. It handles:
+        - Prefix length (characters before the region)
+        - Opening marker tag length (when region is a marker and remove_marker=False)
+        - Spacer string offset
+        
+        Parameters
+        ----------
+        parent_seq : str
+            The original parent sequence (before region extraction).
+        prefix : str
+            The prefix extracted from the parent sequence (seq[:region_start]).
+        
+        Returns
+        -------
+        int
+            The total offset to add to style positions.
+        """
+        if self._region is None:
+            return 0
+        
+        if isinstance(self._region, str):
+            # Region is a marker name
+            from .marker_ops.parsing import parse_marker, build_marker_tag
+            clean_prefix, _, _, strand = parse_marker(parent_seq, self._region)
+            prefix_len = len(clean_prefix)
+            
+            if not self._remove_marker:
+                # Account for opening tag if we're keeping the marker
+                # Build a marker tag with dummy content to get the opening tag format
+                # (empty content creates self-closing tags which have different format)
+                test_tag = build_marker_tag(self._region, 'X', strand=strand)
+                # test_tag is like '<name>X</name>' - opening tag ends at first '>'
+                opening_tag_len = test_tag.index('>') + 1
+                prefix_len += opening_tag_len
+        else:
+            # Region is [start, stop] interval
+            prefix_len = len(prefix)
+        
+        # Account for spacer_str
+        spacer_offset = len(self._spacer_str) if self._spacer_str else 0
+        
+        return prefix_len + spacer_offset
+    
     @staticmethod
     def _validate_region(region: RegionType) -> None:
         """Validate region parameter format.
@@ -296,12 +347,24 @@ class Operation:
         self,
         parent_seqs: list[str],
         rng: np.random.Generator | None = None,
+        parent_styles: list[StyleList] | None = None,
     ) -> dict:
-        """Compute design card and output sequences together.
+        """Compute design card, output sequences, and output styles together.
+        
+        Parameters
+        ----------
+        parent_seqs : list[str]
+            Input sequences from parent pools.
+        rng : np.random.Generator | None
+            Random number generator (for random mode operations).
+        parent_styles : list[StyleList] | None
+            Input styles from parent pools. Each element is a list of
+            (style_spec, positions) tuples for the corresponding parent sequence.
         
         Returns a dictionary containing:
         - Design card keys (matching design_card_keys)
         - Output sequence keys (seq_0, seq_1, ...)
+        - Output style keys (style_0, style_1, ...) - list of (spec, positions) tuples
         """
         raise NotImplementedError("Subclasses must implement compute()")
     
@@ -309,33 +372,71 @@ class Operation:
         self,
         parent_seqs: list[str],
         rng: np.random.Generator | None = None,
+        parent_styles: list[StyleList] | None = None,
     ) -> dict:
         """Compute with automatic region handling, spacer insertion, and marker removal.
         
         If region is specified:
         1. Extracts region content from parent_seqs[0]
-        2. Calls compute with modified sequences
-        3. Wraps result sequences with spacer_str if specified
-        4. Reassembles prefix + result + suffix
-        5. Removes marker tags if remove_marker=True and region is a marker name
+        2. Adjusts input style positions to be region-relative
+        3. Calls compute with modified sequences and styles
+        4. Wraps result sequences with spacer_str if specified
+        5. Reassembles prefix + result + suffix
+        6. Adjusts output style positions to account for prefix
+        7. Removes marker tags if remove_marker=True and region is a marker name
         """
         if self._region is None:
-            return self.compute(parent_seqs, rng)
+            return self.compute(parent_seqs, rng, parent_styles)
         
         # Extract region parts from parent_seqs[0]
         prefix, region_content, suffix = self._extract_region_parts(
             parent_seqs[0], self._region
         )
         
+        # Get region bounds for position adjustment
+        bounds = self._resolve_region(parent_seqs[0], self._region)
+        region_start = bounds[0] if bounds else 0
+        
+        # Adjust parent styles for first parent (shift positions by -region_start)
+        modified_styles = None
+        if parent_styles:
+            modified_styles = list(parent_styles)  # Copy the list
+            if modified_styles and len(modified_styles) > 0:
+                # Adjust first parent's styles to be region-relative
+                first_parent_styles = modified_styles[0]
+                adjusted_first_styles: StyleList = []
+                for spec, positions in first_parent_styles:
+                    # Shift positions and filter to those within region
+                    region_end = region_start + len(region_content)
+                    mask = (positions >= region_start) & (positions < region_end)
+                    if np.any(mask):
+                        adjusted_positions = positions[mask] - region_start
+                        adjusted_first_styles.append((spec, adjusted_positions))
+                modified_styles[0] = adjusted_first_styles
+        
         # Call subclass with region content as first sequence
         modified_seqs = [region_content] + parent_seqs[1:]
-        result = self.compute(modified_seqs, rng)
+        result = self.compute(modified_seqs, rng, modified_styles)
         
         # Helper to identify sequence output keys (seq_0, seq_1, etc.)
         def is_seq_output(key: str) -> bool:
             return key.startswith('seq_') and len(key) > 4 and key[4:].isdigit()
         
-        # Reassemble each output sequence
+        # Helper to identify style output keys (style_0, style_1, etc.)
+        def is_style_output(key: str) -> bool:
+            return key.startswith('style_') and len(key) > 6 and key[6:].isdigit()
+        
+        # Compute total offset for style positions using centralized helper
+        total_offset = self._compute_style_position_offset(parent_seqs[0], prefix)
+        
+        # Parse marker info for sequence reassembly (if region is a marker)
+        if isinstance(self._region, str):
+            from .marker_ops.parsing import parse_marker, build_marker_tag
+            clean_prefix, _, clean_suffix, strand = parse_marker(
+                parent_seqs[0], self._region
+            )
+        
+        # Reassemble each output sequence and style
         reassembled = {}
         for key, value in result.items():
             if is_seq_output(key):
@@ -345,11 +446,6 @@ class Operation:
                     seq = self._spacer_str + seq + self._spacer_str
                 
                 if isinstance(self._region, str):
-                    # Region is a marker name - get clean prefix/suffix
-                    from .marker_ops.parsing import parse_marker, build_marker_tag
-                    clean_prefix, _, clean_suffix, strand = parse_marker(
-                        parent_seqs[0], self._region
-                    )
                     if self._remove_marker:
                         # Remove marker tags
                         reassembled[key] = clean_prefix + seq + clean_suffix
@@ -360,6 +456,14 @@ class Operation:
                 else:
                     # Region is [start, stop] interval - just reassemble
                     reassembled[key] = prefix + seq + suffix
+            elif is_style_output(key):
+                # Adjust style positions to account for prefix and spacer
+                styles = value
+                adjusted_styles: StyleList = []
+                for spec, positions in styles:
+                    adjusted_positions = positions + total_offset
+                    adjusted_styles.append((spec, adjusted_positions))
+                reassembled[key] = adjusted_styles
             else:
                 # Keep design card keys as-is
                 reassembled[key] = value

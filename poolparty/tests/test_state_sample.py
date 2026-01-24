@@ -162,7 +162,7 @@ class TestStateSampleCompute:
             sampled = state_sample(pool, sampled_states=[0])
         
         result = sampled.operation.compute(['ACGT'])
-        assert result == {'seq_0': 'ACGT'}
+        assert result['seq_0'] == 'ACGT'
 
 
 class TestStateSampleWithReplacement:

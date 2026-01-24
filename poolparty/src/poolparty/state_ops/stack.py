@@ -98,6 +98,7 @@ class StackOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
+        parent_styles: list | None = None,
     ) -> dict:
         """Return design card and sequence from active parent together."""
         for i, parent in enumerate(self.parent_pools):
@@ -106,11 +107,14 @@ class StackOp(Operation):
                 self.state.value = i
                 active = i
                 seq = parent_seqs[active]
-                return {'active_parent': active, 'seq_0': seq}
+                # Pass through styles from active parent
+                output_styles = parent_styles[active] if parent_styles and len(parent_styles) > active else []
+                return {'active_parent': active, 'seq_0': seq, 'style_0': output_styles}
         self.state.value = None
         active = None
         seq = parent_seqs[0] if parent_seqs else ''
-        return {'active_parent': active, 'seq_0': seq}
+        output_styles = parent_styles[0] if parent_styles and len(parent_styles) > 0 else []
+        return {'active_parent': active, 'seq_0': seq, 'style_0': output_styles}
     
     def compute_seq_names(
         self,
