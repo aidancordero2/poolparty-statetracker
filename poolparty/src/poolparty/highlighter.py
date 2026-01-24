@@ -80,7 +80,7 @@ DEFAULT_GAP_CHARS = '-. '
 _BASIC_FG_CODES = {'91', '92', '93', '94', '95', '96'}
 
 # Case transformation tokens for inline styles (not ANSI codes)
-CASE_TRANSFORMS = {'upper', 'lower'}
+CASE_TRANSFORMS = {'upper', 'lower', 'uppercase', 'lowercase', 'swapcase'}
 
 
 def _hex_to_ansi(hex_color: str) -> str:
@@ -98,8 +98,15 @@ def _parse_style(style: str) -> str:
         return _hex_to_ansi(CSS_COLORS[style])
     if style.startswith('#') and len(style) == 7:
         return _hex_to_ansi(style)
-    # Assume raw ANSI code
-    return style
+    # Allow raw numeric ANSI codes (e.g., '91', '38;2;R;G;B')
+    if re.match(r'^[\d;]+$', style):
+        return style
+    # Unknown style - raise helpful error
+    raise ValueError(
+        f"Unknown style: {style!r}. Valid options: "
+        f"ANSI names ({', '.join(sorted(STYLE_CODES.keys()))}), "
+        f"CSS color names, hex codes (#RRGGBB), or raw ANSI codes (numeric)."
+    )
 
 
 def _is_foreground_code(code: str) -> bool:
@@ -474,10 +481,12 @@ def apply_inline_styles(seq: str, styles: StyleList, validate: bool = True) -> s
         # Apply case transform if present (highest priority wins)
         if char_transforms[i]:
             transform = max(char_transforms[i].items(), key=lambda x: x[1])[0]
-            if transform == 'upper':
+            if transform in ('upper', 'uppercase'):
                 char = char.upper()
-            elif transform == 'lower':
+            elif transform in ('lower', 'lowercase'):
                 char = char.lower()
+            elif transform == 'swapcase':
+                char = char.swapcase()
         
         new_codes = _resolve_styles(char_styles[i]) if char_styles[i] else []
         if new_codes != current_codes:
@@ -595,10 +604,12 @@ def apply_inline_styles_and_highlights(
         # Apply case transform if present (highest priority wins)
         if char_transforms[i]:
             transform = max(char_transforms[i].items(), key=lambda x: x[1])[0]
-            if transform == 'upper':
+            if transform in ('upper', 'uppercase'):
                 char = char.upper()
-            elif transform == 'lower':
+            elif transform in ('lower', 'lowercase'):
                 char = char.lower()
+            elif transform == 'swapcase':
+                char = char.swapcase()
         
         new_codes = _resolve_styles(char_styles[i]) if char_styles[i] else []
         if new_codes != current_codes:
