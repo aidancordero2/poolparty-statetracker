@@ -396,9 +396,13 @@ class Operation:
         # Get region bounds for position adjustment
         bounds = self._resolve_region(parent_seqs[0], self._region)
         region_start = bounds[0] if bounds else 0
+        region_end = region_start + len(region_content)
         
         # Adjust parent styles for first parent (shift positions by -region_start)
+        # Also preserve styles for positions outside the region
         modified_styles = None
+        preserved_prefix_styles: StyleList = []  # Styles for positions before region
+        preserved_suffix_styles: StyleList = []  # Styles for positions after region
         if parent_styles:
             modified_styles = list(parent_styles)  # Copy the list
             if modified_styles and len(modified_styles) > 0:
@@ -406,12 +410,22 @@ class Operation:
                 first_parent_styles = modified_styles[0]
                 adjusted_first_styles: StyleList = []
                 for spec, positions in first_parent_styles:
-                    # Shift positions and filter to those within region
-                    region_end = region_start + len(region_content)
-                    mask = (positions >= region_start) & (positions < region_end)
-                    if np.any(mask):
-                        adjusted_positions = positions[mask] - region_start
+                    # Styles before region - preserve unchanged
+                    prefix_mask = positions < region_start
+                    if np.any(prefix_mask):
+                        preserved_prefix_styles.append((spec, positions[prefix_mask]))
+                    
+                    # Styles within region - shift to region-relative coords
+                    region_mask = (positions >= region_start) & (positions < region_end)
+                    if np.any(region_mask):
+                        adjusted_positions = positions[region_mask] - region_start
                         adjusted_first_styles.append((spec, adjusted_positions))
+                    
+                    # Styles after region - preserve (will adjust later if length changes)
+                    suffix_mask = positions >= region_end
+                    if np.any(suffix_mask):
+                        preserved_suffix_styles.append((spec, positions[suffix_mask]))
+                
                 modified_styles[0] = adjusted_first_styles
         
         # Call subclass with region content as first sequence
@@ -460,9 +474,31 @@ class Operation:
                 # Adjust style positions to account for prefix and spacer
                 styles = value
                 adjusted_styles: StyleList = []
+                
+                # First add preserved prefix styles (positions unchanged)
+                adjusted_styles.extend(preserved_prefix_styles)
+                
+                # Add styles from compute result (shifted by total_offset)
                 for spec, positions in styles:
                     adjusted_positions = positions + total_offset
                     adjusted_styles.append((spec, adjusted_positions))
+                
+                # Add preserved suffix styles, adjusting for any length change
+                # in the region content (relevant for ops that change length)
+                if preserved_suffix_styles:
+                    # Get the output sequence to determine new region length
+                    seq_key = 'seq_' + key.split('_')[1]
+                    output_seq = result.get(seq_key, '')
+                    new_region_len = len(output_seq)
+                    if self._spacer_str:
+                        new_region_len += 2 * len(self._spacer_str)
+                    old_region_len = len(region_content)
+                    length_delta = new_region_len - old_region_len
+                    
+                    for spec, positions in preserved_suffix_styles:
+                        adjusted_positions = positions + length_delta
+                        adjusted_styles.append((spec, adjusted_positions))
+                
                 reassembled[key] = adjusted_styles
             else:
                 # Keep design card keys as-is
