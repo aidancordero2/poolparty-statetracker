@@ -141,10 +141,11 @@ def deletion_scan(
             which='gap',
         )
     
-    # 5. Apply style_background to non-gap characters
+    # 5. Apply style_background to non-gap characters within region only
     if style_background is not None:
         result = stylize(
             result,
+            region=region,  # Only style within the specified region
             style=style_background,
             which='contents',  # Styles all non-gap, non-tag positions
             name=name,

@@ -493,14 +493,24 @@ class Operation:
                     if self._spacer_str:
                         new_region_len += 2 * len(self._spacer_str)
                     
-                    # Calculate length delta accounting for marker removal
-                    if isinstance(self._region, str) and self._remove_marker:
-                        # When removing marker, the old region included marker tags
-                        # Find the full marker span in the original sequence
+                    # Calculate length delta accounting for marker tag changes
+                    if isinstance(self._region, str):
+                        # Region is a marker - need to account for marker tag format changes
                         from .marker_ops.parsing import validate_single_marker
                         marker_info = validate_single_marker(parent_seqs[0], self._region)
-                        old_region_len_with_tags = marker_info.end - marker_info.start
-                        length_delta = new_region_len - old_region_len_with_tags
+                        old_marker_span = marker_info.end - marker_info.start
+                        
+                        if self._remove_marker:
+                            # When removing marker: compare new content length vs full marker span
+                            length_delta = new_region_len - old_marker_span
+                        else:
+                            # When keeping marker: compare new marker span vs old marker span
+                            # Build the new marker to get its exact length
+                            spacer_content = output_seq
+                            if self._spacer_str:
+                                spacer_content = self._spacer_str + output_seq + self._spacer_str
+                            new_wrapped = build_marker_tag(self._region, spacer_content, strand=strand)
+                            length_delta = len(new_wrapped) - old_marker_span
                     else:
                         old_region_len = len(region_content)
                         length_delta = new_region_len - old_region_len

@@ -1036,6 +1036,56 @@ class TestInsertKmersStylePropagation:
         assert len(styles) > 0
         # Check that the 'blue' style is present
         assert any(spec == 'blue' for spec, _ in styles)
+    
+    def test_insert_kmers_suffix_styles_shifted_correctly(self):
+        """Suffix styles are correctly shifted when self-closing marker is replaced.
+        
+        This tests the specific bug where <bc/> becoming <bc>content</bc> caused
+        suffix styles to incorrectly land inside the </bc> closing tag because
+        the length delta wasn't accounting for marker tag format changes.
+        """
+        with pp.Party() as party:
+            # Set remove_marker=False so marker tags are kept (like pp.init() does)
+            party.set_default('remove_marker', False)
+            
+            # Style the ENTIRE sequence (including suffix after marker)
+            bg = pp.from_seq('AAAA<bc/>TTTT')\
+                .stylize(style='red')\
+                .named('bg')
+            result = bg.insert_kmers('bc', length=3, mode='sequential').named('result')
+        
+        df = result.generate_library(num_seqs=1, report_design_cards=True)
+        seq = df['seq'].iloc[0]
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Sequence should be: AAAA<bc>XXX</bc>TTTT (where XXX is 3-char kmer)
+        # Structure: AAAA (4) + <bc> (4) + XXX (3) + </bc> (5) + TTTT (4) = 20 chars
+        assert '<bc>' in seq
+        assert '</bc>' in seq
+        assert len(seq) == 20
+        
+        # Find the positions of the suffix 'TTTT' (should be at positions 16-19)
+        suffix_start = seq.index('</bc>') + 5  # Position after </bc>
+        assert seq[suffix_start:suffix_start+4] == 'TTTT'
+        
+        # Red style should apply to AAAA (0-3) and TTTT (16-19)
+        # NOT to positions inside the <bc>...</bc> tags
+        red_styles = [(spec, pos) for spec, pos in styles if spec == 'red']
+        assert len(red_styles) > 0
+        
+        # Collect all red-styled positions
+        red_positions = set()
+        for _, positions in red_styles:
+            red_positions.update(positions.tolist())
+        
+        # Suffix positions (TTTT at 16-19) should be styled
+        for i in range(suffix_start, suffix_start + 4):
+            assert i in red_positions, f"Position {i} (in suffix TTTT) should have red style"
+        
+        # Positions inside marker tags should NOT be styled
+        # <bc> is at positions 4-7, </bc> is at positions 11-15
+        for i in range(4, 16):  # All positions in <bc>XXX</bc>
+            assert i not in red_positions, f"Position {i} (inside marker) should not have red style"
 
 
 class TestStackRepeatStylePropagation:
@@ -1225,6 +1275,36 @@ class TestMutagenizeStyleBackground:
             pool = pp.mutagenize('ACGT', num_mutations=1, style_background='cyan')
             params = pool.operation._get_copy_params()
         assert params['style_background'] == 'cyan'
+    
+    def test_style_background_region_restricted(self):
+        """style_background only applies within the specified region, not outside."""
+        with pp.Party() as party:
+            bg = pp.from_seq('TTTT<cre>ACGTACGT</cre>GGGG')
+            pool = pp.mutagenize(bg, region='cre', num_mutations=1, mode='sequential',
+                                  style_background='blue').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        seq = df['seq'].iloc[0]
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Sequence should have TTTT prefix and GGGG suffix
+        assert seq.startswith('TTTT')
+        assert 'GGGG' in seq
+        
+        # Collect all blue-styled positions
+        blue_positions = []
+        for spec, pos in styles:
+            if spec == 'blue':
+                blue_positions.extend(pos.tolist())
+        
+        # Blue should only appear within the <cre> region
+        # NOT on TTTT (positions 0-3) or GGGG (positions at end)
+        # The cre content is 8 chars, minus 1 mutated = 7 background positions
+        assert len(blue_positions) == 7
+        
+        # Positions 0-3 (TTTT) should NOT be styled
+        for i in range(4):
+            assert i not in blue_positions, f"Position {i} (outside region) should not be styled"
 
 
 class TestInsertionScanStyleBackground:
@@ -1282,6 +1362,58 @@ class TestInsertionScanStyleBackground:
         _, positions = green_styles[0]
         # Background: all non-replacement positions (10 - 3 = 7)
         assert len(positions) == 7
+    
+    def test_style_background_region_restricted(self):
+        """style_background only applies within the specified region, not outside."""
+        with pp.Party() as party:
+            # Template with outer region marker
+            bg = pp.from_seq('TTTT<cre>AAAAAAAAAA</cre>GGGG')
+            ins = pp.from_seq('CCC')
+            pool = pp.insertion_scan(bg, ins, region='cre', positions=[5], mode='sequential',
+                                      style_background='blue').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        seq = df['seq'].iloc[0]
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Sequence should be TTTT<cre>AAAAACCCAAAAA</cre>GGGG
+        assert 'TTTT' in seq  # prefix preserved
+        assert 'GGGG' in seq  # suffix preserved
+        
+        # Collect all blue-styled positions
+        blue_positions = []
+        for spec, pos in styles:
+            if spec == 'blue':
+                blue_positions.extend(pos.tolist())
+        
+        # Blue should only appear within the <cre> region (positions 9-21 in the output)
+        # NOT on TTTT (positions 0-3) or GGGG (positions at end)
+        # The cre content is: AAAAA + CCC + AAAAA = 13 chars, minus 3 inserted = 10 background
+        assert len(blue_positions) == 10
+        
+        # Positions 0-3 (TTTT) should NOT be styled
+        for i in range(4):
+            assert i not in blue_positions, f"Position {i} (outside region) should not be styled"
+    
+    def test_replacement_scan_style_background_region_restricted(self):
+        """style_background in replacement_scan only applies within region."""
+        with pp.Party() as party:
+            bg = pp.from_seq('TTTT<cre>AAAAAAAAAA</cre>GGGG')
+            ins = pp.from_seq('CCC')
+            pool = pp.replacement_scan(bg, ins, region='cre', positions=[5], mode='sequential',
+                                        style_background='green').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        green_positions = []
+        for spec, pos in styles:
+            if spec == 'green':
+                green_positions.extend(pos.tolist())
+        
+        # Positions 0-3 (TTTT) should NOT be styled
+        for i in range(4):
+            assert i not in green_positions, f"Position {i} (outside region) should not be styled"
 
 
 class TestDeletionScanStyleBackground:
@@ -1316,6 +1448,31 @@ class TestDeletionScanStyleBackground:
         style_specs = [spec for spec, _ in styles]
         assert 'gray' in style_specs
         assert 'blue' in style_specs
+    
+    def test_style_background_region_restricted(self):
+        """style_background only applies within the specified region, not outside."""
+        with pp.Party() as party:
+            bg = pp.from_seq('TTTT<cre>AAAAAAAAAA</cre>GGGG')
+            pool = pp.deletion_scan(bg, deletion_length=2, region='cre', positions=[5],
+                                     mode='sequential', style_background='blue').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        seq = df['seq'].iloc[0]
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Sequence should have TTTT prefix and GGGG suffix
+        assert seq.startswith('TTTT')
+        assert 'GGGG' in seq
+        
+        # Collect all blue-styled positions
+        blue_positions = []
+        for spec, pos in styles:
+            if spec == 'blue':
+                blue_positions.extend(pos.tolist())
+        
+        # Positions 0-3 (TTTT) should NOT be styled
+        for i in range(4):
+            assert i not in blue_positions, f"Position {i} (outside region) should not be styled"
 
 
 class TestInsertKmersStyleParams:

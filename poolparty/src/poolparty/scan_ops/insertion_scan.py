@@ -161,6 +161,7 @@ def insertion_scan(
         _num_sites=num_sites,
         _style_insertion=style_insertion,
         _style_background=style_background,
+        _outer_region=region,  # Pass outer region for style_background targeting
     )
 
 
