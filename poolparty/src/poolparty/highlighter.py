@@ -79,6 +79,9 @@ DEFAULT_GAP_CHARS = '-. '
 # Basic ANSI foreground color codes (mutually exclusive)
 _BASIC_FG_CODES = {'91', '92', '93', '94', '95', '96'}
 
+# Case transformation tokens for inline styles (not ANSI codes)
+CASE_TRANSFORMS = {'upper', 'lower'}
+
 
 def _hex_to_ansi(hex_color: str) -> str:
     """Convert hex color (#RRGGBB) to true-color ANSI code (38;2;R;G;B)."""
@@ -407,10 +410,12 @@ def apply_inline_styles(seq: str, styles: StyleList, validate: bool = True) -> s
     
     Each style tuple in `styles` is (spec, positions) where:
     - spec: Style specification string (e.g., 'bold blue', '#ff7f50', 'coral')
+      Can include 'upper' or 'lower' to transform character case at positions.
     - positions: np.ndarray of character positions to style
     
     Styles are applied in order. Later styles override foreground colors
-    but combine with modifiers (bold, underline).
+    but combine with modifiers (bold, underline). Later case transforms
+    override earlier ones.
     
     Parameters
     ----------
@@ -436,23 +441,44 @@ def apply_inline_styles(seq: str, styles: StyleList, validate: bool = True) -> s
     
     # Track styles for each character: code -> priority (style index)
     char_styles: list[dict[str, int]] = [{} for _ in range(n)]
+    # Track case transforms for each character: transform -> priority
+    char_transforms: list[dict[str, int]] = [{} for _ in range(n)]
     
     # Apply each style tuple
     for priority, (spec, positions) in enumerate(styles):
-        # Parse the style spec (can be space-separated like 'bold blue')
-        codes = [_parse_style(s) for s in spec.split()]
+        # Parse the style spec, separating case transforms from ANSI codes
+        tokens = spec.split()
+        case_transform = None
+        style_tokens = []
+        for t in tokens:
+            if t in CASE_TRANSFORMS:
+                case_transform = t
+            else:
+                style_tokens.append(t)
         
-        # Apply codes to specified positions
+        codes = [_parse_style(s) for s in style_tokens]
+        
+        # Apply codes and transforms to specified positions
         for pos in positions:
             if 0 <= pos < n:
                 for code in codes:
                     char_styles[pos][code] = priority
+                if case_transform is not None:
+                    char_transforms[pos][case_transform] = priority
     
-    # Build output with combined ANSI codes
+    # Build output with combined ANSI codes and case transforms
     result = []
     current_codes: list[str] = []
     
     for i, char in enumerate(clean_seq):
+        # Apply case transform if present (highest priority wins)
+        if char_transforms[i]:
+            transform = max(char_transforms[i].items(), key=lambda x: x[1])[0]
+            if transform == 'upper':
+                char = char.upper()
+            elif transform == 'lower':
+                char = char.lower()
+        
         new_codes = _resolve_styles(char_styles[i]) if char_styles[i] else []
         if new_codes != current_codes:
             if current_codes:
@@ -482,6 +508,9 @@ def apply_inline_styles_and_highlights(
     Inline styles are applied first and act as a base layer.
     Highlighters are then applied on top, following the same rules
     for combining styles (later colors override, modifiers combine).
+    
+    Inline style specs can include 'upper' or 'lower' to transform
+    character case at the styled positions.
     
     Parameters
     ----------
@@ -514,14 +543,28 @@ def apply_inline_styles_and_highlights(
     # Inline styles get priorities 0 to len(inline_styles)-1
     # Highlighters get priorities starting at len(inline_styles)
     char_styles: list[dict[str, int]] = [{} for _ in range(n)]
+    # Track case transforms for each character: transform -> priority
+    char_transforms: list[dict[str, int]] = [{} for _ in range(n)]
     
     # Apply inline styles first
     for priority, (spec, positions) in enumerate(inline_styles):
-        codes = [_parse_style(s) for s in spec.split()]
+        # Parse the style spec, separating case transforms from ANSI codes
+        tokens = spec.split()
+        case_transform = None
+        style_tokens = []
+        for t in tokens:
+            if t in CASE_TRANSFORMS:
+                case_transform = t
+            else:
+                style_tokens.append(t)
+        
+        codes = [_parse_style(s) for s in style_tokens]
         for pos in positions:
             if 0 <= pos < n:
                 for code in codes:
                     char_styles[pos][code] = priority
+                if case_transform is not None:
+                    char_transforms[pos][case_transform] = priority
     
     # Apply highlighters on top
     base_priority = len(inline_styles)
@@ -544,11 +587,19 @@ def apply_inline_styles_and_highlights(
                     continue
                 char_styles[pos][hl._code] = priority
     
-    # Build output with combined ANSI codes
+    # Build output with combined ANSI codes and case transforms
     result = []
     current_codes: list[str] = []
     
     for i, char in enumerate(clean_seq):
+        # Apply case transform if present (highest priority wins)
+        if char_transforms[i]:
+            transform = max(char_transforms[i].items(), key=lambda x: x[1])[0]
+            if transform == 'upper':
+                char = char.upper()
+            elif transform == 'lower':
+                char = char.lower()
+        
         new_codes = _resolve_styles(char_styles[i]) if char_styles[i] else []
         if new_codes != current_codes:
             if current_codes:
