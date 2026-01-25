@@ -239,11 +239,11 @@ class ReplaceMarkerContentOp(Operation):
         name_parts = []
         if self._seq_name_prefix:
             w = pos_idx * self._num_sites + site_idx
-            name_parts.append(f'{self._seq_name_prefix}{w}')
+            name_parts.append(f'{self._seq_name_prefix}_{w}')
         if self._seq_name_pos_prefix:
-            name_parts.append(f'{self._seq_name_pos_prefix}{pos_idx}')
+            name_parts.append(f'{self._seq_name_pos_prefix}_{pos_idx}')
         if self._seq_name_site_prefix:
-            name_parts.append(f'{self._seq_name_site_prefix}{site_idx}')
+            name_parts.append(f'{self._seq_name_site_prefix}_{site_idx}')
         
         return '.'.join(name_parts) if name_parts else None
     

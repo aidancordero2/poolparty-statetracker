@@ -546,7 +546,7 @@ class Operation:
             # Inactive state - return None
             return None
         
-        op_name = f'{self.name_prefix}{value}'
+        op_name = f'{self.name_prefix}_{value}'
         full_name = f'{parent_name}.{op_name}' if parent_name else op_name
         return full_name
     
