@@ -1,6 +1,7 @@
 """Pool class for poolparty."""
 import statetracker as st
-from .types import Pool_type, Operation_type, Union, Optional, Real, Callable, Integral, Sequence, beartype
+from .types import Pool_type, Operation_type, Union, Optional, Real, Callable, Integral, Sequence, beartype, ModeType, RegionType, PositionsType
+from typing import Literal
 from .marker import Marker
 import pandas as pd
 
@@ -246,14 +247,41 @@ class Pool:
     # Generation
     #########################################################################
     
-    def generate_library(self, **kwargs) -> Union[pd.DataFrame, list[str]]:
-        """Generate sequences from this pool.
-        
-        This is a thin wrapper around poolparty.generate_library().
-        See that function for full documentation of parameters.
-        """
+    def generate_library(
+        self,
+        num_cycles: int = 1,
+        num_seqs: Optional[int] = None,
+        seed: Optional[int] = None,
+        init_state: Optional[int] = None,
+        seqs_only: bool = False,
+        report_design_cards: bool = False,
+        aux_pools: Sequence[Pool_type] = (),
+        report_seq: bool = True,
+        report_pool_seqs: bool = True,
+        report_pool_states: bool = True,
+        report_op_states: bool = True,
+        report_op_keys: bool = True,
+        pools_to_report: Union[str, Sequence[Pool_type]] = 'all',
+        organize_columns_by: Literal['pool', 'type'] = 'type',
+    ) -> Union[pd.DataFrame, list[str]]:
         from .generate_library import generate_library
-        return generate_library(self, **kwargs)
+        return generate_library(
+            pool=self,
+            num_cycles=num_cycles,
+            num_seqs=num_seqs,
+            seed=seed,
+            init_state=init_state,
+            seqs_only=seqs_only,
+            report_design_cards=report_design_cards,
+            aux_pools=aux_pools,
+            report_seq=report_seq,
+            report_pool_seqs=report_pool_seqs,
+            report_pool_states=report_pool_states,
+            report_op_states=report_op_states,
+            report_op_keys=report_op_keys,
+            pools_to_report=pools_to_report,
+            organize_columns_by=organize_columns_by,
+        )
     
     def print_library(
         self,
@@ -344,109 +372,454 @@ class Pool:
     # Base operations
     #########################################################################
     
-    def mutagenize(self, **kwargs) -> Pool_type:
+    def mutagenize(
+        self,
+        region: RegionType = None,
+        num_mutations: Optional[Integral] = None,
+        mutation_rate: Optional[Real] = None,
+        allowed_chars: Optional[str] = None,
+        style: Optional[str] = None,
+        prefix: Optional[str] = None,
+        mode: ModeType = 'random',
+        num_states: Optional[int] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .base_ops.mutagenize import mutagenize
-        return mutagenize(pool=self, **kwargs)
+        return mutagenize(
+            pool=self,
+            region=region,
+            num_mutations=num_mutations,
+            mutation_rate=mutation_rate,
+            allowed_chars=allowed_chars,
+            style=style,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+        )
     
-    def shuffle_seq(self, **kwargs) -> Pool_type:
+    def shuffle_seq(
+        self,
+        region: RegionType = None,
+        prefix: Optional[str] = None,
+        mode: ModeType = 'random',
+        num_states: Optional[int] = None,
+        iter_order: Optional[Real] = None,
+        style_shuffle: Optional[str] = None,
+    ) -> Pool_type:
         from .base_ops.shuffle_seq import shuffle_seq
-        return shuffle_seq(pool=self, **kwargs)
+        return shuffle_seq(
+            pool=self,
+            region=region,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+            style_shuffle=style_shuffle,
+        )
     
-    def insert_from_iupac(self, **kwargs) -> Pool_type:
+    def insert_from_iupac(
+        self,
+        iupac_seq: str,
+        region: RegionType = None,
+        prefix: Optional[str] = None,
+        mode: ModeType = 'random',
+        num_states: Optional[int] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .base_ops.from_iupac import from_iupac
-        return from_iupac(pool=self, **kwargs)
+        return from_iupac(
+            iupac_seq=iupac_seq,
+            bg_pool=self,
+            region=region,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+        )
     
-    def insert_from_motif(self, **kwargs) -> Pool_type:
+    def insert_from_motif(
+        self,
+        prob_df: pd.DataFrame,
+        region: RegionType = None,
+        prefix: Optional[str] = None,
+        mode: ModeType = 'random',
+        num_states: Optional[int] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .base_ops.from_motif import from_motif
-        return from_motif(pool=self, **kwargs)
+        return from_motif(
+            prob_df=prob_df,
+            bg_pool=self,
+            region=region,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+        )
     
-    def insert_kmers(self, **kwargs) -> Pool_type:
+    def insert_kmers(
+        self,
+        length: Integral,
+        region: RegionType = None,
+        style: Optional[str] = None,
+        case: Literal['lower', 'upper'] = 'upper',
+        prefix: Optional[str] = None,
+        mode: ModeType = 'random',
+        num_states: Optional[Integral] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .base_ops.get_kmers import get_kmers
-        return get_kmers(pool=self, **kwargs)
+        return get_kmers(
+            length=length,
+            pool=self,
+            region=region,
+            style=style,
+            case=case,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+        )
     
     #########################################################################
     # Scan operations
     #########################################################################
     
-    def mutagenize_scan(self, **kwargs) -> Pool_type:
+    def mutagenize_scan(
+        self,
+        mutagenize_length: Integral,
+        num_mutations: Optional[Integral] = None,
+        mutation_rate: Optional[Real] = None,
+        positions: PositionsType = None,
+        region: RegionType = None,
+        prefix: Optional[Union[str, Sequence[str]]] = None,
+        mode: Union[ModeType, tuple[ModeType, ModeType]] = 'random',
+        num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
+        iter_order: Optional[Union[Real, Sequence[Real]]] = None,
+    ) -> Pool_type:
         from .scan_ops.mutagenize_scan import mutagenize_scan
-        return mutagenize_scan(pool=self, **kwargs)
+        return mutagenize_scan(
+            pool=self,
+            mutagenize_length=mutagenize_length,
+            num_mutations=num_mutations,
+            mutation_rate=mutation_rate,
+            positions=positions,
+            region=region,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+        )
     
-    def deletion_scan(self, **kwargs) -> Pool_type:
+    def deletion_scan(
+        self,
+        deletion_length: Integral,
+        deletion_marker: Optional[str] = '-',
+        region: RegionType = None,
+        positions: PositionsType = None,
+        prefix: Optional[str] = None,
+        mode: ModeType = 'random',
+        num_states: Optional[Integral] = None,
+        style: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .scan_ops.deletion_scan import deletion_scan
-        return deletion_scan(pool=self, **kwargs)
+        return deletion_scan(
+            pool=self,
+            deletion_length=deletion_length,
+            deletion_marker=deletion_marker,
+            region=region,
+            positions=positions,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            style=style,
+            iter_order=iter_order,
+        )
     
-    def insertion_scan(self, **kwargs) -> Pool_type:
+    def insertion_scan(
+        self,
+        ins_pool: Union[Pool_type, str],
+        positions: PositionsType = None,
+        region: RegionType = None,
+        replace: bool = False,
+        style: Optional[str] = None,
+        prefix: Optional[str] = None,
+        prefix_position: Optional[str] = None,
+        prefix_insert: Optional[str] = None,
+        mode: ModeType = 'random',
+        num_states: Optional[Integral] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .scan_ops.insertion_scan import insertion_scan
-        return insertion_scan(pool=self, **kwargs)
+        return insertion_scan(
+            pool=self,
+            ins_pool=ins_pool,
+            positions=positions,
+            region=region,
+            replace=replace,
+            style=style,
+            prefix=prefix,
+            prefix_position=prefix_position,
+            prefix_insert=prefix_insert,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+        )
     
-    def replacement_scan(self, **kwargs) -> Pool_type:
+    def replacement_scan(
+        self,
+        ins_pool: Union[Pool_type, str],
+        positions: PositionsType = None,
+        region: RegionType = None,
+        style: Optional[str] = None,
+        prefix: Optional[str] = None,
+        prefix_position: Optional[str] = None,
+        prefix_insert: Optional[str] = None,
+        mode: ModeType = 'random',
+        num_states: Optional[Integral] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .scan_ops.insertion_scan import replacement_scan
-        return replacement_scan(pool=self, **kwargs)
+        return replacement_scan(
+            pool=self,
+            ins_pool=ins_pool,
+            positions=positions,
+            region=region,
+            style=style,
+            prefix=prefix,
+            prefix_position=prefix_position,
+            prefix_insert=prefix_insert,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+        )
     
-    def shuffle_scan(self, **kwargs) -> Pool_type:
+    def shuffle_scan(
+        self,
+        shuffle_length: Integral,
+        positions: PositionsType = None,
+        region: RegionType = None,
+        shuffles_per_position: Integral = 1,
+        prefix: Optional[str] = None,
+        prefix_position: Optional[str] = None,
+        prefix_shuffle: Optional[str] = None,
+        mode: ModeType = 'random',
+        num_states: Optional[Integral] = None,
+        style_shuffle: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .scan_ops.shuffle_scan import shuffle_scan
-        return shuffle_scan(pool=self, **kwargs)
+        return shuffle_scan(
+            pool=self,
+            shuffle_length=shuffle_length,
+            positions=positions,
+            region=region,
+            shuffles_per_position=shuffles_per_position,
+            prefix=prefix,
+            prefix_position=prefix_position,
+            prefix_shuffle=prefix_shuffle,
+            mode=mode,
+            num_states=num_states,
+            style_shuffle=style_shuffle,
+            iter_order=iter_order,
+        )
     
     #########################################################################
     # Fixed operations
     #########################################################################
     
-    def rc(self, **kwargs) -> Pool_type:
+    def rc(
+        self,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .fixed_ops.rc import rc
-        return rc(pool=self, **kwargs)
+        return rc(
+            pool=self,
+            region=region,
+            remove_marker=remove_marker,
+            iter_order=iter_order,
+        )
     
-    def swapcase(self, **kwargs) -> Pool_type:
+    def swapcase(
+        self,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .fixed_ops.swapcase import swapcase
-        return swapcase(pool=self, **kwargs)
+        return swapcase(
+            pool=self,
+            region=region,
+            remove_marker=remove_marker,
+            iter_order=iter_order,
+        )
     
-    def upper(self, **kwargs) -> Pool_type:
+    def upper(
+        self,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .fixed_ops.upper import upper
-        return upper(pool=self, **kwargs)
+        return upper(
+            pool=self,
+            region=region,
+            remove_marker=remove_marker,
+            iter_order=iter_order,
+        )
     
-    def lower(self, **kwargs) -> Pool_type:
+    def lower(
+        self,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .fixed_ops.lower import lower
-        return lower(pool=self, **kwargs)
+        return lower(
+            pool=self,
+            region=region,
+            remove_marker=remove_marker,
+            iter_order=iter_order,
+        )
     
-    def clear_gaps(self, **kwargs) -> Pool_type:
+    def clear_gaps(
+        self,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .fixed_ops.clear_gaps import clear_gaps
-        return clear_gaps(pool=self, **kwargs)
+        return clear_gaps(
+            pool=self,
+            region=region,
+            remove_marker=remove_marker,
+            iter_order=iter_order,
+        )
     
-    def clear_annotation(self, **kwargs) -> Pool_type:
+    def clear_annotation(
+        self,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .fixed_ops.clear_annotation import clear_annotation
-        return clear_annotation(pool=self, **kwargs)
+        return clear_annotation(
+            pool=self,
+            region=region,
+            remove_marker=remove_marker,
+            iter_order=iter_order,
+        )
     
-    def stylize(self, region=None, *, style: str, **kwargs) -> Pool_type:
+    def stylize(
+        self,
+        region: RegionType = None,
+        *,
+        style: str,
+        which: Literal['all', 'upper', 'lower', 'gap', 'tags', 'contents'] = 'contents',
+        regex: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .fixed_ops.style import stylize
-        return stylize(pool=self, region=region, style=style, **kwargs)
+        return stylize(
+            pool=self,
+            region=region,
+            style=style,
+            which=which,
+            regex=regex,
+            iter_order=iter_order,
+        )
     
     #########################################################################
     # State operations
     #########################################################################
     
-    def repeat_states(self, times: Integral, **kwargs) -> Pool_type:
+    def repeat_states(
+        self,
+        times: Integral,
+        prefix: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .state_ops.repeat import repeat
-        return repeat(pool=self, times=times, **kwargs)
+        return repeat(
+            pool=self,
+            times=times,
+            prefix=prefix,
+            iter_order=iter_order,
+        )
     
-    def sample_states(self, **kwargs) -> Pool_type:
+    def sample_states(
+        self,
+        num_values: Optional[Integral] = None,
+        sampled_states: Optional[Sequence[Integral]] = None,
+        seed: Optional[Integral] = None,
+        with_replacement: bool = True,
+        prefix: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .state_ops.state_sample import state_sample
-        return state_sample(pool=self, **kwargs)
+        return state_sample(
+            pool=self,
+            num_values=num_values,
+            sampled_states=sampled_states,
+            seed=seed,
+            with_replacement=with_replacement,
+            prefix=prefix,
+            iter_order=iter_order,
+        )
     
-    def shuffle_states(self, **kwargs) -> Pool_type:
+    def shuffle_states(
+        self,
+        seed: Optional[Integral] = None,
+        permutation: Optional[Sequence[Integral]] = None,
+        prefix: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .state_ops.state_shuffle import state_shuffle
-        return state_shuffle(pool=self, **kwargs)
+        return state_shuffle(
+            pool=self,
+            seed=seed,
+            permutation=permutation,
+            prefix=prefix,
+            iter_order=iter_order,
+        )
     
-    def slice_states(self, key: Union[Integral, slice], **kwargs) -> Pool_type:
+    def slice_states(
+        self,
+        key: Union[Integral, slice],
+        prefix: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .state_ops.state_slice import state_slice
-        return state_slice(pool=self, key=key, **kwargs)
+        return state_slice(
+            pool=self,
+            key=key,
+            prefix=prefix,
+            iter_order=iter_order,
+        )
     
     #########################################################################
     # Marker operations
     #########################################################################
     
-    def apply_at_marker(self, marker_name: str, transform_fn: Callable, remove_tags: Optional[bool] = None, **kwargs) -> Pool_type:
+    def apply_at_marker(
+        self,
+        marker_name: str,
+        transform_fn: Callable,
+        remove_marker: bool = True,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
         from .marker_ops.apply_at_marker import apply_at_marker
-        return apply_at_marker(self, marker_name, transform_fn, remove_marker=remove_tags, **kwargs)
+        return apply_at_marker(
+            self,
+            marker_name,
+            transform_fn,
+            remove_marker=remove_marker,
+            iter_order=iter_order,
+        )
     
     def insert_marker(
         self,
@@ -454,31 +827,45 @@ class Pool:
         start: int,
         stop: Optional[int] = None,
         strand: str = '+',
-        **kwargs,
+        iter_order: Optional[Real] = None,
     ) -> Pool_type:
-        """Insert an XML-style marker at a fixed position in sequences."""
         from .marker_ops.insert_marker import insert_marker
-        return insert_marker(self, marker_name, start, stop, strand, **kwargs)
+        return insert_marker(
+            self,
+            marker_name,
+            start,
+            stop,
+            strand,
+            iter_order=iter_order,
+        )
     
     def remove_marker(
         self,
         marker_name: str,
         keep_content: bool = True,
-        **kwargs,
+        iter_order: Optional[Real] = None,
     ) -> Pool_type:
-        """Remove a marker from sequences."""
         from .marker_ops.remove_marker import remove_marker
-        return remove_marker(self, marker_name, keep_content, **kwargs)
+        return remove_marker(
+            self,
+            marker_name,
+            keep_content,
+            iter_order=iter_order,
+        )
     
     def replace_marker_content(
         self,
         content_pool: Union[Pool_type, str],
         marker_name: str,
-        **kwargs,
+        iter_order: Optional[Real] = None,
     ) -> Pool_type:
-        """Replace a marker region with content from another Pool."""
         from .marker_ops.replace_marker_content import replace_marker_content
-        return replace_marker_content(self, content_pool, marker_name, **kwargs)
+        return replace_marker_content(
+            self,
+            content_pool,
+            marker_name,
+            iter_order=iter_order,
+        )
     
     def clear_markers(self, **kwargs) -> Pool_type:
         """Remove all marker tags from sequences, keeping content."""

@@ -22,6 +22,7 @@ from .fixed_ops import (
     upper,
     lower,
     clear_gaps,
+    clear_annotation,
     stylize, StylizeOp,
 )
 # Import other operations from base_ops module
@@ -144,3 +145,58 @@ def set_default(key: str, value) -> None:
 def load_defaults(filepath: str) -> None:
     """Load default parameters from a TOML file into the active Party."""
     get_active_party().load_defaults(filepath)
+
+
+# === Copy factory docstrings to Pool methods ===
+import re
+
+def _remove_pool_param_from_docstring(docstring: str) -> str:
+    """Remove the 'pool' parameter section from a numpy-style docstring."""
+    if not docstring:
+        return docstring
+    # Pattern matches parameter block: "pool : Type\n    description..."
+    # Continuation lines must be more indented than the parameter name line (8+ spaces)
+    # This prevents matching the next parameter which starts with 4 spaces
+    pattern = r'^\s*pool\s*:\s*[^\n]+\n(?:\s{8,}[^\n]*\n)*'
+    return re.sub(pattern, '', docstring, flags=re.MULTILINE)
+
+# Map Pool method names to their factory functions
+_POOL_FACTORY_MAP = {
+    # Base ops
+    'mutagenize': mutagenize,
+    'shuffle_seq': shuffle_seq,
+    'insert_from_iupac': from_iupac,
+    'insert_from_motif': from_motif,
+    'insert_kmers': get_kmers,
+    # Scan ops
+    'mutagenize_scan': mutagenize_scan,
+    'deletion_scan': deletion_scan,
+    'insertion_scan': insertion_scan,
+    'replacement_scan': replacement_scan,
+    'shuffle_scan': shuffle_scan,
+    # Fixed ops
+    'rc': rc,
+    'swapcase': swapcase,
+    'upper': upper,
+    'lower': lower,
+    'clear_gaps': clear_gaps,
+    'clear_annotation': clear_annotation,
+    'stylize': stylize,
+    # State ops
+    'repeat_states': repeat,
+    'sample_states': state_sample,
+    'shuffle_states': state_shuffle,
+    'slice_states': state_slice,
+    # Marker ops
+    'apply_at_marker': apply_at_marker,
+    'insert_marker': insert_marker,
+    'remove_marker': remove_marker,
+    'replace_marker_content': replace_marker_content,
+    # Generation
+    'generate_library': generate_library,
+}
+
+# Copy filtered docstrings from factory functions to Pool methods
+for _method_name, _factory_fn in _POOL_FACTORY_MAP.items():
+    if hasattr(Pool, _method_name) and _factory_fn.__doc__:
+        getattr(Pool, _method_name).__doc__ = _remove_pool_param_from_docstring(_factory_fn.__doc__)
