@@ -19,6 +19,7 @@ from .df_utils import (
     counter_col_name, get_pools_reverse_topo,
     organize_columns, finalize_generate_df,
 )
+from .seq_utils import validate_positions
 
 __all__ = [
     # utils
@@ -38,4 +39,6 @@ __all__ = [
     # df_utils
     'counter_col_name', 'get_pools_reverse_topo',
     'organize_columns', 'finalize_generate_df',
+    # seq_utils
+    'validate_positions',
 ]

@@ -1,5 +1,5 @@
 """Sequence utilities for poolparty."""
-from .types import PositionsType, Sequence, Integral, beartype
+from ..types import PositionsType, Sequence, Integral, beartype
 
 
 @beartype

@@ -2,7 +2,7 @@
 from numbers import Integral, Real
 
 from ..types import Union, Literal, ModeType, Optional, PositionsType, RegionType, beartype
-from ..seq_utils import validate_positions
+from ..utils import validate_positions
 from ..party import get_active_party
 from ..pool import Pool
 
