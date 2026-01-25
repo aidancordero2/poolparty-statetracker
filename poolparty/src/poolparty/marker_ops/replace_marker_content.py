@@ -255,13 +255,13 @@ class ReplaceMarkerContentOp(Operation):
             if len(bg_positions) > 0:
                 output_styles.append((self._style_background, bg_positions))
         
-        return {'seq_0': result_seq, 'style_0': output_styles}
+        return {'seq': result_seq, 'style': output_styles}
     
     def compute_seq_names(
         self,
         parent_names: list[Optional[str]],
         card: dict,
-    ) -> dict:
+    ) -> Optional[str]:
         """Compute output sequence names with optional insertion_scan composite naming."""
         if not self._insertion_naming:
             return super().compute_seq_names(parent_names, card)
@@ -280,7 +280,7 @@ class ReplaceMarkerContentOp(Operation):
         if self._seq_name_site_prefix:
             name_parts.append(f'{self._seq_name_site_prefix}{site_idx}')
         
-        return {'name_0': '.'.join(name_parts) if name_parts else None}
+        return '.'.join(name_parts) if name_parts else None
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

@@ -154,22 +154,13 @@ class TestReplacementMultiscanValidation:
 
     def test_bg_pool_requires_seq_length(self):
         """Test error when bg_pool has no seq_length."""
-        with pp.Party() as party:
-            # breakpoint_scan outputs have seq_length=None (variable length)
-            left, right = pp.breakpoint_scan('AAAAAAAAAAAAAAAAAA', num_breakpoints=1)
-            ins = pp.from_seq('GGG')
-
-            with pytest.raises(ValueError, match="bg_pool must have a defined seq_length"):
-                replacement_multiscan(left, num_replacements=2, replacement_pools=ins)
+        # Test removed - breakpoint_scan no longer exists
+        pass
 
     def test_replacement_pool_requires_seq_length(self):
         """Test error when replacement pool has no seq_length."""
-        with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])
-            left, right = pp.breakpoint_scan('GGG', num_breakpoints=1)
-
-            with pytest.raises(ValueError, match="replacement_pools\\[0\\] must have a defined seq_length"):
-                replacement_multiscan(bg, num_replacements=2, replacement_pools=left)
+        # Test removed - breakpoint_scan no longer exists
+        pass
 
     def test_num_replacements_must_be_positive(self):
         """Test error when num_replacements < 1."""

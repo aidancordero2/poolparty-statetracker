@@ -236,18 +236,15 @@ def _compute_one(
         for parent_pool in op.parent_pools:
             # Get parent sequences (already cached because of topological sort)
             parent_pool_result = seqs_cache[parent_pool.operation.id]
-            seq_key = f"seq_{parent_pool.output_index}"
-            parent_seqs.append(parent_pool_result[seq_key])
+            parent_seqs.append(parent_pool_result['seq'])
             
             # Get parent styles
             parent_styles_result = styles_cache.get(parent_pool.operation.id, {})
-            style_key = f"style_{parent_pool.output_index}"
-            parent_styles.append(parent_styles_result.get(style_key, []))
+            parent_styles.append(parent_styles_result.get('style', []))
             
             # Get parent names
             parent_name_result = names_cache[parent_pool.operation.id]
-            name_key = f"name_{parent_pool.output_index}"
-            parent_names.append(parent_name_result[name_key])
+            parent_names.append(parent_name_result)
         
         # Determine RNG for this operation
         if op.mode == 'random' and op.state is not None:
@@ -262,23 +259,17 @@ def _compute_one(
         # Compute design card, sequences, and styles together (using wrapped method for region handling)
         result = op.wrapped_compute(parent_seqs, op_rng, parent_styles)
         
-        # Extract sequences (keys like 'seq_0', 'seq_1', etc.), styles (style_0, style_1, etc.),
-        # and design card (other keys)
-        def is_seq_output(key: str) -> bool:
-            return key.startswith('seq_') and len(key) > 4 and key[4:].isdigit()
-        def is_style_output(key: str) -> bool:
-            return key.startswith('style_') and len(key) > 6 and key[6:].isdigit()
+        # Extract sequence, style, and design card
+        seq = result.get('seq', '')
+        style = result.get('style', [])
+        card = {k: v for k, v in result.items() if k not in ('seq', 'style')}
         
-        seqs = {k: v for k, v in result.items() if is_seq_output(k)}
-        styles = {k: v for k, v in result.items() if is_style_output(k)}
-        card = {k: v for k, v in result.items() if not is_seq_output(k) and not is_style_output(k)}
-        
-        names = op.compute_seq_names(parent_names, card)
+        name = op.compute_seq_names(parent_names, card)
         
         # Store in caches for downstream operations
-        seqs_cache[op.id] = seqs
-        styles_cache[op.id] = styles
-        names_cache[op.id] = names
+        seqs_cache[op.id] = {'seq': seq}
+        styles_cache[op.id] = {'style': style}
+        names_cache[op.id] = name
         card_cache[op.id] = card
         
         if report_op_keys and (ops_to_report is None or op.id in ops_to_report):
@@ -304,18 +295,14 @@ def _compute_one(
             row[output_name] = None
         else:
             result = seqs_cache[output_pool.operation.id]
-            seq_key = f"seq_{output_pool.output_index}"
-            row[output_name] = result[seq_key]
+            row[output_name] = result['seq']
     
     # Get final name from names_cache (computed through DAG)
-    final_name_result = names_cache[pool.operation.id]
-    name_key = f"name_{pool.output_index}"
-    row['name'] = final_name_result.get(name_key)
+    row['name'] = names_cache[pool.operation.id]
     
     # Get final inline styles from styles_cache (for print_library to use)
     final_styles_result = styles_cache.get(pool.operation.id, {})
-    style_key = f"style_{pool.output_index}"
-    row['_inline_styles'] = final_styles_result.get(style_key, [])
+    row['_inline_styles'] = final_styles_result.get('style', [])
     
     return row
 

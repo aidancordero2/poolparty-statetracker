@@ -113,55 +113,7 @@ class TestMutationScan:
 class TestBreakpointScan:
     """Test breakpoint scanning operations."""
     
-    def test_single_breakpoint(self):
-        """Test splitting with one breakpoint."""
-        with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential')
-            left = left.named('left')
-            right = right.named('right')
-        
-        df = left.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[right])
-        # 5 possible breakpoint positions (0, 1, 2, 3, 4)
-        assert len(df) == 5
-        
-        # Check all splits are valid
-        for _, row in df.iterrows():
-            assert row['left.seq'] + row['right.seq'] == 'ACGT'
-    
-    def test_double_breakpoint(self):
-        """Test splitting with two breakpoints."""
-        with pp.Party() as party:
-            left, mid, right = pp.breakpoint_scan('ACGTACGT', num_breakpoints=2, 
-                                                   mode='sequential')
-            left = left.named('left')
-            mid = mid.named('mid')
-            right = right.named('right')
-        
-        df = left.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[mid, right])
-        
-        # Check all splits are valid
-        for _, row in df.iterrows():
-            assert row['left.seq'] + row['mid.seq'] + row['right.seq'] == 'ACGTACGT'
-    
-    @pytest.mark.skip(reason="Diamond pattern state conflict - known statetracker limitation")
-    def test_breakpoint_with_mutation_join_diamond_resolved(self):
-        """Test combining breakpoint scan with mutation works with diamond pattern.
-        
-        Breakpoint scan creates synchronized pools that share a counter.
-        Concatenating one with a mutation of the other creates a diamond
-        pattern. ordered_product now properly deduplicates this pattern,
-        so no conflict error is raised.
-        """
-        with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGTACGT', num_breakpoints=1, 
-                                              mode='sequential')
-            # Use random mode to avoid issues with empty segments at some breakpoints
-            mutated_right = pp.mutagenize(right, num_mutations=1, mode='random')
-            oligo = join([left, mutated_right]).named('oligo')
-        
-        # Should work without ConflictingStateAssignmentError
-        df = oligo.generate_library(num_seqs=5, seed=42)
-        assert len(df) == 5
+    # Breakpoint scan tests removed - breakpoint_scan no longer exists
 
 
 class TestStatePersistence:

@@ -196,8 +196,8 @@ class FromIupacOp(Operation):
         
         return {
             'iupac_state': state,
-            'seq_0': seq,
-            'style_0': [],  # Source operation - start with empty styles
+            'seq': seq,
+            'style': [],  # Source operation - start with empty styles
         }
 
     def _get_copy_params(self) -> dict:

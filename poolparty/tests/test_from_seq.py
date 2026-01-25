@@ -83,7 +83,7 @@ class TestFromSeqCompute:
             pool = from_seq('ATGC')
         
         result = pool.operation.compute([])
-        assert result['seq_0'] == 'ATGC'
-        # FixedOp returns empty design card (no keys other than seq_0 and style_0)
-        card = {k: v for k, v in result.items() if not k.startswith('seq_') and not k.startswith('style_')}
+        assert result['seq'] == 'ATGC'
+        # FixedOp returns empty design card (no keys other than seq and style)
+        card = {k: v for k, v in result.items() if k not in ('seq', 'style')}
         assert card == {}

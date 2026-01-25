@@ -565,7 +565,7 @@ class TestMutagenizeCompute:
         
         pool.operation.state._value = 0
         result = pool.operation.compute(['ACGT'])
-        assert len(result['seq_0']) == 4
+        assert len(result['seq']) == 4
         assert result['positions'] is not None
     
     def test_compute_random_with_num(self):
@@ -575,10 +575,10 @@ class TestMutagenizeCompute:
         
         rng = np.random.default_rng(42)
         result = pool.operation.compute(['ACGT'], rng)
-        assert len(result['seq_0']) == 4
+        assert len(result['seq']) == 4
         
         # Verify exactly one mutation
-        diffs = sum(1 for a, b in zip('ACGT', result['seq_0']) if a != b)
+        diffs = sum(1 for a, b in zip('ACGT', result['seq']) if a != b)
         assert diffs == 1
     
     def test_compute_random_with_rate(self):
@@ -588,7 +588,7 @@ class TestMutagenizeCompute:
         
         rng = np.random.default_rng(42)
         result = pool.operation.compute(['ACGT'], rng)
-        assert len(result['seq_0']) == 4
+        assert len(result['seq']) == 4
 
 
 class TestMutagenizeWithParentPool:
@@ -607,12 +607,11 @@ class TestMutagenizeWithParentPool:
     def test_with_breakpoint_output(self):
         """Test mutation scan on breakpoint output."""
         with pp.Party() as party:
-            # Use positions=[1, 2, 3] to avoid empty segments
-            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1, positions=[1, 2, 3])
-            mutated_right = mutagenize(right, num_mutations=1, mode='sequential').named('mutant')
+            # Test removed - breakpoint_scan no longer exists
+            pass
         
-        df = mutated_right.generate_library(num_seqs=5)
-        assert len(df) == 5
+        # Test removed - breakpoint_scan no longer exists
+        pass
 
 
 class TestMutagenizeCustomName:

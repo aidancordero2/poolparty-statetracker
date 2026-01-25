@@ -205,12 +205,12 @@ class TestGetKmersCompute:
         
         pool.operation.state._value = 0
         result = pool.operation.compute([])
-        assert result['seq_0'] == 'AA'
+        assert result['seq'] == 'AA'
         assert result['kmer_index'] == 0
         
         pool.operation.state._value = 1
         result = pool.operation.compute([])
-        assert result['seq_0'] == 'AC'
+        assert result['seq'] == 'AC'
         assert result['kmer_index'] == 1
     
     def test_compute_random(self):
@@ -220,8 +220,8 @@ class TestGetKmersCompute:
         
         rng = np.random.default_rng(42)
         result = pool.operation.compute([], rng)
-        assert len(result['seq_0']) == 4
-        assert all(c in 'ACGT' for c in result['seq_0'])
+        assert len(result['seq']) == 4
+        assert all(c in 'ACGT' for c in result['seq'])
 
 
 class TestGetKmersCustomName:

@@ -84,7 +84,7 @@ class RepeatOp(Operation):
         repeat_index = 0 if state is None else state
         # Pass through parent styles
         output_styles = parent_styles[0] if parent_styles and len(parent_styles) > 0 else []
-        return {'repeat_index': repeat_index, 'seq_0': parent_seqs[0], 'style_0': output_styles}
+        return {'repeat_index': repeat_index, 'seq': parent_seqs[0], 'style': output_styles}
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

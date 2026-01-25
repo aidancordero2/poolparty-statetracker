@@ -70,7 +70,7 @@ class TestSeqShuffleDesignCard:
             pool = shuffle_seq('WXYZ', region=[0, 4])
             rng = np.random.default_rng(42)
             result = pool.operation.compute(['WXYZ'], rng)
-        shuffled = result['seq_0']
+        shuffled = result['seq']
         assert set(shuffled) == set('WXYZ')
         assert len(shuffled) == 4
         # applying again with same permutation should reproduce

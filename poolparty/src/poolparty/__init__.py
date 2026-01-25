@@ -31,7 +31,6 @@ from .base_ops import (
     from_motif, FromMotifOp,
     get_kmers, GetKmersOp,
     mutagenize, MutagenizeOp,
-    breakpoint_scan, BreakpointScanOp,
     shuffle_seq, SeqShuffleOp,
 )
 # Import ORF operations from orf_ops module
@@ -92,7 +91,6 @@ __all__ = [
     'slice_seq',
     'mutagenize', 'MutagenizeOp',
     'mutagenize_orf', 'MutagenizeOrfOp',
-    'breakpoint_scan', 'BreakpointScanOp',
     'insertion_scan',
     'replacement_scan',
     'deletion_scan',

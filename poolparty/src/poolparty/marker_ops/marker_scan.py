@@ -405,8 +405,8 @@ class MarkerScanOp(Operation):
             'region_content': marked_seq,
             'strand': strand,
             'region_seq': marker_tag,
-            'seq_0': result_seq,
-            'style_0': output_styles,
+            'seq': result_seq,
+            'style': output_styles,
         }
     
     def _get_copy_params(self) -> dict:

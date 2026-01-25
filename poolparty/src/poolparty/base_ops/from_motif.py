@@ -161,8 +161,8 @@ class FromMotifOp(Operation):
         seq = ''.join(dna.BASES[i] for i in indices_list)
         return {
             'prob_state': indices_list,
-            'seq_0': seq,
-            'style_0': [],  # Source operation - start with empty styles
+            'seq': seq,
+            'style': [],  # Source operation - start with empty styles
         }
 
     def _get_copy_params(self) -> dict:

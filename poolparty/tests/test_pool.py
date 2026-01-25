@@ -27,12 +27,6 @@ class TestPoolCreation:
             assert pool.operation is not None
             assert hasattr(pool.operation, 'compute')
     
-    def test_pool_output_index_default(self):
-        """Test that output_index defaults to 0."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'])
-            assert pool.output_index == 0
-    
     def test_pool_name_attribute(self):
         """Test Pool name attribute uses default pool[{id}] format."""
         with pp.Party() as party:
@@ -84,14 +78,6 @@ class TestPoolCopy:
             copied = pool.copy()
             
             assert copied._id != pool._id
-    
-    def test_copy_preserves_output_index(self):
-        """Test that copy() preserves output_index."""
-        with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1)
-            copied_right = right.copy()
-            
-            assert copied_right.output_index == right.output_index
     
     def test_copy_preserves_num_states(self):
         """Test that copy() preserves num_states."""
@@ -244,14 +230,6 @@ class TestPoolDeepCopy:
             
             assert copied._id != pool._id
     
-    def test_deepcopy_preserves_output_index(self):
-        """Test that deepcopy() preserves output_index."""
-        with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1)
-            copied_right = right.deepcopy()
-            
-            assert copied_right.output_index == right.output_index
-    
     def test_deepcopy_with_custom_name(self):
         """Test that deepcopy() accepts custom name."""
         with pp.Party() as party:
@@ -354,17 +332,6 @@ class TestPoolRepr:
             repr_str = repr(pool)
             assert 'num_states=3' in repr_str
     
-    def test_repr_multi_output(self):
-        """Test repr for multi-output operation."""
-        with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1)
-            left_repr = repr(left)
-            right_repr = repr(right)
-            
-            # Should show output index
-            assert 'out=0' in left_repr
-            assert 'out=1' in right_repr
-
 
 # =============================================================================
 # Tests for Pool + Pool (Stack operation)
@@ -610,30 +577,6 @@ class TestPoolOperatorChaining:
 # =============================================================================
 # Tests for multi-output operations
 # =============================================================================
-
-class TestPoolMultiOutput:
-    """Test Pool behavior with multi-output operations."""
-    
-    def test_breakpoint_creates_multiple_pools(self):
-        """Test that breakpoint_scan creates multiple pools."""
-        with pp.Party() as party:
-            pools = pp.breakpoint_scan('ACGT', num_breakpoints=1)
-            assert len(pools) == 2
-            assert all(isinstance(p, Pool) for p in pools)
-    
-    def test_multi_output_different_indices(self):
-        """Test that multi-output pools have different indices."""
-        with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1)
-            assert left.output_index == 0
-            assert right.output_index == 1
-    
-    def test_multi_output_same_operation(self):
-        """Test that multi-output pools reference same operation."""
-        with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1)
-            assert left.operation is right.operation
-
 
 # =============================================================================
 # Tests for Pool.generate_library()

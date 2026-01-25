@@ -356,8 +356,8 @@ class MutagenizeOrfOp(Operation):
             'mut_codons': mut_codons,
             'wt_aas': wt_aas,
             'mut_aas': mut_aas,
-            'seq_0': result_seq,
-            'style_0': output_styles,
+            'seq': result_seq,
+            'style': output_styles,
         }
     
     def _get_copy_params(self) -> dict:

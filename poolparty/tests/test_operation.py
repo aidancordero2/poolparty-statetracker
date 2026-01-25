@@ -182,11 +182,11 @@ class TestOperationCompute:
         # Set counter state and compute
         pool.operation.state._value = 0
         result = pool.operation.compute([])
-        assert result['seq_0'] == 'AAA'
+        assert result['seq'] == 'AAA'
         
         pool.operation.state._value = 1
         result = pool.operation.compute([])
-        assert result['seq_0'] == 'TTT'
+        assert result['seq'] == 'TTT'
 
 
 class TestOperationRepr:
@@ -267,28 +267,6 @@ class TestOperationDesignCards:
             assert len(combined.operation.design_card_keys) == 0
 
 
-class TestOperationNumOutputs:
-    """Test Operation num_outputs attribute."""
-    
-    def test_single_output_default(self):
-        """Test most operations have num_outputs=1."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'])
-            assert pool.operation.num_outputs == 1
-    
-    def test_breakpoint_multi_output(self):
-        """Test BreakpointScanOp has multiple outputs."""
-        with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1)
-            assert left.operation.num_outputs == 2
-    
-    def test_breakpoint_three_outputs(self):
-        """Test BreakpointScanOp with 2 breakpoints has 3 outputs."""
-        with pp.Party() as party:
-            left, mid, right = pp.breakpoint_scan('ACGTACGT', num_breakpoints=2)
-            assert left.operation.num_outputs == 3
-
-
 class TestOperationCopy:
     """Test Operation.copy() method."""
     
@@ -349,7 +327,7 @@ class TestOperationCopy:
             # Verify copied op produces same results
             copied_op.state._value = 0
             result = copied_op.compute([])
-            assert result['seq_0'] == 'A'
+            assert result['seq'] == 'A'
     
     def test_copy_mutagenize_op(self):
         """Test copying MutagenizeOp."""
@@ -418,15 +396,6 @@ class TestOperationCopy:
             copied_op = sliced.operation.copy()
             
             assert copied_op.parent_pools == sliced.operation.parent_pools
-    
-    def test_copy_breakpoint_scan_op(self):
-        """Test copying BreakpointScanOp."""
-        with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGTACGT', num_breakpoints=1)
-            copied_op = left.operation.copy()
-            
-            assert copied_op.parent_pools == left.operation.parent_pools
-            assert copied_op.num_outputs == left.operation.num_outputs
     
     def test_base_operation_get_copy_params_raises(self):
         """Test that base Operation._get_copy_params() raises NotImplementedError."""

@@ -137,7 +137,7 @@ class TestSliceSeqCompute:
             sliced = slice_seq(pool, slice(0, 2))
         
         result = sliced.operation.compute(['ACGT'])
-        assert result['seq_0'] == 'AC'
+        assert result['seq'] == 'AC'
     
     def test_compute_with_int(self):
         """Test compute with integer key."""
@@ -146,7 +146,7 @@ class TestSliceSeqCompute:
             sliced = slice_seq(pool, 0)
         
         result = sliced.operation.compute(['ACGT'])
-        assert result['seq_0'] == 'A'
+        assert result['seq'] == 'A'
 
 
 class TestSliceSeqCustomName:

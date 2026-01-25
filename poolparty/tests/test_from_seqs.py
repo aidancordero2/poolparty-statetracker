@@ -188,13 +188,13 @@ class TestFromSeqsCompute:
         # Set counter state to 0
         pool.operation.state._value = 0
         result = pool.operation.compute([])
-        assert result['seq_0'] == 'AAA'
+        assert result['seq'] == 'AAA'
         assert result['seq_index'] == 0
         
         # Set counter state to 1
         pool.operation.state._value = 1
         result = pool.operation.compute([])
-        assert result['seq_0'] == 'TTT'
+        assert result['seq'] == 'TTT'
         assert result['seq_index'] == 1
     
     def test_compute_random(self):
@@ -204,7 +204,7 @@ class TestFromSeqsCompute:
         
         rng = np.random.default_rng(42)
         result = pool.operation.compute([], rng)
-        assert result['seq_0'] in ['AAA', 'TTT', 'GGG']
+        assert result['seq'] in ['AAA', 'TTT', 'GGG']
 
 
 class TestFromSeqsCustomName:

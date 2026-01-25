@@ -144,7 +144,7 @@ class FixedOp(Operation):
         output_styles: StyleList = []
         if self._pass_through_styles and parent_styles and len(parent_styles) > 0:
             output_styles.extend(parent_styles[0])
-        return {'seq_0': result, 'style_0': output_styles}
+        return {'seq': result, 'style': output_styles}
 
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

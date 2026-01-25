@@ -10,7 +10,6 @@ import numpy as np
 class Operation:
     """Base class for all operations."""
     design_card_keys: Sequence[str] = []
-    num_outputs: int = 1
     max_num_sequential_states: int = 1_000_000
     factory_name: str = "op"
     
@@ -355,8 +354,8 @@ class Operation:
         
         Returns a dictionary containing:
         - Design card keys (matching design_card_keys)
-        - Output sequence keys (seq_0, seq_1, ...)
-        - Output style keys (style_0, style_1, ...) - list of (spec, positions) tuples
+        - 'seq': output sequence string
+        - 'style': output style list - list of (spec, positions) tuples
         """
         raise NotImplementedError("Subclasses must implement compute()")
     
@@ -407,13 +406,13 @@ class Operation:
         modified_seqs = [region_content] + parent_seqs[1:]
         result = self.compute(modified_seqs, rng, modified_styles)
         
-        # Helper to identify sequence output keys (seq_0, seq_1, etc.)
+        # Helper to identify sequence output key
         def is_seq_output(key: str) -> bool:
-            return key.startswith('seq_') and len(key) > 4 and key[4:].isdigit()
+            return key == 'seq'
         
-        # Helper to identify style output keys (style_0, style_1, etc.)
+        # Helper to identify style output key
         def is_style_output(key: str) -> bool:
-            return key.startswith('style_') and len(key) > 6 and key[6:].isdigit()
+            return key == 'style'
         
         # Parse marker info for sequence reassembly (if region is a marker)
         if isinstance(self._region, str):
@@ -441,8 +440,7 @@ class Operation:
                     reassembled[key] = prefix + seq + suffix
             elif is_style_output(key):
                 # Get the output sequence to determine new region length
-                seq_key = 'seq_' + key.split('_')[1]
-                output_seq = result.get(seq_key, '')
+                output_seq = result.get('seq', '')
                 
                 # Calculate prefix length for style reassembly
                 # For markers with remove_marker=False, region styles need prefix + opening tag
@@ -518,14 +516,14 @@ class Operation:
         self,
         parent_names: list[Optional[str]],
         card: dict,
-    ) -> dict:
-        """Compute output sequence names from parent names and design card.
+    ) -> Optional[str]:
+        """Compute output sequence name from parent names and design card.
         
-        Returns a dictionary with name_0, name_1, ... keys matching num_outputs.
+        Returns a string name or None.
         """
-        # Block all names if _block_seq_names is set
+        # Block name if _block_seq_names is set
         if self._block_seq_names:
-            return {f'name_{i}': None for i in range(self.num_outputs)}
+            return None
         
         # Apply clear_parent_names if set
         if self.clear_parent_names:
@@ -537,31 +535,20 @@ class Operation:
         
         # If no name_prefix, pass through parent name
         if self.name_prefix is None:
-            if self.num_outputs == 1:
-                return {'name_0': parent_name}
-            return {f'name_{i}': parent_name for i in range(self.num_outputs)}
+            return parent_name
         
-        # Build name(s) with prefix
+        # Build name with prefix
         if self.state is None:
-            # Stateless operation - return None for all outputs
-            return {f'name_{i}': None for i in range(self.num_outputs)}
+            # Stateless operation - return None
+            return None
         value = self.state.value
         if value is None:
-            # Inactive state - return None for all outputs
-            return {f'name_{i}': None for i in range(self.num_outputs)}
+            # Inactive state - return None
+            return None
         
-        if self.num_outputs == 1:
-            op_name = f'{self.name_prefix}{value}'
-            full_name = f'{parent_name}.{op_name}' if parent_name else op_name
-            return {'name_0': full_name}
-        else:
-            # Multi-output: use f'{prefix}{value}({i})' format
-            result = {}
-            for i in range(self.num_outputs):
-                op_name = f'{self.name_prefix}{value}({i})'
-                full_name = f'{parent_name}.{op_name}' if parent_name else op_name
-                result[f'name_{i}'] = full_name
-            return result
+        op_name = f'{self.name_prefix}{value}'
+        full_name = f'{parent_name}.{op_name}' if parent_name else op_name
+        return full_name
     
     def __repr__(self) -> str:
         num_values_str = "None" if self.num_values is None else str(self.num_values)

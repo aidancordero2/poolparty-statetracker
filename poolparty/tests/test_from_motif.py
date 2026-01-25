@@ -262,9 +262,9 @@ class TestFromMotifCompute:
         # the structure of the result
         rng = np.random.default_rng(42)
         result = pool.operation.compute([], rng)
-        assert 'seq_0' in result
+        assert 'seq' in result
         assert 'prob_state' in result
-        assert result['seq_0'] in ['A', 'C', 'G', 'T']
+        assert result['seq'] in ['A', 'C', 'G', 'T']
     
     def test_compute_with_rng(self):
         """Test compute in random mode uses RNG correctly."""
@@ -274,7 +274,7 @@ class TestFromMotifCompute:
         
         rng = np.random.default_rng(42)
         result = pool.operation.compute([], rng)
-        assert result['seq_0'] == 'A'
+        assert result['seq'] == 'A'
 
 
 class TestFromMotifCustomName:

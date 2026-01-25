@@ -135,23 +135,6 @@ class TestClearSeqNamesChaining:
         assert 'name' not in df.columns or df['name'].isna().all()
 
 
-class TestClearSeqNamesWithMultiOutput:
-    """Test clear_seq_names() with multi-output operations."""
-    
-    def test_breakpoint_scan_with_clear(self):
-        """Test clear_seq_names() with breakpoint_scan (2 outputs)."""
-        with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential')
-            left.clear_seq_names()
-            right.clear_seq_names()
-        
-        df_left = left.generate_library(num_cycles=1)
-        df_right = right.generate_library(num_cycles=1)
-        
-        # Both should have no names
-        assert 'name' not in df_left.columns or df_left['name'].isna().all()
-        assert 'name' not in df_right.columns or df_right['name'].isna().all()
-
 
 class TestClearSeqNamesDoesNotAffectSequences:
     """Test that clear_seq_names() only affects names, not sequences."""

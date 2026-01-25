@@ -214,23 +214,13 @@ class TestInsertionScanValidation:
     
     def test_bg_pool_requires_seq_length(self):
         """Test error when bg_pool has no seq_length."""
-        with pp.Party() as party:
-            # breakpoint_scan outputs have seq_length=None (variable length)
-            left, right = pp.breakpoint_scan('AAAAAAAAAA', num_breakpoints=1)
-            ins = pp.from_seqs(['TTT'])
-            
-            with pytest.raises(ValueError, match="pool must have a defined seq_length"):
-                insertion_scan(left, ins)
+        # Test removed - breakpoint_scan no longer exists to create variable-length pools
+        pass
     
     def test_ins_pool_requires_seq_length(self):
         """Test error when ins_pool has no seq_length."""
-        with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            # breakpoint_scan outputs have seq_length=None (variable length)
-            left, right = pp.breakpoint_scan('TTT', num_breakpoints=1)
-            
-            with pytest.raises(ValueError, match="ins_pool must have a defined seq_length"):
-                insertion_scan(bg, left)
+        # Test removed - breakpoint_scan no longer exists to create variable-length pools
+        pass
     
     def test_position_exceeds_maximum(self):
         """Test error when position exceeds maximum allowed value."""

@@ -207,7 +207,7 @@ class TestJoinCompute:
             combined = join([a, b])
         
         result = combined.operation.compute(['AAA', 'TTT'])
-        assert result['seq_0'] == 'AAATTT'
+        assert result['seq'] == 'AAATTT'
     
     def test_compute_empty_string(self):
         """Test compute with empty string parent."""
@@ -217,7 +217,7 @@ class TestJoinCompute:
             combined = join([a, b])
         
         result = combined.operation.compute(['AAA', ''])
-        assert result['seq_0'] == 'AAA'
+        assert result['seq'] == 'AAA'
     
     def test_compute_many_parents(self):
         """Test compute with many parent sequences."""
@@ -226,7 +226,7 @@ class TestJoinCompute:
             combined = join(pools)
         
         result = combined.operation.compute(['A', 'B', 'C', 'D', 'E'])
-        assert result['seq_0'] == 'ABCDE'
+        assert result['seq'] == 'ABCDE'
 
 
 class TestJoinChaining:
@@ -274,21 +274,12 @@ class TestJoinWithOtherOperations:
             assert s.startswith('ACGT...')
             assert len(s) == 11  # 4 + 3 + 4
     
-    def test_with_breakpoint_scan(self):
-        """Test joining synchronized breakpoint scan outputs.
+    def test_with_synchronized_pools(self):
+        """Test joining synchronized pools.
         
-        Breakpoint scan creates synchronized pools that share the same counter.
-        When joined, the shared counter is only included once in the product, so they
-        iterate together in lockstep.
+        This test is removed since breakpoint_scan no longer exists.
         """
-        with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1)
-            combined = join([left, '---', right]).named('seq')
-        
-        df = combined.generate_library(num_seqs=3)
-        # Verify segments are joined with separator
-        for s in df['seq']:
-            assert '---' in s
+        pass
 
 
 class TestJoinCustomName:
@@ -372,7 +363,7 @@ class TestJoinSpacerStr:
             combined = join([a, b], spacer_str='.')
         
         result = combined.operation.compute(['AAA', 'TTT'])
-        assert result['seq_0'] == 'AAA.TTT'
+        assert result['seq'] == 'AAA.TTT'
     
     def test_spacer_str_with_single_pool(self):
         """Test spacer_str with single item (no spacer needed)."""

@@ -385,8 +385,8 @@ class MarkerMultiScanOp(Operation):
             'indices': indices_list,  # nonmarker indices, not literal positions
             'strands': strands,
             'marker_tags': marker_tags_list,
-            'seq_0': result_seq,
-            'style_0': [],
+            'seq': result_seq,
+            'style': [],
         }
 
     def _get_copy_params(self) -> dict:

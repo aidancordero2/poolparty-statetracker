@@ -68,18 +68,18 @@ class TestMutagenizeWithStyleMutations:
             params = pool.operation._get_copy_params()
         assert params['style_mutations'] == 'blue'
     
-    def test_compute_returns_style_0(self):
-        """compute() returns style_0 key."""
+    def test_compute_returns_style(self):
+        """compute() returns style key."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential')
         
         pool.operation.state._value = 0
         result = pool.operation.compute(['ACGT'])
-        assert 'style_0' in result
-        assert isinstance(result['style_0'], list)
+        assert 'style' in result
+        assert isinstance(result['style'], list)
     
     def test_compute_with_style_mutations_includes_positions(self):
-        """compute() with style_mutations adds mutation positions to style_0."""
+        """compute() with style_mutations adds mutation positions to style."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, style_mutations='red', mode='sequential')
         
@@ -87,20 +87,20 @@ class TestMutagenizeWithStyleMutations:
         result = pool.operation.compute(['ACGT'])
         
         # Should have one style tuple with mutation positions
-        assert len(result['style_0']) == 1
-        spec, positions = result['style_0'][0]
+        assert len(result['style']) == 1
+        spec, positions = result['style'][0]
         assert spec == 'red'
         assert len(positions) == 1  # 1 mutation
     
     def test_compute_without_style_mutations_empty(self):
-        """compute() without style_mutations returns empty style_0."""
+        """compute() without style_mutations returns empty style."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential')
         
         pool.operation.state._value = 0
         result = pool.operation.compute(['ACGT'])
         
-        assert result['style_0'] == []
+        assert result['style'] == []
 
 
 class TestInlineStylesGeneration:

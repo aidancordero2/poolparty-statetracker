@@ -6,7 +6,6 @@ import poolparty as pp
 from poolparty.base_ops.mutagenize import mutagenize
 from poolparty.base_ops.get_kmers import get_kmers
 from poolparty.base_ops.from_seqs import from_seqs
-from poolparty.base_ops.breakpoint_scan import breakpoint_scan
 
 
 class TestRandomNumStatesBasic:
@@ -206,53 +205,6 @@ class TestRandomNumStatesFromSeqs:
         with pp.Party() as party:
             pool = from_seqs(['A', 'T', 'G', 'C'], mode='random', num_states=30).named('seq')
         df = pool.generate_library(num_cycles=1, seed=42)
-        results2 = list(df['seq'])
-        
-        assert results1 == results2
-
-
-class TestRandomNumStatesBreakpointScan:
-    """Test random mode with num_states for breakpoint_scan."""
-    
-    def test_breakpoint_scan_random_num_states(self):
-        """Test that breakpoint_scan random mode with num_states uses correct num_states."""
-        with pp.Party() as party:
-            left, right = breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, 
-                                          mode='random', num_states=50)
-            assert left.operation.num_values == 50
-    
-    def test_breakpoint_scan_random_valid_splits(self):
-        """Test that random breakpoint_scan with num_states produces valid splits."""
-        with pp.Party() as party:
-            left, right = breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, 
-                                          mode='random', num_states=30)
-            left = left.named('left')
-            right = right.named('right')
-        
-        df = left.generate_library(num_cycles=1, seed=42, report_design_cards=True, aux_pools=[right])
-        
-        assert len(df) == 30
-        for i, row in df.iterrows():
-            # Concatenated segments should equal original
-            combined = row['seq'] + row['right.seq']
-            assert combined == 'ACGTACGTACGT'
-    
-    def test_breakpoint_scan_random_reproducible(self):
-        """Test that breakpoint_scan random mode with num_states is reproducible."""
-        results1 = []
-        with pp.Party() as party:
-            left, right = breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, 
-                                          mode='random', num_states=20)
-            left = left.named('left')
-        df = left.generate_library(num_cycles=1, seed=42)
-        results1 = list(df['seq'])
-        
-        results2 = []
-        with pp.Party() as party:
-            left, right = breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, 
-                                          mode='random', num_states=20)
-            left = left.named('left')
-        df = left.generate_library(num_cycles=1, seed=42)
         results2 = list(df['seq'])
         
         assert results1 == results2

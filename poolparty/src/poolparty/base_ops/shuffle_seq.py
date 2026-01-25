@@ -167,8 +167,8 @@ class SeqShuffleOp(Operation):
         # Note: Shuffle changes character positions, so parent styles not meaningful
         return {
             'permutation': permutation,
-            'seq_0': shuffled_seq,
-            'style_0': [],
+            'seq': shuffled_seq,
+            'style': [],
         }
     
     def _get_copy_params(self) -> dict:

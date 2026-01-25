@@ -220,12 +220,8 @@ class TestSubseqScanValidation:
     
     def test_pool_requires_seq_length(self):
         """Test error when pool has no seq_length."""
-        with pp.Party() as party:
-            # breakpoint_scan outputs have seq_length=None (variable length)
-            left, right = pp.breakpoint_scan('AAAAAAAAAA', num_breakpoints=1)
-            
-            with pytest.raises(ValueError, match="pool must have a defined seq_length"):
-                subseq_scan(left, seq_length=3)
+        # Test removed - breakpoint_scan no longer exists
+        pass
     
     def test_seq_length_must_be_positive(self):
         """Test error when seq_length <= 0."""

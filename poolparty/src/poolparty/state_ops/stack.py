@@ -109,22 +109,22 @@ class StackOp(Operation):
                 seq = parent_seqs[active]
                 # Pass through styles from active parent
                 output_styles = parent_styles[active] if parent_styles and len(parent_styles) > active else []
-                return {'active_parent': active, 'seq_0': seq, 'style_0': output_styles}
+                return {'active_parent': active, 'seq': seq, 'style': output_styles}
         self.state.value = None
         active = None
         seq = parent_seqs[0] if parent_seqs else ''
         output_styles = parent_styles[0] if parent_styles and len(parent_styles) > 0 else []
-        return {'active_parent': active, 'seq_0': seq, 'style_0': output_styles}
+        return {'active_parent': active, 'seq': seq, 'style': output_styles}
     
     def compute_seq_names(
         self,
         parent_names: list[Optional[str]],
         card: dict,
-    ) -> dict:
+    ) -> Optional[str]:
         """Return the name from the active parent."""
-        # Block all names if _block_seq_names is set
+        # Block name if _block_seq_names is set
         if self._block_seq_names:
-            return {'name_0': None}
+            return None
         # Apply clear_parent_names if set
         if self.clear_parent_names:
             parent_names = [None] * len(parent_names)
@@ -143,7 +143,7 @@ class StackOp(Operation):
                 op_name = f'{self.name_prefix}{state}'
                 name = f'{name}.{op_name}' if name else op_name
         
-        return {'name_0': name}
+        return name
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

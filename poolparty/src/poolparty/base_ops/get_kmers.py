@@ -215,8 +215,8 @@ class GetKmersOp(Operation):
         return {
             'kmer_index': kmer_index,
             'kmer': kmer,
-            'seq_0': kmer,
-            'style_0': output_styles,
+            'seq': kmer,
+            'style': output_styles,
         }
     
     def _get_copy_params(self) -> dict:

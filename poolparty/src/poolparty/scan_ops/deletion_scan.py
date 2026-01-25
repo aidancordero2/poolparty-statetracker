@@ -60,8 +60,7 @@ def deletion_scan(
     # Validate min_spacing/max_spacing not supported
     if min_spacing is not None or max_spacing is not None:
         raise ValueError(
-            "min_spacing and max_spacing are not supported. "
-            "Use breakpoint_scan directly if needed."
+            "min_spacing and max_spacing are not supported."
         )
 
     # Convert string to pool

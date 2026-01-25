@@ -144,7 +144,7 @@ class TestStateShuffleCompute:
             shuffled = state_shuffle(pool, seed=42)
         
         result = shuffled.operation.compute(['ACGT'])
-        assert result['seq_0'] == 'ACGT'
+        assert result['seq'] == 'ACGT'
 
 
 class TestStateShuffleWithPermutation:

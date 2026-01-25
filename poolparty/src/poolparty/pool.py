@@ -13,7 +13,6 @@ class Pool:
     def __init__(
         self,
         operation: Operation_type,
-        output_index: int = 0,
         name: Optional[str] = None,
         state: Optional[st.State] = None,
         iter_order: Optional[Real] = None,
@@ -32,7 +31,6 @@ class Pool:
         self._party = party
         self._id = party._get_next_pool_id()
         self.operation = operation
-        self.output_index = output_index
         if state is not None:
             self.state = state
         else:
@@ -172,8 +170,6 @@ class Pool:
     
     def __repr__(self) -> str:
         num_states_str = "None" if self.num_states is None else str(self.num_states)
-        if self.operation.num_outputs > 1:
-            return f"Pool(id={self._id}, name={self.name!r}, op={self.operation.name!r}, out={self.output_index}, num_states={num_states_str})"
         return f"Pool(id={self._id}, name={self.name!r}, op={self.operation.name!r}, num_states={num_states_str})"
     
     def named(self, name: str, op_name: Optional[str] = None) -> Pool_type:
@@ -220,7 +216,7 @@ class Pool:
             A new Pool backed by a copied Operation.
         """
         new_op = self.operation.copy()
-        new_pool = Pool(operation=new_op, output_index=self.output_index)
+        new_pool = Pool(operation=new_op)
         if name is not None:
             new_pool.name = name
         else:
@@ -243,7 +239,7 @@ class Pool:
             A new Pool backed by a recursively copied Operation.
         """
         new_op = self.operation.deepcopy()
-        new_pool = Pool(operation=new_op, output_index=self.output_index)
+        new_pool = Pool(operation=new_op)
         if name is not None:
             new_pool.name = name
         else:

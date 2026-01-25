@@ -191,30 +191,30 @@ class FromSeqsOp(Operation):
         return {
             'seq_name': self.seq_names[idx],
             'seq_index': idx,
-            'seq_0': seq,
-            'style_0': output_styles,
+            'seq': seq,
+            'style': output_styles,
         }
     
     def compute_seq_names(
         self,
         parent_names: list[Optional[str]],
         card: dict,
-    ) -> dict:
+    ) -> Optional[str]:
         """Return name based on explicit seq_names or name_prefix."""
-        # Block all names if _block_seq_names is set
+        # Block name if _block_seq_names is set
         if self._block_seq_names:
-            return {'name_0': None}
+            return None
         # If explicit seq_names were provided, use them directly
         if self._seq_names_explicit:
             idx = card['seq_index']
-            return {'name_0': self.seq_names[idx]}
+            return self.seq_names[idx]
         # Otherwise fall back to prefix logic
         if self.name_prefix is None:
-            return {'name_0': None}
+            return None
         state = self.state.value
         if state is None:
-            return {'name_0': None}
-        return {'name_0': f'{self.name_prefix}{state}'}
+            return None
+        return f'{self.name_prefix}{state}'
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

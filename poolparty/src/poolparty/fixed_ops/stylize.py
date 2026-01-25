@@ -229,7 +229,7 @@ class StylizeOp(Operation):
         if len(positions) > 0:
             output_styles.append((self.style, positions))
 
-        return {'seq_0': seq, 'style_0': output_styles}
+        return {'seq': seq, 'style': output_styles}
 
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

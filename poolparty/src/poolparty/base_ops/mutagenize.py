@@ -483,8 +483,8 @@ class MutagenizeOp(Operation):
             'positions': positions,
             'wt_chars': wt_chars,
             'mut_chars': mut_chars,
-            'seq_0': result_seq,
-            'style_0': output_styles,
+            'seq': result_seq,
+            'style': output_styles,
         }
     
     def _get_copy_params(self) -> dict:
