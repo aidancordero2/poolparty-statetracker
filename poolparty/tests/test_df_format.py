@@ -3,7 +3,7 @@
 import pytest
 import pandas as pd
 import poolparty as pp
-from poolparty.df_format import (
+from poolparty.df_utils import (
     counter_col_name,
     get_pools_reverse_topo,
     organize_columns,
@@ -202,9 +202,9 @@ class TestFinalizeGenerateDf:
 
 
 class TestIntegrationWithGenerate:
-    """Test that df_format functions work correctly with Pool.generate_library()."""
+    """Test that df_utils functions work correctly with Pool.generate_library()."""
     
-    def test_generate_uses_df_format_functions(self):
+    def test_generate_uses_df_utils_functions(self):
         """Test that generate() produces correctly formatted output."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT', 'GGG'], mode='sequential')
