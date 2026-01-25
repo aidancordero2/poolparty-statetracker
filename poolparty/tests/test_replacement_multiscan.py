@@ -255,26 +255,6 @@ class TestReplacementMultiscanNumReplacements:
         for seq in df['seq']:
             assert seq.count('G') == 9  # 3 * 3
             assert len(seq) == 18
-
-
-class TestReplacementMultiscanSpacerStr:
-    """Test spacer_str parameter."""
-
-    def test_spacer_str(self):
-        """Test custom spacer string."""
-        with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])  # 18 chars
-            ins = pp.from_seq('G')  # 1 char replacement
-            result = replacement_multiscan(
-                bg, num_replacements=2, replacement_pools=ins, spacer_str='.'
-            ).named('result')
-
-        df = result.generate_library(num_seqs=3, seed=42)
-        for seq in df['seq']:
-            # Should have dots around each replacement
-            assert '.G.' in seq
-
-
 class TestReplacementMultiscanNaming:
     """Test naming parameters."""
 

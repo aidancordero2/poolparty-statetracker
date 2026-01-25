@@ -11,7 +11,6 @@ def shuffle_seq(
     pool: Union[Pool_type, str],
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
-    spacer_str: str = '',
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
@@ -58,7 +57,6 @@ def shuffle_seq(
         parent_pool=pool_obj,
         region=region,
         remove_marker=remove_marker,
-        spacer_str=spacer_str,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_states=num_states,
@@ -115,7 +113,6 @@ class SeqShuffleOp(Operation):
             seq_name_prefix=seq_name_prefix,
             region=region,
             remove_marker=remove_marker,
-            spacer_str=spacer_str,
         )
     
     def compute(
@@ -180,7 +177,6 @@ class SeqShuffleOp(Operation):
             'parent_pool': self.parent_pools[0],
             'region': self._region,
             'remove_marker': self._remove_marker,
-            'spacer_str': self._spacer_str,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,

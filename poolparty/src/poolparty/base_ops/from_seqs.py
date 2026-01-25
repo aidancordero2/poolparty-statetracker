@@ -13,7 +13,6 @@ def from_seqs(
     bg_pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
-    spacer_str: str = '',
     style: Optional[str] = None,
     seq_names: Optional[Sequence[str]] = None,
     seq_name_prefix: Optional[str] = None,
@@ -71,7 +70,7 @@ def from_seqs(
     from ..fixed_ops.from_seq import from_seq
     bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     op = FromSeqsOp(seqs, bg_pool=bg_pool_obj, region=region,
-                    remove_marker=remove_marker, spacer_str=spacer_str,
+                    remove_marker=remove_marker,
                     style=style,
                     seq_names=seq_names, seq_name_prefix=seq_name_prefix,
                     mode=mode, num_states=num_states,
@@ -160,7 +159,6 @@ class FromSeqsOp(Operation):
             seq_name_prefix=seq_name_prefix,
             region=region,
             remove_marker=remove_marker,
-            spacer_str=spacer_str,
         )
     
     def compute(
@@ -225,7 +223,6 @@ class FromSeqsOp(Operation):
             'bg_pool': self.parent_pools[0] if self.parent_pools else None,
             'region': self._region,
             'remove_marker': self._remove_marker,
-            'spacer_str': self._spacer_str,
             'style': self._style,
             'seq_names': self.seq_names if self._seq_names_explicit else None,
             'seq_name_prefix': self.name_prefix,

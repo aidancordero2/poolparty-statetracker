@@ -10,7 +10,6 @@ def clear_annotation(
     pool: Union[Pool_type, str],
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
-    spacer_str: str = '',
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -64,7 +63,6 @@ def clear_annotation(
         seq_length_from_pool_lengths_fn=lambda lengths: None,  # Length may vary
         region=region,
         remove_marker=remove_marker,
-        spacer_str=spacer_str,
         name=name,
         op_name=op_name,
         iter_order=iter_order,

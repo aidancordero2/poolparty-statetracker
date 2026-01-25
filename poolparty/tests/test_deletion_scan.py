@@ -197,36 +197,6 @@ class TestDeletionScanMarkerOptions:
             # Should only have A's, no markers
             assert set(seq) == {'A'}
             assert len(seq) == 7  # 10 - 3
-
-
-class TestDeletionScanSpacerStr:
-    """Test spacer_str parameter."""
-    
-    def test_spacer_str_with_marker(self):
-        """Test custom spacer string with marker."""
-        with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            result = deletion_scan(bg, deletion_length=3, spacer_str='.').named('result')
-        
-        df = result.generate_library(num_seqs=3)
-        for seq in df['seq']:
-            # Should have dots around the deletion marker
-            assert '.---.' in seq
-    
-    def test_spacer_str_without_marker(self):
-        """Test that spacer_str is ignored when deletion_marker=None."""
-        with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            result = deletion_scan(bg, deletion_length=3, deletion_marker=None, 
-                                   spacer_str='.').named('result')
-        
-        df = result.generate_library(num_seqs=3)
-        for seq in df['seq']:
-            # spacer_str is ignored when deletion_marker=None; segment is simply removed
-            assert '.' not in seq
-            assert len(seq) == 7  # 10 - 3
-
-
 class TestDeletionScanNaming:
     """Test naming parameters."""
     

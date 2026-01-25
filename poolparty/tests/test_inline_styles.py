@@ -296,28 +296,6 @@ class TestPositionAdjustmentWithMarkers:
             # which starts at 2 (AA) + 6 (<test>) = 8
             assert all(8 <= pos < 12 for pos in positions)
     
-    def test_mutagenize_region_with_spacer_str(self):
-        """Positions adjusted correctly for spacer_str."""
-        with pp.Party() as party:
-            bg = pp.from_seq('AA<test>CCCC</test>GG').named('bg')
-            mutated = bg.mutagenize(
-                'test', num_mutations=1, style_mutations='red',
-                mode='sequential', remove_marker=True, spacer_str='XX'
-            ).named('mutated')
-        
-        df = mutated.generate_library(num_seqs=1, report_design_cards=True)
-        seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
-        
-        # Sequence should have spacers: 'AA' + 'XX' + content + 'XX' + 'GG'
-        assert 'XX' in seq
-        
-        # Style positions should account for prefix (2) + spacer (2) = 4
-        if styles:
-            spec, positions = styles[0]
-            # With spacer, region content starts at position 4
-            assert all(4 <= pos < 8 for pos in positions)
-    
     def test_mutagenize_region_marker_with_minus_strand(self):
         """Minus strand marker handled correctly with position offset."""
         with pp.Party() as party:
@@ -387,21 +365,6 @@ class TestPositionAdjustmentHelperUnit:
         offset = op._compute_style_position_offset('AACCCCGG', 'AA')
         assert offset == 2
     
-    def test_compute_offset_interval_region_with_spacer(self):
-        """Correct offset for interval region with spacer."""
-        with pp.Party() as party:
-            bg = pp.from_seq('AACCCCGG')
-            # Interval region with spacer_str='XX'
-            pool = mutagenize(
-                bg, region=[2, 6], num_mutations=1, 
-                mode='sequential', spacer_str='XX'
-            )
-            op = pool.operation
-        
-        # Prefix is 'AA' (2) + spacer 'XX' (2) = 4
-        offset = op._compute_style_position_offset('AACCCCGG', 'AA')
-        assert offset == 4
-    
     def test_compute_offset_marker_region_remove_true(self):
         """Correct offset for marker region with remove_marker=True."""
         with pp.Party() as party:
@@ -448,21 +411,6 @@ class TestPositionAdjustmentHelperUnit:
         offset = op._compute_style_position_offset(parent_seq, "AA<test strand='-'>")
         assert offset == 19
     
-    def test_compute_offset_marker_region_with_spacer(self):
-        """Correct offset for marker region with spacer_str."""
-        with pp.Party() as party:
-            bg = pp.from_seq('AA<test>CCCC</test>GG')
-            pool = mutagenize(
-                bg, region='test', num_mutations=1, 
-                mode='sequential', remove_marker=True, spacer_str='XX'
-            )
-            op = pool.operation
-        
-        # Prefix is 'AA' (2 chars) + spacer 'XX' (2 chars) = 4
-        parent_seq = 'AA<test>CCCC</test>GG'
-        offset = op._compute_style_position_offset(parent_seq, 'AA<test>')
-        assert offset == 4
-
 
 class TestCaseTransformInlineStyles:
     """Test 'upper' and 'lower' case transformation in inline styles."""
@@ -892,26 +840,17 @@ class TestInsertionScanStyleInsertion:
         _, positions = yellow_styles[0]
         assert list(positions) == [5, 6, 7]
     
-    def test_style_insertion_with_spacer_str(self):
-        """style_insertion doesn't include spacer positions, only content."""
-        with pp.Party() as party:
-            bg = pp.from_seq('AAAAAAAAAA')
-            ins = pp.from_seq('GG')
-            pool = pp.insertion_scan(bg, ins, positions=[5], mode='sequential',
-                                      spacer_str='.', style_insertion='green').named('result')
-        
-        df = pool.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
         styles = df['_inline_styles'].iloc[0]
         
-        # Sequence should be AAAAA.GG.AAAAA (with spacers)
-        assert '.GG.' in seq
+        # Sequence should be AAAAAGGGAA (GGG replaced at position 5)
+        assert 'GGG' in seq
         
-        # Style should only cover the GG (2 positions), not the dots
-        green_styles = [(spec, pos) for spec, pos in styles if spec == 'green']
-        assert len(green_styles) == 1
-        _, positions = green_styles[0]
-        assert len(positions) == 2  # Only GG, not the dots
+        # Style should cover the GGG (3 positions)
+        yellow_styles = [(spec, pos) for spec, pos in styles if spec == 'yellow']
+        assert len(yellow_styles) == 1
+        _, positions = yellow_styles[0]
+        assert len(positions) == 3  # GGG positions
     
     def test_style_insertion_without_style_returns_empty(self):
         """insertion_scan without style_insertion has no insertion styles."""

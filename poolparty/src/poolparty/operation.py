@@ -42,7 +42,6 @@ class Operation:
         seq_name_prefix: Optional[str] = None,
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
-        spacer_str: str = '',
     ) -> None:
         """Initialize Operation."""
         from .party import get_active_party
@@ -107,9 +106,6 @@ class Operation:
             self._remove_marker = party.get_default('remove_marker', True)
         else:
             self._remove_marker = remove_marker
-        
-        # Spacer string for region operations
-        self._spacer_str = spacer_str
         
         # Register operation with party after name is set
         party._register_operation(self)
@@ -208,7 +204,6 @@ class Operation:
         content in the final output sequence. It handles:
         - Prefix length (characters before the region)
         - Opening marker tag length (when region is a marker and remove_marker=False)
-        - Spacer string offset
         
         Parameters
         ----------
@@ -243,10 +238,7 @@ class Operation:
             # Region is [start, stop] interval
             prefix_len = len(prefix)
         
-        # Account for spacer_str
-        spacer_offset = len(self._spacer_str) if self._spacer_str else 0
-        
-        return prefix_len + spacer_offset
+        return prefix_len
     
     @staticmethod
     def _validate_region(region: RegionType) -> None:
@@ -374,17 +366,18 @@ class Operation:
         rng: np.random.Generator | None = None,
         parent_styles: list[StyleList] | None = None,
     ) -> dict:
-        """Compute with automatic region handling, spacer insertion, and marker removal.
+        """Compute with automatic region handling and marker removal.
         
         If region is specified:
         1. Extracts region content from parent_seqs[0]
         2. Adjusts input style positions to be region-relative
         3. Calls compute with modified sequences and styles
-        4. Wraps result sequences with spacer_str if specified
-        5. Reassembles prefix + result + suffix
-        6. Adjusts output style positions to account for prefix
-        7. Removes marker tags if remove_marker=True and region is a marker name
+        4. Reassembles prefix + result + suffix
+        5. Adjusts output style positions to account for prefix
+        6. Removes marker tags if remove_marker=True and region is a marker name
         """
+        from .style import split_styles_by_region, reassemble_styles
+        
         if self._region is None:
             return self.compute(parent_seqs, rng, parent_styles)
         
@@ -396,37 +389,19 @@ class Operation:
         # Get region bounds for position adjustment
         bounds = self._resolve_region(parent_seqs[0], self._region)
         region_start = bounds[0] if bounds else 0
-        region_end = region_start + len(region_content)
+        region_end = bounds[1] if bounds else len(parent_seqs[0])
         
-        # Adjust parent styles for first parent (shift positions by -region_start)
-        # Also preserve styles for positions outside the region
+        # Split styles for first parent using utility function
         modified_styles = None
-        preserved_prefix_styles: StyleList = []  # Styles for positions before region
-        preserved_suffix_styles: StyleList = []  # Styles for positions after region
+        prefix_styles: StyleList = []
+        suffix_styles: StyleList = []
         if parent_styles:
             modified_styles = list(parent_styles)  # Copy the list
             if modified_styles and len(modified_styles) > 0:
-                # Adjust first parent's styles to be region-relative
-                first_parent_styles = modified_styles[0]
-                adjusted_first_styles: StyleList = []
-                for spec, positions in first_parent_styles:
-                    # Styles before region - preserve unchanged
-                    prefix_mask = positions < region_start
-                    if np.any(prefix_mask):
-                        preserved_prefix_styles.append((spec, positions[prefix_mask]))
-                    
-                    # Styles within region - shift to region-relative coords
-                    region_mask = (positions >= region_start) & (positions < region_end)
-                    if np.any(region_mask):
-                        adjusted_positions = positions[region_mask] - region_start
-                        adjusted_first_styles.append((spec, adjusted_positions))
-                    
-                    # Styles after region - preserve (will adjust later if length changes)
-                    suffix_mask = positions >= region_end
-                    if np.any(suffix_mask):
-                        preserved_suffix_styles.append((spec, positions[suffix_mask]))
-                
-                modified_styles[0] = adjusted_first_styles
+                prefix_styles, region_styles, suffix_styles = split_styles_by_region(
+                    modified_styles[0], region_start, region_end
+                )
+                modified_styles[0] = region_styles
         
         # Call subclass with region content as first sequence
         modified_seqs = [region_content] + parent_seqs[1:]
@@ -440,9 +415,6 @@ class Operation:
         def is_style_output(key: str) -> bool:
             return key.startswith('style_') and len(key) > 6 and key[6:].isdigit()
         
-        # Compute total offset for style positions using centralized helper
-        total_offset = self._compute_style_position_offset(parent_seqs[0], prefix)
-        
         # Parse marker info for sequence reassembly (if region is a marker)
         if isinstance(self._region, str):
             from .marker_ops.parsing import parse_marker, build_marker_tag
@@ -455,9 +427,6 @@ class Operation:
         for key, value in result.items():
             if is_seq_output(key):
                 seq = value
-                # Apply spacer_str if specified
-                if self._spacer_str:
-                    seq = self._spacer_str + seq + self._spacer_str
                 
                 if isinstance(self._region, str):
                     if self._remove_marker:
@@ -471,55 +440,74 @@ class Operation:
                     # Region is [start, stop] interval - just reassemble
                     reassembled[key] = prefix + seq + suffix
             elif is_style_output(key):
-                # Adjust style positions to account for prefix and spacer
-                styles = value
-                adjusted_styles: StyleList = []
+                # Get the output sequence to determine new region length
+                seq_key = 'seq_' + key.split('_')[1]
+                output_seq = result.get(seq_key, '')
                 
-                # First add preserved prefix styles (positions unchanged)
-                adjusted_styles.extend(preserved_prefix_styles)
-                
-                # Add styles from compute result (shifted by total_offset)
-                for spec, positions in styles:
-                    adjusted_positions = positions + total_offset
-                    adjusted_styles.append((spec, adjusted_positions))
-                
-                # Add preserved suffix styles, adjusting for any length change
-                # in the region content (relevant for ops that change length)
-                if preserved_suffix_styles:
-                    # Get the output sequence to determine new region length
-                    seq_key = 'seq_' + key.split('_')[1]
-                    output_seq = result.get(seq_key, '')
-                    new_region_len = len(output_seq)
-                    if self._spacer_str:
-                        new_region_len += 2 * len(self._spacer_str)
+                # Calculate prefix length for style reassembly
+                # For markers with remove_marker=False, region styles need prefix + opening tag
+                # For markers with remove_marker=True, region styles just need prefix
+                # For intervals, region styles just need prefix
+                # Suffix styles: for markers, use marker.end (where suffix starts in original)
+                #                 for intervals, use region_end (where suffix starts)
+                if isinstance(self._region, str):
+                    from .marker_ops.parsing import validate_single_marker, build_marker_tag
+                    marker_info = validate_single_marker(parent_seqs[0], self._region)
+                    clean_prefix_len = len(clean_prefix)
                     
-                    # Calculate length delta accounting for marker tag changes
-                    if isinstance(self._region, str):
-                        # Region is a marker - need to account for marker tag format changes
-                        from .marker_ops.parsing import validate_single_marker
-                        marker_info = validate_single_marker(parent_seqs[0], self._region)
-                        old_marker_span = marker_info.end - marker_info.start
-                        
-                        if self._remove_marker:
-                            # When removing marker: compare new content length vs full marker span
-                            length_delta = new_region_len - old_marker_span
-                        else:
-                            # When keeping marker: compare new marker span vs old marker span
-                            # Build the new marker to get its exact length
-                            spacer_content = output_seq
-                            if self._spacer_str:
-                                spacer_content = self._spacer_str + output_seq + self._spacer_str
-                            new_wrapped = build_marker_tag(self._region, spacer_content, strand=strand)
-                            length_delta = len(new_wrapped) - old_marker_span
+                    if self._remove_marker:
+                        # Region styles shifted by clean_prefix only
+                        region_prefix_len = clean_prefix_len
+                        # Suffix styles: suffix starts at marker.content_end in original
+                        suffix_start_pos = marker_info.content_end
                     else:
-                        old_region_len = len(region_content)
-                        length_delta = new_region_len - old_region_len
-                    
-                    for spec, positions in preserved_suffix_styles:
-                        adjusted_positions = positions + length_delta
-                        adjusted_styles.append((spec, adjusted_positions))
+                        # Region styles shifted by clean_prefix + opening tag
+                        test_tag = build_marker_tag(self._region, 'X', strand=strand)
+                        opening_tag_len = test_tag.index('>') + 1
+                        region_prefix_len = clean_prefix_len + opening_tag_len
+                        # Suffix styles: suffix starts at marker.end in original
+                        suffix_start_pos = marker_info.end
+                else:
+                    # Region is [start, stop] interval
+                    region_prefix_len = len(prefix)
+                    suffix_start_pos = region_end
                 
-                reassembled[key] = adjusted_styles
+                # Calculate old and new region lengths accounting for marker tag changes
+                if isinstance(self._region, str):
+                    if self._remove_marker:
+                        # When removing marker: compare new content length vs old content length
+                        old_region_len = marker_info.content_end - marker_info.content_start
+                        new_region_len = len(output_seq)
+                    else:
+                        # When keeping marker: compare new marker span vs old marker span
+                        old_region_len = marker_info.end - marker_info.start
+                        new_wrapped = build_marker_tag(self._region, output_seq, strand=strand)
+                        new_region_len = len(new_wrapped)
+                else:
+                    # Region is [start, stop] interval
+                    old_region_len = len(region_content)
+                    new_region_len = len(output_seq)
+                
+                # Reassemble styles manually to use different prefix lengths for region vs suffix
+                region_styles = value
+                result_styles: StyleList = []
+                
+                # Add prefix styles unchanged
+                result_styles.extend(prefix_styles)
+                
+                # Shift region styles by region_prefix_len
+                from .style import shift_style_positions
+                shifted_region = shift_style_positions(region_styles, region_prefix_len)
+                result_styles.extend(shifted_region)
+                
+                # Shift suffix styles: they start at suffix_start_pos in original,
+                # and need to move to suffix_start_pos + length_delta in new sequence
+                length_delta = new_region_len - old_region_len
+                suffix_offset = length_delta
+                shifted_suffix = shift_style_positions(suffix_styles, suffix_offset)
+                result_styles.extend(shifted_suffix)
+                
+                reassembled[key] = result_styles
             else:
                 # Keep design card keys as-is
                 reassembled[key] = value

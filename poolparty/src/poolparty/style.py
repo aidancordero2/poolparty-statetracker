@@ -165,6 +165,144 @@ def validate_style_positions(seq_len: int, styles: StyleList) -> None:
 
 
 @beartype
+def split_styles_by_region(
+    styles: StyleList,
+    region_start: int,
+    region_end: int,
+) -> tuple[StyleList, StyleList, StyleList]:
+    """Split styles into (prefix, region, suffix) based on position bounds.
+    
+    Positions in [0, region_start) go to prefix.
+    Positions in [region_start, region_end) go to region (shifted to 0-indexed).
+    Positions in [region_end, ...) go to suffix.
+    
+    Parameters
+    ----------
+    styles : StyleList
+        List of (spec, positions) tuples to split.
+    region_start : int
+        Start position of region (inclusive).
+    region_end : int
+        End position of region (exclusive).
+    
+    Returns
+    -------
+    tuple[StyleList, StyleList, StyleList]
+        (prefix_styles, region_styles, suffix_styles) where:
+        - prefix_styles: positions < region_start (unchanged)
+        - region_styles: positions in [region_start, region_end) shifted to 0-indexed
+        - suffix_styles: positions >= region_end (unchanged)
+    """
+    prefix_styles: StyleList = []
+    region_styles: StyleList = []
+    suffix_styles: StyleList = []
+    
+    for spec, positions in styles:
+        if len(positions) == 0:
+            continue
+        
+        # Split positions into three groups
+        prefix_mask = positions < region_start
+        region_mask = (positions >= region_start) & (positions < region_end)
+        suffix_mask = positions >= region_end
+        
+        if np.any(prefix_mask):
+            prefix_styles.append((spec, positions[prefix_mask]))
+        
+        if np.any(region_mask):
+            # Shift to region-relative coordinates (0-indexed)
+            adjusted_positions = positions[region_mask] - region_start
+            region_styles.append((spec, adjusted_positions))
+        
+        if np.any(suffix_mask):
+            suffix_styles.append((spec, positions[suffix_mask]))
+    
+    return prefix_styles, region_styles, suffix_styles
+
+
+@beartype
+def shift_style_positions(styles: StyleList, offset: int) -> StyleList:
+    """Shift all positions in styles by offset.
+    
+    Parameters
+    ----------
+    styles : StyleList
+        List of (spec, positions) tuples.
+    offset : int
+        Amount to shift positions (can be negative).
+    
+    Returns
+    -------
+    StyleList
+        New StyleList with all positions shifted by offset.
+    """
+    if not styles:
+        return []
+    
+    shifted: StyleList = []
+    for spec, positions in styles:
+        if len(positions) > 0:
+            shifted.append((spec, positions + offset))
+        else:
+            shifted.append((spec, positions))
+    
+    return shifted
+
+
+@beartype
+def reassemble_styles(
+    prefix_styles: StyleList,
+    region_styles: StyleList,
+    suffix_styles: StyleList,
+    prefix_len: int,
+    old_region_len: int,
+    new_region_len: int,
+) -> StyleList:
+    """Reassemble styles after region operation.
+    
+    - prefix_styles: unchanged
+    - region_styles: shifted by prefix_len
+    - suffix_styles: shifted by (prefix_len + new_region_len - old_region_len)
+    
+    Parameters
+    ----------
+    prefix_styles : StyleList
+        Styles for positions before the region (unchanged).
+    region_styles : StyleList
+        Styles from region operation (will be shifted by prefix_len).
+    suffix_styles : StyleList
+        Styles for positions after the region (will be shifted by length delta).
+    prefix_len : int
+        Length of prefix before region.
+    old_region_len : int
+        Original length of region content.
+    new_region_len : int
+        New length of region content after operation.
+    
+    Returns
+    -------
+    StyleList
+        Reassembled styles with correct positions.
+    """
+    result: StyleList = []
+    
+    # Add prefix styles unchanged
+    result.extend(prefix_styles)
+    
+    # Shift region styles by prefix length
+    shifted_region = shift_style_positions(region_styles, prefix_len)
+    result.extend(shifted_region)
+    
+    # Shift suffix styles by prefix_len + length_delta
+    length_delta = new_region_len - old_region_len
+    suffix_offset = prefix_len + length_delta
+    shifted_suffix = shift_style_positions(suffix_styles, suffix_offset)
+    result.extend(shifted_suffix)
+    
+    return result
+
+
+@beartype
 def apply_inline_styles(seq: str, styles: StyleList, validate: bool = True) -> str:
     """Apply per-sequence inline styles to a sequence.
     

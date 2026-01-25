@@ -186,36 +186,6 @@ class TestInsertionScanModes:
         for seq in df['seq']:
             assert 'TTT' in seq
             assert len(seq) == 13
-
-
-class TestInsertionScanSpacerStr:
-    """Test spacer_str parameter."""
-    
-    def test_spacer_str(self):
-        """Test custom spacer string."""
-        with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            ins = pp.from_seqs(['TTT'])
-            result = insertion_scan(bg, ins, spacer_str='.').named('result')
-        
-        df = result.generate_library(num_seqs=3)
-        for seq in df['seq']:
-            # Should have dots around the insert
-            assert '.TTT.' in seq
-    
-    def test_empty_spacer_default(self):
-        """Test that default spacer is empty."""
-        with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAA'])
-            ins = pp.from_seqs(['TTT'])
-            result = insertion_scan(bg, ins).named('result')
-        
-        df = result.generate_library(num_seqs=3)
-        for seq in df['seq']:
-            # Should NOT have dots
-            assert '.' not in seq
-
-
 class TestInsertionScanNaming:
     """Test naming parameters."""
     

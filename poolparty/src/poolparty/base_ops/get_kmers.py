@@ -14,7 +14,6 @@ def get_kmers(
     pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
-    spacer_str: str = '',
     style: Optional[str] = None,
     case: Literal['lower', 'upper'] = 'upper',
     seq_name_prefix: Optional[str] = None,
@@ -71,7 +70,7 @@ def get_kmers(
     from ..fixed_ops.from_seq import from_seq
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
     op = GetKmersOp(length, pool=pool_obj, region=region,
-                    remove_marker=remove_marker, spacer_str=spacer_str,
+                    remove_marker=remove_marker,
                     style=style,
                     case=case, seq_name_prefix=seq_name_prefix, mode=mode,
                     num_states=num_states,
@@ -168,7 +167,6 @@ class GetKmersOp(Operation):
             seq_name_prefix=seq_name_prefix,
             region=region,
             remove_marker=remove_marker,
-            spacer_str=spacer_str,
         )
     
     def _value_to_kmer(self, value: int) -> str:
@@ -228,7 +226,6 @@ class GetKmersOp(Operation):
             'pool': self.parent_pools[0] if self.parent_pools else None,
             'region': self._region,
             'remove_marker': self._remove_marker,
-            'spacer_str': self._spacer_str,
             'style': self._style,
             'case': self.case,
             'seq_name_prefix': self.name_prefix,

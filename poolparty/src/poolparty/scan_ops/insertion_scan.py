@@ -21,7 +21,6 @@ def insertion_scan(
     seq_name_site_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
-    spacer_str: str = '',
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -130,12 +129,11 @@ def insertion_scan(
         site_state = original_ins_pool_state
         num_sites = original_ins_pool_num_states
 
-    # 2. Replace marker with content (spacer_str is handled by replace_marker_content)
+    # 2. Replace marker with content
     return replace_marker_content(
         marked,
         ins_pool,
         marker_name,
-        spacer_str=spacer_str,
         name=name,
         op_name=op_name,
         iter_order=iter_order,
@@ -160,7 +158,6 @@ def replacement_scan(
     positions: PositionsType = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
-    spacer_str: str = '',
     style_insertion: Optional[str] = None,
     style_background: Optional[str] = None,
     seq_name_prefix: Optional[str] = None,
@@ -192,7 +189,6 @@ def replacement_scan(
         seq_name_site_prefix=seq_name_site_prefix,
         mode=mode,
         num_states=num_states,
-        spacer_str=spacer_str,
         name=name,
         op_name=op_name,
         iter_order=iter_order,

@@ -12,7 +12,6 @@ def deletion_multiscan(
     deletion_length: Integral,
     num_deletions: Integral,
     deletion_marker: Optional[str] = '-',
-    spacer_str: str = '',
     positions: PositionsType = None,
     seq_name_prefix: Optional[str] = None,
     mode: str = 'random',
@@ -129,12 +128,9 @@ def deletion_multiscan(
         # Fill gap with del_char * deletion_length
         marker_str = del_char * marker_length
         content = from_seq(marker_str)
-        # Apply spacer_str via replace_marker_content
-        effective_spacer = spacer_str
     else:
-        # Simply remove the segment - use spacer_str as the content (once)
-        content = from_seq(spacer_str)
-        effective_spacer = ''  # Don't add additional spacers
+        # Simply remove the segment - use empty content
+        content = from_seq('')
 
     # 3. Replace each marker's content with deletion content
     result = marked
@@ -143,7 +139,6 @@ def deletion_multiscan(
             result,
             content,
             marker_name,
-            spacer_str=effective_spacer,
             name=None,  # Only set name on final result
             op_name=op_name,
             iter_order=None,  # Only set iter_order on final result

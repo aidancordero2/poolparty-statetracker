@@ -12,7 +12,6 @@ def insertion_multiscan(
     num_insertions: Integral,
     insertion_pools: Union[Pool, Sequence[Pool]],
     positions: PositionsType = None,
-    spacer_str: str = '',
     insertion_mode: Literal['ordered', 'unordered'] = 'ordered',
     seq_name_prefix: Optional[str] = None,
     mode: str = 'random',
@@ -134,7 +133,6 @@ def insertion_multiscan(
     )
 
     # 2. Build insertion content for each pool
-    # spacer_str is handled by replace_marker_content
     result = marked
     for marker_name, ins_pool in zip(markers, pools_list):
         content = ins_pool
@@ -144,7 +142,6 @@ def insertion_multiscan(
             result,
             content,
             marker_name,
-            spacer_str=spacer_str,
             name=None,  # Only set name on final result
             op_name=op_name,
             iter_order=None,  # Only set iter_order on final result

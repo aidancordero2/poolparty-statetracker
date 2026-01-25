@@ -151,39 +151,6 @@ class TestDeletionMultiscanMarkerOptions:
             # Should only have A's, no markers
             assert set(seq) == {'A'}
             assert len(seq) == 12  # 18 - (3 * 2)
-
-
-class TestDeletionMultiscanSpacerStr:
-    """Test spacer_str parameter."""
-
-    def test_spacer_str_with_marker(self):
-        """Test custom spacer string with marker."""
-        with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])  # 18 chars
-            result = deletion_multiscan(
-                bg, deletion_length=3, num_deletions=2, spacer_str='.'
-            ).named('result')
-
-        df = result.generate_library(num_seqs=3, seed=42)
-        for seq in df['seq']:
-            # Should have dots around each deletion marker
-            assert '.---.' in seq
-
-    def test_spacer_str_without_marker(self):
-        """Test custom spacer string without marker."""
-        with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])  # 18 chars
-            result = deletion_multiscan(
-                bg, deletion_length=3, num_deletions=2,
-                deletion_marker=None, spacer_str='.'
-            ).named('result')
-
-        df = result.generate_library(num_seqs=3, seed=42)
-        for seq in df['seq']:
-            # Should have two dots where deletions occurred
-            assert seq.count('.') == 2
-
-
 class TestDeletionMultiscanNaming:
     """Test naming parameters."""
 

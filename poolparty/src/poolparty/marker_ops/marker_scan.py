@@ -18,7 +18,6 @@ def marker_scan(
     positions: PositionsType = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
-    spacer_str: str = '',
     strand: str = '+',
     marker_length: int = 0,
     seq_name_prefix: Optional[str] = None,
@@ -81,7 +80,6 @@ def marker_scan(
         positions=positions,
         region=region,
         remove_marker=remove_marker,
-        spacer_str=spacer_str,
         strand=strand,
         marker_length=int(marker_length),
         seq_name_prefix=seq_name_prefix,
@@ -199,7 +197,6 @@ class MarkerScanOp(Operation):
             seq_name_prefix=seq_name_prefix,
             region=region,
             remove_marker=remove_marker,
-            spacer_str=spacer_str,
         )
     
     def _build_caches(self) -> int:
@@ -420,7 +417,6 @@ class MarkerScanOp(Operation):
             'positions': self._positions,
             'region': self._region,
             'remove_marker': self._remove_marker,
-            'spacer_str': self._spacer_str,
             'strand': self._strand,
             'marker_length': self._marker_length,
             'seq_name_prefix': self.name_prefix,

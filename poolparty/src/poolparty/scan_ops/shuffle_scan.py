@@ -14,7 +14,6 @@ def shuffle_scan(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     shuffles_per_position: Integral = 1,
-    spacer_str: str = '',
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
@@ -93,12 +92,10 @@ def shuffle_scan(
     )
 
     # 2. Shuffle the marked region directly using shuffle_seq with region='_shuf'
-    # spacer_str is handled by Operation base class in wrapped_compute_seq_from_card
     return shuffle_seq(
         marked,
         region=marker_name,
         remove_marker=True,  # Always remove the internal _shuf marker
-        spacer_str=spacer_str,
         mode='random',
         num_states=shuffles_per_position,
         name=name,

@@ -12,7 +12,6 @@ def fixed_operation(
     seq_length_from_pool_lengths_fn: Callable[[Sequence[Union[int, None]]], Union[int, None]],
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
-    spacer_str: str = '',
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -60,7 +59,6 @@ def fixed_operation(
         seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         region=region,
         remove_marker=remove_marker,
-        spacer_str=spacer_str,
         name=op_name,
         iter_order=op_iter_order,
         _factory_name=_factory_name,
@@ -126,7 +124,6 @@ class FixedOp(Operation):
             iter_order=iter_order,
             region=region,
             remove_marker=remove_marker,
-            spacer_str=spacer_str,
         )
 
     def compute(
@@ -157,7 +154,6 @@ class FixedOp(Operation):
             'seq_length_from_pool_lengths_fn': self._seq_length_from_pool_lengths_fn,
             'region': self._region,
             'remove_marker': self._remove_marker,
-            'spacer_str': self._spacer_str,
             'name': None,
             'iter_order': self.iter_order,
             '_pass_through_styles': self._pass_through_styles,

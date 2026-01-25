@@ -12,7 +12,6 @@ def replace_marker_content(
     bg_pool,
     content_pool,
     marker_name: str,
-    spacer_str: str = '',
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -87,7 +86,6 @@ def replace_marker_content(
         bg_pool=bg_pool,
         content_pool=content_pool,
         marker_name=marker_name,
-        spacer_str=spacer_str,
         name=op_name,
         iter_order=op_iter_order,
         _factory_name=_factory_name,
@@ -120,7 +118,6 @@ class ReplaceMarkerContentOp(Operation):
         bg_pool,
         content_pool,
         marker_name: str,
-        spacer_str: str = '',
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
@@ -164,12 +161,7 @@ class ReplaceMarkerContentOp(Operation):
             seq_length=None,  # Variable length
             name=name,
             iter_order=iter_order,
-            spacer_str=spacer_str,
         )
-        
-        # Store spacer_str for our manual handling in compute_seq_from_card
-        # (we handle it manually since we don't use the base class's region-based handling)
-        self._spacer_str = spacer_str
 
     
     def compute(
@@ -190,10 +182,6 @@ class ReplaceMarkerContentOp(Operation):
         # If strand='-', reverse complement the content before insertion
         if marker.strand == '-':
             content_seq = dna.reverse_complement(content_seq)
-        
-        # Apply spacer_str if specified
-        if self._spacer_str:
-            content_seq = self._spacer_str + content_seq + self._spacer_str
         
         # Build result: prefix + content + suffix
         prefix = bg_seq[:marker.start]
@@ -226,8 +214,7 @@ class ReplaceMarkerContentOp(Operation):
         # Handle content_pool styles (second parent) - inserted content retains its styling
         if parent_styles and len(parent_styles) > 1:
             content_styles = parent_styles[1]
-            original_content_len = len(parent_seqs[1])  # Length before spacers
-            spacer_offset = len(self._spacer_str) if self._spacer_str else 0
+            original_content_len = len(parent_seqs[1])
             
             for spec, positions in content_styles:
                 adjusted_positions = []
@@ -235,16 +222,15 @@ class ReplaceMarkerContentOp(Operation):
                     if marker.strand == '-':
                         # Flip position for reverse complement
                         pos = original_content_len - 1 - pos
-                    # Shift by prefix length + leading spacer
-                    new_pos = marker.start + spacer_offset + pos
+                    # Shift by prefix length
+                    new_pos = marker.start + pos
                     adjusted_positions.append(new_pos)
                 if adjusted_positions:
                     output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
         
         # Apply style_insertion to all inserted content positions
-        original_content_len = len(parent_seqs[1])  # Length before spacers
-        spacer_offset = len(self._spacer_str) if self._spacer_str else 0
-        ins_start = marker.start + spacer_offset
+        original_content_len = len(parent_seqs[1])
+        ins_start = marker.start
         ins_end = ins_start + original_content_len
         
         if self._style_insertion is not None:
@@ -302,7 +288,6 @@ class ReplaceMarkerContentOp(Operation):
             'bg_pool': self.parent_pools[0],
             'content_pool': self.parent_pools[1],
             'marker_name': self.marker_name,
-            'spacer_str': self._spacer_str,
             'name': None,
             'iter_order': self.iter_order,
             '_seq_name_prefix': self._seq_name_prefix,
