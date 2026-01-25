@@ -47,26 +47,26 @@ class TestInlineStylesBasic:
 
 
 class TestMutagenizeWithStyleMutations:
-    """Test mutagenize with style_mutations parameter."""
+    """Test mutagenize with style parameter."""
     
-    def test_style_mutations_none_by_default(self):
-        """Default style_mutations is None."""
+    def test_style_none_by_default(self):
+        """Default style is None."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1)
-            assert pool.operation._style_mutations is None
+            assert pool.operation._style is None
     
-    def test_style_mutations_stored(self):
-        """style_mutations parameter is stored on operation."""
+    def test_style_stored(self):
+        """style parameter is stored on operation."""
         with pp.Party() as party:
-            pool = mutagenize('ACGT', num_mutations=1, style_mutations='red bold')
-            assert pool.operation._style_mutations == 'red bold'
+            pool = mutagenize('ACGT', num_mutations=1, style='red bold')
+            assert pool.operation._style == 'red bold'
     
-    def test_style_mutations_in_copy_params(self):
-        """style_mutations is included in _get_copy_params."""
+    def test_style_in_copy_params(self):
+        """style is included in _get_copy_params."""
         with pp.Party() as party:
-            pool = mutagenize('ACGT', num_mutations=1, style_mutations='blue')
+            pool = mutagenize('ACGT', num_mutations=1, style='blue')
             params = pool.operation._get_copy_params()
-        assert params['style_mutations'] == 'blue'
+        assert params['style'] == 'blue'
     
     def test_compute_returns_style(self):
         """compute() returns style key."""
@@ -78,10 +78,10 @@ class TestMutagenizeWithStyleMutations:
         assert 'style' in result
         assert isinstance(result['style'], list)
     
-    def test_compute_with_style_mutations_includes_positions(self):
-        """compute() with style_mutations adds mutation positions to style."""
+    def test_compute_with_style_includes_positions(self):
+        """compute() with style adds mutation positions to style."""
         with pp.Party() as party:
-            pool = mutagenize('ACGT', num_mutations=1, style_mutations='red', mode='sequential')
+            pool = mutagenize('ACGT', num_mutations=1, style='red', mode='sequential')
         
         pool.operation.state._value = 0
         result = pool.operation.compute(['ACGT'])
@@ -92,8 +92,8 @@ class TestMutagenizeWithStyleMutations:
         assert spec == 'red'
         assert len(positions) == 1  # 1 mutation
     
-    def test_compute_without_style_mutations_empty(self):
-        """compute() without style_mutations returns empty style."""
+    def test_compute_without_style_empty(self):
+        """compute() without style returns empty style."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential')
         
@@ -109,7 +109,7 @@ class TestInlineStylesGeneration:
     def test_generate_library_includes_inline_styles(self):
         """generate_library includes _inline_styles in rows."""
         with pp.Party() as party:
-            pool = mutagenize('ACGT', num_mutations=1, style_mutations='red', mode='sequential').named('mutant')
+            pool = mutagenize('ACGT', num_mutations=1, style='red', mode='sequential').named('mutant')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
         assert '_inline_styles' in df.columns
@@ -119,8 +119,8 @@ class TestInlineStylesGeneration:
         assert len(styles) == 1
         assert styles[0][0] == 'red'
     
-    def test_generate_library_without_style_mutations(self):
-        """generate_library without style_mutations has empty _inline_styles."""
+    def test_generate_library_without_style(self):
+        """generate_library without style has empty _inline_styles."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
         
@@ -137,7 +137,7 @@ class TestInlineStylesChain:
     def test_styles_pass_through_state_ops(self):
         """Styles pass through state operations unchanged."""
         with pp.Party() as party:
-            pool = mutagenize('ACGT', num_mutations=1, style_mutations='red', mode='sequential')
+            pool = mutagenize('ACGT', num_mutations=1, style='red', mode='sequential')
             repeated = pool.repeat_states(2).named('repeated')
         
         df = repeated.generate_library(num_seqs=1, report_design_cards=True)
@@ -150,8 +150,8 @@ class TestInlineStylesChain:
     def test_styles_from_stacked_pools(self):
         """Stack operation passes through styles from active parent."""
         with pp.Party() as party:
-            pool1 = mutagenize('ACGT', num_mutations=1, style_mutations='red', mode='sequential')
-            pool2 = mutagenize('TTTT', num_mutations=1, style_mutations='blue', mode='sequential')
+            pool1 = mutagenize('ACGT', num_mutations=1, style='red', mode='sequential')
+            pool2 = mutagenize('TTTT', num_mutations=1, style='blue', mode='sequential')
             stacked = pp.stack([pool1, pool2]).named('stacked')
         
         df = stacked.generate_library(num_seqs=2, report_design_cards=True)
@@ -171,7 +171,7 @@ class TestInlineStylesPositionAdjustment:
             # Create a sequence with a marker
             bg = pp.from_seq('AA<test>CCCC</test>GG').named('bg')
             # Mutagenize within the region
-            mutated = bg.mutagenize(region='test', num_mutations=1, style_mutations='red', mode='sequential').named('mutated')
+            mutated = bg.mutagenize(region='test', num_mutations=1, style='red', mode='sequential').named('mutated')
         
         df = mutated.generate_library(num_seqs=1, report_design_cards=True)
         
@@ -249,7 +249,7 @@ class TestPositionAdjustmentWithMarkers:
             bg = pp.from_seq('AA<test>CCCC</test>GG').named('bg')
             # Mutagenize first position of region, with remove_marker=True
             mutated = bg.mutagenize(
-                region='test', num_mutations=1, style_mutations='red',
+                region='test', num_mutations=1, style='red',
                 mode='sequential'
             ).named('mutated')
         
@@ -276,7 +276,7 @@ class TestPositionAdjustmentWithMarkers:
             # 'AA' prefix, marker with content 'CCCC', 'GG' suffix
             bg = pp.from_seq('AA<test>CCCC</test>GG').named('bg')
             mutated = bg.mutagenize(
-                region='test', num_mutations=1, style_mutations='red',
+                region='test', num_mutations=1, style='red',
                 mode='sequential'
             ).named('mutated')
         
@@ -303,7 +303,7 @@ class TestPositionAdjustmentWithMarkers:
             # Marker with minus strand
             bg = pp.from_seq('AA<test strand="-">CCCC</test>GG').named('bg')
             mutated = bg.mutagenize(
-                region='test', num_mutations=1, style_mutations='red',
+                region='test', num_mutations=1, style='red',
                 mode='sequential'
             ).named('mutated')
         
@@ -329,7 +329,7 @@ class TestPositionAdjustmentWithMarkers:
             bg = pp.from_seq('AACCCCGG').named('bg')
             # Use the mutagenize function directly (not method) for interval region
             mutated = mutagenize(
-                bg, region=[2, 6], num_mutations=1, style_mutations='red',
+                bg, region=[2, 6], num_mutations=1, style='red',
                 mode='sequential'
             ).named('mutated')
         
@@ -560,12 +560,12 @@ class TestDeletionScanStylePropagation:
             styled_gaps = [p for p in positions if p in gap_positions]
             assert len(styled_gaps) == 0, f"Gap chars should not have {spec} style, but found at positions {styled_gaps}"
     
-    def test_style_deletion_parameter(self):
-        """style_deletion parameter applies style to gap characters."""
+    def test_style_parameter(self):
+        """style parameter applies style to gap characters."""
         with pp.Party() as party:
             bg = pp.from_seq('AAA<test>CCCC</test>TTT').named('bg')
             deleted = bg.deletion_scan(region='test', deletion_length=2, mode='sequential', 
-                                        style_deletion='cyan').named('deleted')
+                                        style='cyan').named('deleted')
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
@@ -583,15 +583,15 @@ class TestDeletionScanStylePropagation:
         
         assert gap_positions == cyan_positions, f"Gap positions {gap_positions} should match cyan positions {cyan_positions}"
     
-    def test_style_deletion_with_region_styles(self):
-        """style_deletion works correctly with pre-existing region styles."""
+    def test_style_with_region_styles(self):
+        """style works correctly with pre-existing region styles."""
         with pp.Party() as party:
-            # Style the region, then delete with style_deletion
+            # Style the region, then delete with style
             bg = pp.from_seq('AAA<test>CCCC</test>TTT')\
                 .stylize('test', style='red')\
                 .named('bg')
             deleted = bg.deletion_scan(region='test', deletion_length=2, mode='sequential',
-                                        style_deletion='cyan').named('deleted')
+                                        style='cyan').named('deleted')
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
@@ -610,13 +610,13 @@ class TestDeletionScanStylePropagation:
                 styled_gaps = [p for p in positions if p in gap_positions]
                 assert len(styled_gaps) == len(gap_positions), "Cyan style should apply to all gaps"
     
-    def test_style_deletion_ignored_when_no_marker(self):
-        """style_deletion is ignored when deletion_marker=None."""
+    def test_style_ignored_when_no_marker(self):
+        """style is ignored when deletion_marker=None."""
         with pp.Party() as party:
             bg = pp.from_seq('AAA<test>CCCC</test>TTT').named('bg')
             deleted = bg.deletion_scan(region='test', deletion_length=2, 
                                         deletion_marker=None,
-                                        style_deletion='cyan',
+                                        style='cyan',
                                         mode='sequential').named('deleted')
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
@@ -741,43 +741,43 @@ class TestInsertionScanStylePropagation:
 
 
 class TestInsertionScanStyleInsertion:
-    """Test insertion_scan with style_insertion parameter."""
+    """Test insertion_scan with style parameter."""
     
-    def test_style_insertion_none_by_default(self):
-        """Default style_insertion is None."""
+    def test_style_none_by_default(self):
+        """Default style is None."""
         with pp.Party() as party:
             bg = pp.from_seq('AAAAAAAAAA')
             ins = pp.from_seq('TTT')
             pool = pp.insertion_scan(bg, ins, positions=[0], mode='sequential')
             # The final operation is replace_marker_content
-            assert pool.operation._style_insertion is None
+            assert pool.operation._style is None
     
-    def test_style_insertion_stored(self):
-        """style_insertion parameter is stored on operation."""
+    def test_style_stored(self):
+        """style parameter is stored on operation."""
         with pp.Party() as party:
             bg = pp.from_seq('AAAAAAAAAA')
             ins = pp.from_seq('TTT')
             pool = pp.insertion_scan(bg, ins, positions=[0], mode='sequential', 
-                                      style_insertion='red bold')
-            assert pool.operation._style_insertion == 'red bold'
+                                      style='red bold')
+            assert pool.operation._style == 'red bold'
     
-    def test_style_insertion_in_copy_params(self):
-        """style_insertion is included in _get_copy_params."""
+    def test_style_in_copy_params(self):
+        """style is included in _get_copy_params."""
         with pp.Party() as party:
             bg = pp.from_seq('AAAAAAAAAA')
             ins = pp.from_seq('TTT')
             pool = pp.insertion_scan(bg, ins, positions=[0], mode='sequential',
-                                      style_insertion='blue')
+                                      style='blue')
             params = pool.operation._get_copy_params()
-        assert params['_style_insertion'] == 'blue'
+        assert params['_style'] == 'blue'
     
-    def test_style_insertion_applies_to_inserted_positions(self):
-        """style_insertion applies style to all inserted positions."""
+    def test_style_applies_to_inserted_positions(self):
+        """style applies style to all inserted positions."""
         with pp.Party() as party:
             bg = pp.from_seq('AAAAAAAAAA')
             ins = pp.from_seq('TTT')
             pool = pp.insertion_scan(bg, ins, positions=[5], mode='sequential',
-                                      style_insertion='red').named('result')
+                                      style='red').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
         styles = df['_inline_styles'].iloc[0]
@@ -794,13 +794,13 @@ class TestInsertionScanStyleInsertion:
         # Insert at position 5 should style positions 5, 6, 7
         assert list(positions) == [5, 6, 7]
     
-    def test_style_insertion_at_start(self):
-        """style_insertion works when inserting at position 0."""
+    def test_style_at_start(self):
+        """style works when inserting at position 0."""
         with pp.Party() as party:
             bg = pp.from_seq('AAAAAAAAAA')
             ins = pp.from_seq('GGG')
             pool = pp.insertion_scan(bg, ins, positions=[0], mode='sequential',
-                                      style_insertion='cyan').named('result')
+                                      style='cyan').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
         styles = df['_inline_styles'].iloc[0]
@@ -811,13 +811,13 @@ class TestInsertionScanStyleInsertion:
         _, positions = cyan_styles[0]
         assert list(positions) == [0, 1, 2]
     
-    def test_style_insertion_at_end(self):
-        """style_insertion works when inserting at the end."""
+    def test_style_at_end(self):
+        """style works when inserting at the end."""
         with pp.Party() as party:
             bg = pp.from_seq('AAAAAAAAAA')  # 10 chars
             ins = pp.from_seq('GGG')
             pool = pp.insertion_scan(bg, ins, positions=[10], mode='sequential',
-                                      style_insertion='magenta').named('result')
+                                      style='magenta').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
         styles = df['_inline_styles'].iloc[0]
@@ -828,13 +828,13 @@ class TestInsertionScanStyleInsertion:
         _, positions = magenta_styles[0]
         assert list(positions) == [10, 11, 12]
     
-    def test_style_insertion_with_replacement_scan(self):
-        """style_insertion works with replacement_scan."""
+    def test_style_with_replacement_scan(self):
+        """style works with replacement_scan."""
         with pp.Party() as party:
             bg = pp.from_seq('AAAAAAAAAA')  # 10 chars
             ins = pp.from_seq('GGG')
             pool = pp.replacement_scan(bg, ins, positions=[5], mode='sequential',
-                                        style_insertion='yellow').named('result')
+                                        style='yellow').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
         styles = df['_inline_styles'].iloc[0]
@@ -857,8 +857,8 @@ class TestInsertionScanStyleInsertion:
         _, positions = yellow_styles[0]
         assert len(positions) == 3  # GGG positions
     
-    def test_style_insertion_without_style_returns_empty(self):
-        """insertion_scan without style_insertion has no insertion styles."""
+    def test_style_without_style_returns_empty(self):
+        """insertion_scan without style has no insertion styles."""
         with pp.Party() as party:
             bg = pp.from_seq('AAAAAAAAAA')
             ins = pp.from_seq('TTT')
@@ -867,22 +867,22 @@ class TestInsertionScanStyleInsertion:
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
         styles = df['_inline_styles'].iloc[0]
         
-        # Should be empty (no style_insertion specified)
+        # Should be empty (no style specified)
         assert styles == []
     
-    def test_style_insertion_combines_with_insert_pool_styles(self):
-        """style_insertion combines with styles already on insert pool."""
+    def test_style_combines_with_insert_pool_styles(self):
+        """style combines with styles already on insert pool."""
         with pp.Party() as party:
             bg = pp.from_seq('AAAAAAAAAA')
             # Insert pool already has styling
             ins = pp.from_seq('TTT').stylize(style='blue')
             pool = pp.insertion_scan(bg, ins, positions=[5], mode='sequential',
-                                      style_insertion='red').named('result')
+                                      style='red').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
         styles = df['_inline_styles'].iloc[0]
         
-        # Should have both blue (from insert pool) and red (from style_insertion)
+        # Should have both blue (from insert pool) and red (from style)
         style_specs = [spec for spec, _ in styles]
         assert 'blue' in style_specs
         assert 'red' in style_specs
@@ -900,7 +900,7 @@ class TestInsertKmersStylePropagation:
                 .stylize(region=[0, 4], style='red')\
                 .named('bg')
             # Insert kmers at the marker
-            result = bg.insert_kmers('bc', length=3, mode='sequential').named('result')
+            result = bg.insert_kmers(region='bc', length=3, mode='sequential').named('result')
         
         df = result.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
@@ -918,7 +918,7 @@ class TestInsertKmersStylePropagation:
             bg = pp.from_seq('AAAA<bc/>TTTT')\
                 .stylize(region=[0, 4], style='blue')\
                 .named('bg')
-            result = bg.insert_kmers('bc', length=3, mode='sequential').named('result')
+            result = bg.insert_kmers(region='bc', length=3, mode='sequential').named('result')
         
         df = result.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
@@ -944,7 +944,7 @@ class TestInsertKmersStylePropagation:
             bg = pp.from_seq('AAAA<bc/>TTTT')\
                 .stylize(style='red')\
                 .named('bg')
-            result = bg.insert_kmers('bc', length=3, mode='sequential').named('result')
+            result = bg.insert_kmers(region='bc', length=3, mode='sequential').named('result')
         
         df = result.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
@@ -1024,7 +1024,7 @@ class TestCompositeOperationsStyleChain:
         """Styles propagate through mutagenize and stack operations."""
         with pp.Party() as party:
             bg = pp.from_seq('AA<cre>CCCCGGGG</cre>TT').stylize('cre', style='red').named('bg')
-            mutated = bg.mutagenize(region='cre', num_mutations=1, style_mutations='yellow', 
+            mutated = bg.mutagenize(region='cre', num_mutations=1, style='yellow', 
                                     mode='sequential').named('mutated')
             stacked = pp.stack([mutated]).named('stacked')
         
@@ -1040,7 +1040,7 @@ class TestCompositeOperationsStyleChain:
         """Styles flow through a full chain: stylize -> mutagenize -> repeat -> stack."""
         with pp.Party() as party:
             bg = pp.from_seq('ACGTACGT').stylize(style='cyan').named('bg')
-            mutated = bg.mutagenize(num_mutations=1, style_mutations='bold', 
+            mutated = bg.mutagenize(num_mutations=1, style='bold', 
                                     mode='sequential').named('mutated')
             repeated = mutated.repeat_states(2).named('repeated')
             pool2 = pp.from_seq('TTTTTTTT').stylize(style='red').named('pool2')
@@ -1130,14 +1130,14 @@ class TestGetKmersStyle:
 
 
 class TestInsertKmersStyleParams:
-    """Test style_kmers and style_background on insert_kmers."""
+    """Test style parameter on insert_kmers and chained stylize."""
     
     def test_style_kmers_applies_to_kmer(self):
-        """style_kmers applies style to inserted kmer."""
+        """style parameter applies style to inserted kmer."""
         with pp.Party() as party:
             bg = pp.from_seq('AA<kmer/>TT')
-            pool = bg.insert_kmers('kmer', length=2, mode='sequential',
-                                    style_kmers='red').named('result')
+            pool = bg.insert_kmers(region='kmer', length=2, mode='sequential',
+                                    style='red').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
         styles = df['_inline_styles'].iloc[0]
@@ -1148,11 +1148,10 @@ class TestInsertKmersStyleParams:
         assert len(positions) == 2  # kmer length
     
     def test_style_background_applies_to_non_kmer(self):
-        """style_background applies to non-kmer positions."""
+        """Chained stylize applies to non-kmer positions."""
         with pp.Party() as party:
             bg = pp.from_seq('AA<kmer/>TT')
-            pool = bg.insert_kmers('kmer', length=2, mode='sequential',
-                                    style_background='blue').named('result')
+            pool = bg.stylize(style='blue').insert_kmers(region='kmer', length=2, mode='sequential').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
         styles = df['_inline_styles'].iloc[0]
@@ -1170,11 +1169,11 @@ class TestInsertKmersStyleParams:
         assert 3 not in blue_positions  # kmer position
     
     def test_style_kmers_and_style_background_combined(self):
-        """style_kmers and style_background can be combined."""
+        """style parameter and chained stylize can be combined."""
         with pp.Party() as party:
             bg = pp.from_seq('AA<kmer/>TT')
-            pool = bg.insert_kmers('kmer', length=2, mode='sequential',
-                                    style_kmers='red', style_background='blue').named('result')
+            pool = bg.stylize(style='blue').insert_kmers(region='kmer', length=2, mode='sequential',
+                                    style='red').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
         styles = df['_inline_styles'].iloc[0]

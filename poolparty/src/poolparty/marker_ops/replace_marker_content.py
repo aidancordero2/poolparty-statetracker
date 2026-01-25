@@ -21,7 +21,7 @@ def replace_marker_content(
     _pos_state=None,  # State object for position naming
     _site_state=None,  # State object for site naming
     _num_sites: Optional[int] = None,
-    _style_insertion: Optional[str] = None,
+    _style: Optional[str] = None,
 ):
     """
     Replace a marker region with content from another Pool.
@@ -84,7 +84,7 @@ def replace_marker_content(
         _pos_state=_pos_state,
         _site_state=_site_state,
         _num_sites=_num_sites,
-        _style_insertion=_style_insertion,
+        _style=_style,
     )
     result_pool = Pool(operation=op)
     
@@ -115,7 +115,7 @@ class ReplaceMarkerContentOp(Operation):
         _pos_state=None,  # State object for position naming
         _site_state=None,  # State object for site naming
         _num_sites: Optional[int] = None,
-        _style_insertion: Optional[str] = None,
+        _style: Optional[str] = None,
     ) -> None:
         self.marker_name = marker_name
         
@@ -131,7 +131,7 @@ class ReplaceMarkerContentOp(Operation):
         self._site_state = _site_state
         self._num_sites = _num_sites
         self._insertion_naming = any([_seq_name_prefix, _seq_name_pos_prefix, _seq_name_site_prefix])
-        self._style_insertion = _style_insertion
+        self._style = _style
         
         # The operation itself has num_values=1 because it doesn't add its own states.
         # The total number of output states comes from the product of parent pool counters.
@@ -211,14 +211,14 @@ class ReplaceMarkerContentOp(Operation):
                 if adjusted_positions:
                     output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
         
-        # Apply style_insertion to all inserted content positions
+        # Apply style to all inserted content positions
         original_content_len = len(parent_seqs[1])
         ins_start = marker.start
         ins_end = ins_start + original_content_len
         
-        if self._style_insertion is not None:
+        if self._style is not None:
             ins_positions = np.arange(ins_start, ins_end, dtype=np.int64)
-            output_styles.append((self._style_insertion, ins_positions))
+            output_styles.append((self._style, ins_positions))
         
         return {'seq': result_seq, 'style': output_styles}
     
@@ -261,5 +261,5 @@ class ReplaceMarkerContentOp(Operation):
             '_pos_state': self._pos_state,
             '_site_state': self._site_state,
             '_num_sites': self._num_sites,
-            '_style_insertion': self._style_insertion,
+            '_style': self._style,
         }

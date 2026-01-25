@@ -16,7 +16,7 @@ def mutagenize(
     num_mutations: Optional[Integral] = None,
     mutation_rate: Optional[Real] = None,
     allowed_chars: Optional[str] = None,
-    style_mutations: Optional[str] = None,
+    style: Optional[str] = None,
     prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
@@ -41,7 +41,7 @@ def mutagenize(
         IUPAC string of same length as sequence, specifying allowed bases at each position.
         Each character is an IUPAC code (A, C, G, T, R, Y, S, W, K, M, B, D, H, V, N).
         Positions where only the wild-type is allowed are treated as non-mutable.
-    style_mutations : Optional[str], default=None
+    style : Optional[str], default=None
         Style to apply to mutated positions.
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
@@ -66,7 +66,7 @@ def mutagenize(
         mutation_rate=mutation_rate,
         allowed_chars=allowed_chars,
         region=region,
-        style_mutations=style_mutations,
+        style=style,
         prefix=prefix,
         mode=mode,
         num_states=num_states,
@@ -98,7 +98,7 @@ class MutagenizeOp(Operation):
         mutation_rate: Optional[Real] = None,
         allowed_chars: Optional[str] = None,
         region: RegionType = None,
-        style_mutations: Optional[str] = None,
+        style: Optional[str] = None,
         prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
@@ -138,7 +138,7 @@ class MutagenizeOp(Operation):
         self.num_mutations = num_mutations
         self.mutation_rate = mutation_rate
         self.allowed_chars = allowed_chars
-        self._style_mutations = style_mutations
+        self._style = style
         self.alpha_size = len(dna_utils.BASES)
         self._mode = mode
         
@@ -433,15 +433,15 @@ class MutagenizeOp(Operation):
         result_seq = ''.join(seq_list)
         
         # Build output styles: pass through parent styles (mutagenize preserves length)
-        # and add mutation style if _style_mutations is set
+        # and add mutation style if _style is set
         output_styles: StyleList = []
         if parent_styles and len(parent_styles) > 0:
             output_styles.extend(parent_styles[0])
         
-        if self._style_mutations is not None and len(positions) > 0:
+        if self._style is not None and len(positions) > 0:
             # Convert logical positions to raw positions for styling
             raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
-            output_styles.append((self._style_mutations, raw_positions))
+            output_styles.append((self._style, raw_positions))
         
         return {
             'positions': positions,
@@ -459,7 +459,7 @@ class MutagenizeOp(Operation):
             'mutation_rate': self.mutation_rate,
             'allowed_chars': self.allowed_chars,
             'region': self._region,
-            'style_mutations': self._style_mutations,
+            'style': self._style,
             'prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,

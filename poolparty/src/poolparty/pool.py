@@ -321,7 +321,7 @@ class Pool:
             if show_seq:
                 seq = row['seq']
                 from .utils.style_utils import apply_inline_styles
-                # Get per-sequence inline styles (from operation style_mutations parameters)
+                # Get per-sequence inline styles (from operation style parameters)
                 inline_styles = row.get('_inline_styles', [])
                 # Apply inline styles
                 seq = apply_inline_styles(seq, inline_styles)
@@ -360,26 +360,9 @@ class Pool:
         from .base_ops.from_motif import from_motif
         return from_motif(pool=self, **kwargs)
     
-    def insert_kmers(
-        self,
-        region: Optional[str] = None,
-        style_kmers: Optional[str] = None,
-        style_background: Optional[str] = None,
-        **kwargs,
-    ) -> Pool_type:
+    def insert_kmers(self, **kwargs) -> Pool_type:
         from .base_ops.get_kmers import get_kmers
-        from .fixed_ops.style import stylize
-        
-        # Map style_kmers to style parameter for get_kmers
-        if style_kmers is not None:
-            kwargs['style'] = style_kmers
-        
-        # Apply style_background to pool before kmer insertion
-        pool = self
-        if style_background is not None:
-            pool = stylize(pool, style=style_background)
-        
-        return get_kmers(pool=pool, region=region, **kwargs)
+        return get_kmers(pool=self, **kwargs)
     
     #########################################################################
     # Scan operations

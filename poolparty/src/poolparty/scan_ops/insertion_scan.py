@@ -13,7 +13,7 @@ def insertion_scan(
     positions: PositionsType = None,
     region: RegionType = None,
     replace: bool = False,
-    style_insertion: Optional[str] = None,
+    style: Optional[str] = None,
     prefix: Optional[str] = None,
     prefix_position: Optional[str] = None,
     prefix_insert: Optional[str] = None,
@@ -38,7 +38,7 @@ def insertion_scan(
     replace : bool, default=False
         If False, insert at position (output length = bg + ins).
         If True, replace content at position (output length = bg).
-    style_insertion : Optional[str], default=None
+    style : Optional[str], default=None
         Style to apply to inserted content.
     prefix : Optional[str], default=None
         Prefix for cartesian product index (e.g., 'ins_' produces 'ins_0', 'ins_1', ...).
@@ -136,7 +136,7 @@ def insertion_scan(
         _pos_state=pos_state,
         _site_state=site_state,
         _num_sites=num_sites,
-        _style_insertion=style_insertion,
+        _style=style,
     )
 
 
@@ -146,7 +146,7 @@ def replacement_scan(
     ins_pool: Union[Pool, str],
     positions: PositionsType = None,
     region: RegionType = None,
-    style_insertion: Optional[str] = None,
+    style: Optional[str] = None,
     prefix: Optional[str] = None,
     prefix_position: Optional[str] = None,
     prefix_insert: Optional[str] = None,
@@ -165,7 +165,7 @@ def replacement_scan(
         positions=positions,
         region=region,
         replace=True,
-        style_insertion=style_insertion,
+        style=style,
         prefix=prefix,
         prefix_position=prefix_position,
         prefix_insert=prefix_insert,

@@ -41,7 +41,7 @@ def deletion_scan(
     prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
-    style_deletion: Optional[str] = None,
+    style: Optional[str] = None,
     iter_order: Optional[Real] = None,
 ) -> Pool:
     """
@@ -65,7 +65,7 @@ def deletion_scan(
         Deletion mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
-    style_deletion : Optional[str], default=None
+    style : Optional[str], default=None
         Style to apply to deletion gap characters (e.g., 'gray', 'red bold').
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
@@ -112,7 +112,7 @@ def deletion_scan(
         prefix=prefix,
         mode=mode,
         num_states=num_states,
-        style_deletion=style_deletion,
+        style=style,
         name=None,
         iter_order=iter_order,
     )
@@ -136,7 +136,7 @@ class DeletionScanOp(Operation):
         prefix: Optional[str] = None,
         mode: str = 'random',
         num_states: Optional[int] = None,
-        style_deletion: Optional[str] = None,
+        style: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -144,7 +144,7 @@ class DeletionScanOp(Operation):
         self._deletion_length = deletion_length
         self._gap_char = gap_char
         self._positions = positions
-        self._style_deletion = style_deletion
+        self._style = style
         
         # Determine effective seq_length for state calculation:
         # If region is a marker name, use the marker's registered length
@@ -322,10 +322,10 @@ class DeletionScanOp(Operation):
         output_styles: StyleList = []
         
         if not parent_styles or len(parent_styles) == 0:
-            # No parent styles, just add style_deletion if specified
-            if self._style_deletion and gap_content:
+            # No parent styles, just add style if specified
+            if self._style and gap_content:
                 gap_positions = np.arange(del_start, del_start + len(gap_content), dtype=np.int64)
-                output_styles.append((self._style_deletion, gap_positions))
+                output_styles.append((self._style, gap_positions))
             return output_styles
         
         input_styles = parent_styles[0]
@@ -345,10 +345,10 @@ class DeletionScanOp(Operation):
             if adjusted_positions:
                 output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
         
-        # Add style_deletion for gap characters
-        if self._style_deletion and gap_content:
+        # Add style for gap characters
+        if self._style and gap_content:
             gap_positions = np.arange(del_start, del_start + len(gap_content), dtype=np.int64)
-            output_styles.append((self._style_deletion, gap_positions))
+            output_styles.append((self._style, gap_positions))
         
         return output_styles
     
@@ -363,7 +363,7 @@ class DeletionScanOp(Operation):
             'prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
-            'style_deletion': self._style_deletion,
+            'style': self._style,
             'name': None,
             'iter_order': self.iter_order,
         }
