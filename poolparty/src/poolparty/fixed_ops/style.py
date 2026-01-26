@@ -2,7 +2,7 @@
 import re
 from numbers import Real
 import numpy as np
-from ..types import Pool_type, Union, Optional, RegionType, Literal, beartype, StyleList
+from ..types import Pool_type, Union, Optional, RegionType, Literal, beartype, SeqStyle
 from ..operation import Operation
 from ..pool import Pool
 
@@ -204,7 +204,7 @@ class StylizeOp(Operation):
         self,
         parent_seqs: list[str],
         rng=None,
-        parent_styles: list[StyleList] | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Return unchanged sequence with styling applied."""
         seq = parent_seqs[0]
@@ -213,14 +213,12 @@ class StylizeOp(Operation):
         positions = self._get_matching_positions(seq)
 
         # Build output styles: pass through parent + add new style
-        output_styles: StyleList = []
-        if parent_styles and len(parent_styles) > 0:
-            output_styles.extend(parent_styles[0])
+        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(seq))
 
         if len(positions) > 0:
-            output_styles.append((self.style, positions))
+            output_style = output_style.add_style(self.style, positions)
 
-        return {'seq': seq, 'style': output_styles}
+        return {'seq': seq, 'style': output_style}
 
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

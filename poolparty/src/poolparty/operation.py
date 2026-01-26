@@ -1,7 +1,7 @@
 """Operation base class for poolparty."""
 from numbers import Real
 import statetracker as st
-from .types import Pool_type, Sequence, ModeType, Optional, RegionType, beartype, StyleList
+from .types import Pool_type, Sequence, ModeType, Optional, RegionType, beartype, SeqStyle
 from .utils import dna_utils
 import numpy as np
 
@@ -338,7 +338,7 @@ class Operation:
         self,
         parent_seqs: list[str],
         rng: np.random.Generator | None = None,
-        parent_styles: list[StyleList] | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Compute design card, output sequences, and output styles together.
         
@@ -348,14 +348,14 @@ class Operation:
             Input sequences from parent pools.
         rng : np.random.Generator | None
             Random number generator (for random mode operations).
-        parent_styles : list[StyleList] | None
-            Input styles from parent pools. Each element is a list of
-            (style_spec, positions) tuples for the corresponding parent sequence.
+        parent_styles : list[SeqStyle] | None
+            Input styles from parent pools. Each element is a SeqStyle object
+            for the corresponding parent sequence.
         
         Returns a dictionary containing:
         - Design card keys (matching design_card_keys)
         - 'seq': output sequence string
-        - 'style': output style list - list of (spec, positions) tuples
+        - 'style': output SeqStyle object
         """
         raise NotImplementedError("Subclasses must implement compute()")
     
@@ -363,7 +363,7 @@ class Operation:
         self,
         parent_seqs: list[str],
         rng: np.random.Generator | None = None,
-        parent_styles: list[StyleList] | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Compute with automatic region handling and tag removal.
         
@@ -391,17 +391,20 @@ class Operation:
         region_end = bounds[1] if bounds else len(parent_seqs[0])
         
         # Split styles for first parent using SeqStyle
-        modified_styles = None
+        # Store as raw StyleLists initially (will rebuild with clean lengths during reassembly)
+        from .types import StyleList
         prefix_styles: StyleList = []
         suffix_styles: StyleList = []
-        if parent_styles:
-            modified_styles = list(parent_styles)  # Copy the list
-            if modified_styles and len(modified_styles) > 0:
-                parent_style = SeqStyle.from_style_list(modified_styles[0], len(parent_seqs[0]))
-                prefix_seq_style, region_seq_style, suffix_seq_style = parent_style.split([region_start, region_end])
-                prefix_styles = prefix_seq_style.style_list
-                suffix_styles = suffix_seq_style.style_list
-                modified_styles[0] = region_seq_style.style_list
+        if parent_styles and len(parent_styles) > 0:
+            parent_style = parent_styles[0]
+            temp_prefix, region_seq_style, temp_suffix = parent_style.split([region_start, region_end])
+            prefix_styles = temp_prefix.style_list
+            suffix_styles = temp_suffix.style_list
+            modified_styles = [region_seq_style] + list(parent_styles[1:])
+        else:
+            # No parent styles - create empty SeqStyle for region
+            region_seq_style = SeqStyle.empty(len(region_content))
+            modified_styles = [region_seq_style]
         
         # Call subclass with region content as first sequence
         modified_seqs = [region_content] + parent_seqs[1:]
@@ -442,21 +445,19 @@ class Operation:
             elif is_style_output(key):
                 # Get the output sequence to determine new region length
                 output_seq = result.get('seq', '')
-                from .utils.style_utils import SeqStyle
+                region_seq_style = value  # Already a SeqStyle
                 
                 # Calculate lengths for style reassembly
-                # The prefix_styles, suffix_styles were extracted from the original sequence
-                # which includes tags. We need to calculate the correct positions.
                 if isinstance(self._region, str):
-                    from .utils.parsing_utils import validate_single_region, build_region_tags
-                    region_info = validate_single_region(parent_seqs[0], self._region)
+                    from .utils.parsing_utils import build_region_tags
                     clean_prefix_len = len(clean_prefix)
+                    clean_suffix_len = len(clean_suffix)
                     
                     if self._remove_tags:
                         # When tags removed: prefix + region + suffix
+                        # Rebuild prefix/suffix with clean lengths
                         prefix_seq_style = SeqStyle.from_style_list(prefix_styles, clean_prefix_len)
-                        region_seq_style = SeqStyle.from_style_list(value, len(output_seq))
-                        suffix_seq_style = SeqStyle.from_style_list(suffix_styles, len(suffix))
+                        suffix_seq_style = SeqStyle.from_style_list(suffix_styles, clean_suffix_len)
                         
                         result_style = SeqStyle.join([
                             prefix_seq_style,
@@ -465,18 +466,14 @@ class Operation:
                         ])
                     else:
                         # When tags kept: prefix + opening_tag + region + closing_tag + suffix
-                        # prefix_styles span [0, region.start) which includes clean_prefix
-                        # suffix_styles span [region.end, ...) which includes clean_suffix
                         test_tag = build_region_tags(self._region, 'X', strand=strand)
                         opening_tag_len = test_tag.index('>') + 1
                         new_wrapped = build_region_tags(self._region, output_seq, strand=strand)
                         closing_tag_len = len(new_wrapped) - opening_tag_len - len(output_seq)
                         
-                        # prefix_styles cover clean_prefix only (tags are in between prefix and region)
+                        # Rebuild prefix/suffix with clean lengths
                         prefix_seq_style = SeqStyle.from_style_list(prefix_styles, clean_prefix_len)
-                        region_seq_style = SeqStyle.from_style_list(value, len(output_seq))
-                        # suffix_styles cover clean_suffix only
-                        suffix_seq_style = SeqStyle.from_style_list(suffix_styles, len(suffix))
+                        suffix_seq_style = SeqStyle.from_style_list(suffix_styles, clean_suffix_len)
                         
                         result_style = SeqStyle.join([
                             prefix_seq_style,
@@ -487,8 +484,8 @@ class Operation:
                         ])
                 else:
                     # Region is [start, stop] interval
+                    # Rebuild prefix/suffix with actual lengths
                     prefix_seq_style = SeqStyle.from_style_list(prefix_styles, len(prefix))
-                    region_seq_style = SeqStyle.from_style_list(value, len(output_seq))
                     suffix_seq_style = SeqStyle.from_style_list(suffix_styles, len(suffix))
                     
                     result_style = SeqStyle.join([
@@ -497,7 +494,7 @@ class Operation:
                         suffix_seq_style,
                     ])
                 
-                reassembled[key] = result_style.style_list
+                reassembled[key] = result_style
             else:
                 # Keep design card keys as-is
                 reassembled[key] = value

@@ -1,5 +1,5 @@
 """Insert multiple XML region tags into a sequence."""
-from poolparty.types import Union, Optional, Sequence, Literal
+from poolparty.types import Union, Optional, Sequence, Literal, SeqStyle
 from numbers import Integral, Real
 import numpy as np
 
@@ -316,7 +316,7 @@ class RegionMultiScanOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Return design card and sequence with region tags inserted together."""
         seq = parent_seqs[0]
@@ -374,12 +374,13 @@ class RegionMultiScanOp(Operation):
         result_seq = ''.join(result_parts)
         
         # Region multiscan modifies sequence structure, so styles not meaningful
+        # Return empty SeqStyle for consistency
         return {
             'indices': indices_list,  # nontag indices, not literal positions
             'strands': strands,
             'region_tags': region_tags_list,
             'seq': result_seq,
-            'style': [],
+            'style': SeqStyle.empty(len(result_seq)),
         }
 
     def _get_copy_params(self) -> dict:

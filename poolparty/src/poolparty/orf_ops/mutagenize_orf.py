@@ -3,7 +3,7 @@ from itertools import combinations
 from math import comb
 from numbers import Real, Integral
 import re
-from ..types import Union, ModeType, Optional, Sequence, beartype
+from ..types import Union, ModeType, Optional, Sequence, beartype, SeqStyle
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
@@ -298,7 +298,7 @@ class MutagenizeOrfOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Return design card and mutated sequence together."""
         seq = parent_seqs[0]
@@ -340,7 +340,7 @@ class MutagenizeOrfOp(Operation):
         result_seq = self._restore_tags(mutated_clean_seq, tags)
         
         # Pass through parent styles (mutagenize_orf preserves sequence length)
-        output_styles = parent_styles[0] if parent_styles and len(parent_styles) > 0 else []
+        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(result_seq))
         return {
             'codon_positions': positions,
             'wt_codons': wt_codons,
@@ -348,7 +348,7 @@ class MutagenizeOrfOp(Operation):
             'wt_aas': wt_aas,
             'mut_aas': mut_aas,
             'seq': result_seq,
-            'style': output_styles,
+            'style': output_style,
         }
     
     def _get_copy_params(self) -> dict:

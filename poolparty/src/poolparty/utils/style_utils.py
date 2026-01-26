@@ -168,6 +168,10 @@ class SeqStyle:
         """Create from existing StyleList."""
         return cls(style_list, length)
     
+    def copy(self) -> 'SeqStyle':
+        """Return self (SeqStyle is immutable, so no actual copy needed)."""
+        return self
+    
     # --- Adding styles (returns new SeqStyle) ---
     def add_style(self, spec: str, positions: np.ndarray) -> 'SeqStyle':
         """Return new SeqStyle with additional style appended."""

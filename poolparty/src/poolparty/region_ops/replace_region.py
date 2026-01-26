@@ -1,6 +1,6 @@
 """Replace region content with sequences from another Pool."""
 from numbers import Real
-from poolparty.types import Optional
+from poolparty.types import Optional, SeqStyle
 import numpy as np
 
 from ..utils.parsing_utils import validate_single_region
@@ -151,11 +151,9 @@ class ReplaceRegionOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Replace region in bg_seq with content_seq."""
-        from ..types import StyleList
-        
         bg_seq = parent_seqs[0]
         content_seq = parent_seqs[1]
         
@@ -172,10 +170,8 @@ class ReplaceRegionOp(Operation):
         result_seq = prefix + content_seq + suffix
         
         # Use SeqStyle for clean style assembly
-        from ..utils.style_utils import SeqStyle
-        
-        bg_style = SeqStyle.from_style_list(parent_styles[0], len(bg_seq)) if parent_styles else SeqStyle.empty(len(bg_seq))
-        content_style = SeqStyle.from_style_list(parent_styles[1], len(parent_seqs[1])) if len(parent_styles) > 1 else SeqStyle.empty(len(content_seq))
+        bg_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(bg_seq))
+        content_style = parent_styles[1] if len(parent_styles) > 1 else SeqStyle.empty(len(parent_seqs[1]))
         
         output_style = SeqStyle.join([
             bg_style[:region.start],                           # Prefix
@@ -190,7 +186,7 @@ class ReplaceRegionOp(Operation):
             ins_positions = np.arange(ins_start, ins_end, dtype=np.int64)
             output_style = output_style.add_style(self._style, ins_positions)
         
-        return {'seq': result_seq, 'style': output_style.style_list}
+        return {'seq': result_seq, 'style': output_style}
     
     def compute_seq_names(
         self,

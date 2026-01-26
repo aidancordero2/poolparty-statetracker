@@ -1,6 +1,6 @@
 """GetKmers operation - generate DNA k-mers."""
 from numbers import Real
-from ..types import Pool_type, ModeType, Optional, Literal, Union, RegionType, Integral, beartype, StyleList
+from ..types import Pool_type, ModeType, Optional, Literal, Union, RegionType, Integral, beartype, SeqStyle
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
@@ -174,7 +174,7 @@ class GetKmersOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Return design card and kmer together."""
         if self.mode == 'random':
@@ -194,16 +194,16 @@ class GetKmersOp(Operation):
             kmer = kmer.lower()
         
         # Apply style to all positions if specified
-        output_styles: StyleList = []
+        output_style = SeqStyle.empty(len(kmer))
         if self._style is not None:
             positions = np.arange(len(kmer), dtype=np.int64)
-            output_styles.append((self._style, positions))
+            output_style = output_style.add_style(self._style, positions)
         
         return {
             'kmer_index': kmer_index,
             'kmer': kmer,
             'seq': kmer,
-            'style': output_styles,
+            'style': output_style,
         }
     
     def _get_copy_params(self) -> dict:

@@ -1,6 +1,6 @@
 """Library generation functions for poolparty."""
 import statetracker as st
-from .types import Pool_type, Union, Sequence, Literal, Optional, beartype, StyleList
+from .types import Pool_type, Union, Sequence, Literal, Optional, beartype, SeqStyle
 from .utils.utils import clean_df_int_columns
 from .utils.df_utils import counter_col_name, organize_columns, finalize_generate_df
 import numpy as np
@@ -231,7 +231,7 @@ def _compute_one(
     # This is the code that effectively implements the DAG.
     for op in sorted_ops:
         parent_seqs = []
-        parent_styles: list[StyleList] = []
+        parent_styles: list[SeqStyle] = []
         parent_names = []
         for parent_pool in op.parent_pools:
             # Get parent sequences (already cached because of topological sort)
@@ -240,7 +240,7 @@ def _compute_one(
             
             # Get parent styles
             parent_styles_result = styles_cache.get(parent_pool.operation.id, {})
-            parent_styles.append(parent_styles_result.get('style', []))
+            parent_styles.append(parent_styles_result.get('style', SeqStyle.empty(0)))
             
             # Get parent names
             parent_name_result = names_cache[parent_pool.operation.id]
@@ -261,7 +261,7 @@ def _compute_one(
         
         # Extract sequence, style, and design card
         seq = result.get('seq', '')
-        style = result.get('style', [])
+        style = result.get('style', SeqStyle.empty(len(seq)))
         card = {k: v for k, v in result.items() if k not in ('seq', 'style')}
         
         name = op.compute_seq_names(parent_names, card)
@@ -302,7 +302,7 @@ def _compute_one(
     
     # Get final inline styles from styles_cache (for print_library to use)
     final_styles_result = styles_cache.get(pool.operation.id, {})
-    row['_inline_styles'] = final_styles_result.get('style', [])
+    row['_inline_styles'] = final_styles_result.get('style', SeqStyle.empty(0))
     
     return row
 

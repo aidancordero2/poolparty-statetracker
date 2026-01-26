@@ -1,7 +1,7 @@
 """Stack operation - combine pools sequentially (disjoint union)."""
 from numbers import Real
 import statetracker as st
-from ..types import Optional, Sequence, Integral, Real, beartype
+from ..types import Optional, Sequence, Integral, Real, beartype, SeqStyle
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -91,7 +91,7 @@ class StackOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Return design card and sequence from active parent together."""
         for i, parent in enumerate(self.parent_pools):
@@ -101,13 +101,13 @@ class StackOp(Operation):
                 active = i
                 seq = parent_seqs[active]
                 # Pass through styles from active parent
-                output_styles = parent_styles[active] if parent_styles and len(parent_styles) > active else []
-                return {'active_parent': active, 'seq': seq, 'style': output_styles}
+                output_style = parent_styles[active] if parent_styles and len(parent_styles) > active else SeqStyle.empty(len(seq))
+                return {'active_parent': active, 'seq': seq, 'style': output_style}
         self.state.value = None
         active = None
         seq = parent_seqs[0] if parent_seqs else ''
-        output_styles = parent_styles[0] if parent_styles and len(parent_styles) > 0 else []
-        return {'active_parent': active, 'seq': seq, 'style': output_styles}
+        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(seq))
+        return {'active_parent': active, 'seq': seq, 'style': output_style}
     
     def compute_seq_names(
         self,

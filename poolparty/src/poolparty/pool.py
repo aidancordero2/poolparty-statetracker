@@ -348,11 +348,11 @@ class Pool:
                     row_parts.append(f"{row['name']}")
             if show_seq:
                 seq = row['seq']
-                from .utils.style_utils import apply_inline_styles
+                from .utils.style_utils import SeqStyle
                 # Get per-sequence inline styles (from operation style parameters)
-                inline_styles = row.get('_inline_styles', [])
+                inline_styles = row.get('_inline_styles', SeqStyle.empty(0))
                 # Apply inline styles
-                seq = apply_inline_styles(seq, inline_styles)
+                seq = inline_styles.apply(seq)
                 row_parts.append(seq)
             print("  ".join(row_parts))
         print('')

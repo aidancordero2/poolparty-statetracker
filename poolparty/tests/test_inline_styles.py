@@ -77,7 +77,7 @@ class TestMutagenizeWithStyleMutations:
         pool.operation.state._value = 0
         result = pool.operation.compute(['ACGT'])
         assert 'style' in result
-        assert isinstance(result['style'], list)
+        assert isinstance(result['style'], SeqStyle)
     
     def test_compute_with_style_includes_positions(self):
         """compute() with style adds mutation positions to style."""
@@ -88,8 +88,9 @@ class TestMutagenizeWithStyleMutations:
         result = pool.operation.compute(['ACGT'])
         
         # Should have one style tuple with mutation positions
-        assert len(result['style']) == 1
-        spec, positions = result['style'][0]
+        seq_style = result['style']
+        assert len(seq_style.style_list) == 1
+        spec, positions = seq_style.style_list[0]
         assert spec == 'red'
         assert len(positions) == 1  # 1 mutation
     
@@ -101,7 +102,8 @@ class TestMutagenizeWithStyleMutations:
         pool.operation.state._value = 0
         result = pool.operation.compute(['ACGT'])
         
-        assert result['style'] == []
+        seq_style = result['style']
+        assert not seq_style  # Empty SeqStyle
 
 
 class TestInlineStylesGeneration:
@@ -116,9 +118,9 @@ class TestInlineStylesGeneration:
         assert '_inline_styles' in df.columns
         
         # Should have the mutation style
-        styles = df['_inline_styles'].iloc[0]
-        assert len(styles) == 1
-        assert styles[0][0] == 'red'
+        seq_style = df['_inline_styles'].iloc[0]
+        assert len(seq_style.style_list) == 1
+        assert seq_style.style_list[0][0] == 'red'
     
     def test_generate_library_without_style(self):
         """generate_library without style has empty _inline_styles."""
@@ -128,8 +130,8 @@ class TestInlineStylesGeneration:
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
         assert '_inline_styles' in df.columns
         
-        styles = df['_inline_styles'].iloc[0]
-        assert styles == []
+        seq_style = df['_inline_styles'].iloc[0]
+        assert not seq_style  # Empty SeqStyle
 
 
 class TestInlineStylesChain:
@@ -144,9 +146,9 @@ class TestInlineStylesChain:
         df = repeated.generate_library(num_seqs=1, report_design_cards=True)
         
         # Styles should have passed through repeat
-        styles = df['_inline_styles'].iloc[0]
-        assert len(styles) == 1
-        assert styles[0][0] == 'red'
+        seq_style = df['_inline_styles'].iloc[0]
+        assert len(seq_style.style_list) == 1
+        assert seq_style.style_list[0][0] == 'red'
     
     def test_styles_from_stacked_pools(self):
         """Stack operation passes through styles from active parent."""
@@ -158,9 +160,9 @@ class TestInlineStylesChain:
         df = stacked.generate_library(num_seqs=2, report_design_cards=True)
         
         # First row from pool1 should have red style
-        styles0 = df['_inline_styles'].iloc[0]
-        if styles0:  # May be empty if mutation didn't occur
-            assert styles0[0][0] == 'red'
+        seq_style0 = df['_inline_styles'].iloc[0]
+        if seq_style0:  # May be empty if mutation didn't occur
+            assert seq_style0.style_list[0][0] == 'red'
 
 
 class TestInlineStylesPositionAdjustment:
@@ -177,9 +179,9 @@ class TestInlineStylesPositionAdjustment:
         df = mutated.generate_library(num_seqs=1, report_design_cards=True)
         
         # Check that style positions are adjusted to full sequence positions
-        styles = df['_inline_styles'].iloc[0]
-        if styles:
-            spec, positions = styles[0]
+        seq_style = df['_inline_styles'].iloc[0]
+        if seq_style:
+            spec, positions = seq_style.style_list[0]
             # Positions should be relative to full sequence, not just region
             # The region starts at position 2 (after 'AA')
             assert all(pos >= 2 for pos in positions)
@@ -256,7 +258,7 @@ class TestPositionAdjustmentWithMarkers:
         
         df = mutated.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Sequence should be 'AA' + mutated_content + 'GG' (no marker tags)
         assert '<test>' not in seq
@@ -265,8 +267,8 @@ class TestPositionAdjustmentWithMarkers:
         assert seq.endswith('GG')
         
         # Style positions should point to correct characters in clean sequence
-        if styles:
-            spec, positions = styles[0]
+        if seq_style:
+            spec, positions = seq_style.style_list[0]
             # The first mutation is at position 0 within the region
             # With marker removed, position 0 in region = position 2 in final seq
             assert all(2 <= pos < 6 for pos in positions)
@@ -283,7 +285,7 @@ class TestPositionAdjustmentWithMarkers:
         
         df = mutated.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Sequence should not have marker tags (default behavior removes markers)
         assert '<test>' not in seq
@@ -292,8 +294,8 @@ class TestPositionAdjustmentWithMarkers:
         assert seq.endswith('GG')
         
         # Style positions should point to correct characters in clean sequence
-        if styles:
-            spec, positions = styles[0]
+        if seq_style:
+            spec, positions = seq_style.style_list[0]
             # The first mutation is at position 0 within the region
             # With marker removed, position 0 in region = position 2 in final seq
             assert all(2 <= pos < 6 for pos in positions)
@@ -310,15 +312,15 @@ class TestPositionAdjustmentWithMarkers:
         
         df = mutated.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Marker is removed by default
         assert '<test' not in seq
         assert seq.startswith('AA')
         assert seq.endswith('GG')
         
-        if styles:
-            spec, positions = styles[0]
+        if seq_style:
+            spec, positions = seq_style.style_list[0]
             # Style positions should point to correct characters in clean sequence
             # The first mutation is at position 0 within the region
             # With marker removed, position 0 in region = position 2 in final seq
@@ -335,10 +337,10 @@ class TestPositionAdjustmentWithMarkers:
             ).named('mutated')
         
         df = mutated.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
-        if styles:
-            spec, positions = styles[0]
+        if seq_style:
+            spec, positions = seq_style.style_list[0]
             # Positions should be in range [2, 6)
             assert all(2 <= pos < 6 for pos in positions)
 
@@ -514,12 +516,12 @@ class TestDeletionScanStylePropagation:
             deleted = bg.deletion_scan(region='test', deletion_length=2, mode='sequential').named('deleted')
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Styles should have propagated through
         # The 'red' style should be present (positions may have shifted)
-        assert len(styles) > 0
-        assert any(spec == 'red' for spec, _ in styles)
+        assert len(seq_style.style_list) > 0
+        assert any(spec == 'red' for spec, _ in seq_style.style_list)
     
     def test_deletion_scan_styles_adjust_positions(self):
         """Style positions are adjusted correctly through deletion_scan chain."""
@@ -532,11 +534,11 @@ class TestDeletionScanStylePropagation:
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Verify styles exist and have valid positions within seq bounds
-        assert len(styles) > 0
-        for spec, positions in styles:
+        assert len(seq_style.style_list) > 0
+        for spec, positions in seq_style.style_list:
             assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions for {spec}: {positions}, seq_len={len(seq)}"
     
     def test_gap_chars_do_not_inherit_styles(self):
@@ -550,14 +552,14 @@ class TestDeletionScanStylePropagation:
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Find gap positions
         gap_positions = set(i for i, c in enumerate(seq) if c == '-')
         assert len(gap_positions) > 0, "Should have gap characters"
         
         # Verify no styles apply to gap positions
-        for spec, positions in styles:
+        for spec, positions in seq_style.style_list:
             styled_gaps = [p for p in positions if p in gap_positions]
             assert len(styled_gaps) == 0, f"Gap chars should not have {spec} style, but found at positions {styled_gaps}"
     
@@ -570,7 +572,7 @@ class TestDeletionScanStylePropagation:
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Find gap positions
         gap_positions = set(i for i, c in enumerate(seq) if c == '-')
@@ -578,7 +580,7 @@ class TestDeletionScanStylePropagation:
         
         # Verify cyan style applies to gap positions
         cyan_positions = set()
-        for spec, positions in styles:
+        for spec, positions in seq_style.style_list:
             if spec == 'cyan':
                 cyan_positions.update(positions)
         
@@ -596,14 +598,14 @@ class TestDeletionScanStylePropagation:
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Find gap positions
         gap_positions = set(i for i, c in enumerate(seq) if c == '-')
         
         # Verify red style does NOT apply to gaps
         # and cyan style DOES apply to gaps
-        for spec, positions in styles:
+        for spec, positions in seq_style.style_list:
             if spec == 'red':
                 styled_gaps = [p for p in positions if p in gap_positions]
                 assert len(styled_gaps) == 0, "Red style should not apply to gaps"
@@ -622,11 +624,11 @@ class TestDeletionScanStylePropagation:
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # No gap characters (deletion_marker=None removes them), no cyan style
         assert '-' not in seq
-        assert not any(spec == 'cyan' for spec, _ in styles)
+        assert not any(spec == 'cyan' for spec, _ in seq_style.style_list)
 
 
 class TestInsertionScanStylePropagation:
@@ -646,11 +648,11 @@ class TestInsertionScanStylePropagation:
                                           replace=True, mode='sequential').named('inserted')
         
         df = inserted.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Styles should have propagated (green style from bg prefix)
-        assert len(styles) > 0
-        assert any(spec == 'green' for spec, _ in styles)
+        assert len(seq_style.style_list) > 0
+        assert any(spec == 'green' for spec, _ in seq_style.style_list)
     
     def test_insertion_scan_preserves_non_region_styles(self):
         """Styles outside the insertion region are preserved."""
@@ -666,11 +668,11 @@ class TestInsertionScanStylePropagation:
         
         df = inserted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Should have styles for the prefix (AAAA)
-        assert len(styles) > 0
-        for spec, positions in styles:
+        assert len(seq_style.style_list) > 0
+        for spec, positions in seq_style.style_list:
             assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions for {spec}: {positions}, seq_len={len(seq)}"
     
     def test_insert_pool_styles_propagate_through_insertion_scan(self):
@@ -687,13 +689,13 @@ class TestInsertionScanStylePropagation:
         
         df = inserted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Insert pool styles should have propagated
-        assert len(styles) > 0
-        assert any(spec == 'magenta' for spec, _ in styles)
+        assert len(seq_style.style_list) > 0
+        assert any(spec == 'magenta' for spec, _ in seq_style.style_list)
         # Positions should be valid and point to where insert was placed
-        for spec, positions in styles:
+        for spec, positions in seq_style.style_list:
             assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions for {spec}: {positions}, seq_len={len(seq)}"
     
     def test_insert_pool_styles_with_multiple_sites(self):
@@ -711,11 +713,11 @@ class TestInsertionScanStylePropagation:
         
         # Both sequences should have cyan styles from the insert pool
         for i in range(2):
-            styles = df['_inline_styles'].iloc[i]
+            seq_style = df['_inline_styles'].iloc[i]
             seq = df['seq'].iloc[i]
-            assert len(styles) > 0, f"Row {i} should have styles"
-            assert any(spec == 'cyan' for spec, _ in styles), f"Row {i} should have cyan style"
-            for spec, positions in styles:
+            assert len(seq_style.style_list) > 0, f"Row {i} should have styles"
+            assert any(spec == 'cyan' for spec, _ in seq_style.style_list), f"Row {i} should have cyan style"
+            for spec, positions in seq_style.style_list:
                 assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions in row {i}"
     
     def test_insert_pool_styles_with_minus_strand(self):
@@ -732,12 +734,12 @@ class TestInsertionScanStylePropagation:
         
         df = inserted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Styles should propagate (positions flipped due to reverse complement)
-        assert len(styles) > 0
-        assert any(spec == 'yellow' for spec, _ in styles)
-        for spec, positions in styles:
+        assert len(seq_style.style_list) > 0
+        assert any(spec == 'yellow' for spec, _ in seq_style.style_list)
+        for spec, positions in seq_style.style_list:
             assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions for {spec}"
 
 
@@ -781,14 +783,14 @@ class TestInsertionScanStyleInsertion:
                                       style='red').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         seq = df['seq'].iloc[0]
         
         # Should have style for 3 positions (length of insert)
-        assert len(styles) >= 1
+        assert len(seq_style.style_list) >= 1
         
         # Find the red style entry
-        red_styles = [(spec, pos) for spec, pos in styles if spec == 'red']
+        red_styles = [(spec, pos) for spec, pos in seq_style.style_list if spec == 'red']
         assert len(red_styles) == 1
         spec, positions = red_styles[0]
         assert len(positions) == 3  # TTT is 3 chars
@@ -804,10 +806,10 @@ class TestInsertionScanStyleInsertion:
                                       style='cyan').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Should style positions 0, 1, 2
-        cyan_styles = [(spec, pos) for spec, pos in styles if spec == 'cyan']
+        cyan_styles = [(spec, pos) for spec, pos in seq_style.style_list if spec == 'cyan']
         assert len(cyan_styles) == 1
         _, positions = cyan_styles[0]
         assert list(positions) == [0, 1, 2]
@@ -821,10 +823,10 @@ class TestInsertionScanStyleInsertion:
                                       style='magenta').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Insert at end: positions 10, 11, 12
-        magenta_styles = [(spec, pos) for spec, pos in styles if spec == 'magenta']
+        magenta_styles = [(spec, pos) for spec, pos in seq_style.style_list if spec == 'magenta']
         assert len(magenta_styles) == 1
         _, positions = magenta_styles[0]
         assert list(positions) == [10, 11, 12]
@@ -838,22 +840,21 @@ class TestInsertionScanStyleInsertion:
                                         style='yellow').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Should style the 3 replacement positions starting at 5
-        yellow_styles = [(spec, pos) for spec, pos in styles if spec == 'yellow']
+        yellow_styles = [(spec, pos) for spec, pos in seq_style.style_list if spec == 'yellow']
         assert len(yellow_styles) == 1
         _, positions = yellow_styles[0]
         assert list(positions) == [5, 6, 7]
     
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
         
         # Sequence should be AAAAAGGGAA (GGG replaced at position 5)
         assert 'GGG' in seq
         
         # Style should cover the GGG (3 positions)
-        yellow_styles = [(spec, pos) for spec, pos in styles if spec == 'yellow']
+        yellow_styles = [(spec, pos) for spec, pos in seq_style.style_list if spec == 'yellow']
         assert len(yellow_styles) == 1
         _, positions = yellow_styles[0]
         assert len(positions) == 3  # GGG positions
@@ -866,10 +867,10 @@ class TestInsertionScanStyleInsertion:
             pool = pp.insertion_scan(bg, ins, positions=[5], mode='sequential').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Should be empty (no style specified)
-        assert styles == []
+        assert not seq_style
     
     def test_style_combines_with_insert_pool_styles(self):
         """style combines with styles already on insert pool."""
@@ -881,10 +882,10 @@ class TestInsertionScanStyleInsertion:
                                       style='red').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Should have both blue (from insert pool) and red (from style)
-        style_specs = [spec for spec, _ in styles]
+        style_specs = [spec for spec, _ in seq_style.style_list]
         assert 'blue' in style_specs
         assert 'red' in style_specs
 
@@ -905,11 +906,11 @@ class TestInsertKmersStylePropagation:
         
         df = result.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Styles should propagate (red style for AAAA prefix)
-        assert len(styles) > 0
-        for spec, positions in styles:
+        assert len(seq_style.style_list) > 0
+        for spec, positions in seq_style.style_list:
             assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions for {spec}: {positions}, seq_len={len(seq)}"
     
     def test_insert_kmers_preserves_surrounding_styles(self):
@@ -923,12 +924,12 @@ class TestInsertKmersStylePropagation:
         
         df = result.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Blue style for AAAA should be preserved
-        assert len(styles) > 0
+        assert len(seq_style.style_list) > 0
         # Check that the 'blue' style is present
-        assert any(spec == 'blue' for spec, _ in styles)
+        assert any(spec == 'blue' for spec, _ in seq_style.style_list)
     
     def test_insert_kmers_suffix_styles_shifted_correctly(self):
         """Suffix styles are correctly shifted when self-closing marker is replaced.
@@ -949,7 +950,7 @@ class TestInsertKmersStylePropagation:
         
         df = result.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Sequence should be: AAAA<bc>XXX</bc>TTTT (where XXX is 3-char kmer)
         # Structure: AAAA (4) + <bc> (4) + XXX (3) + </bc> (5) + TTTT (4) = 20 chars
@@ -963,7 +964,7 @@ class TestInsertKmersStylePropagation:
         
         # Red style should apply to AAAA (0-3) and TTTT (16-19)
         # NOT to positions inside the <bc>...</bc> tags
-        red_styles = [(spec, pos) for spec, pos in styles if spec == 'red']
+        red_styles = [(spec, pos) for spec, pos in seq_style.style_list if spec == 'red']
         assert len(red_styles) > 0
         
         # Collect all red-styled positions
@@ -994,14 +995,14 @@ class TestStackRepeatStylePropagation:
         df = stacked.generate_library(num_seqs=2, report_design_cards=True)
         
         # First row from pool1 should have red style
-        styles0 = df['_inline_styles'].iloc[0]
-        assert len(styles0) > 0
-        assert styles0[0][0] == 'red'
+        seq_style0 = df['_inline_styles'].iloc[0]
+        assert len(seq_style0.style_list) > 0
+        assert seq_style0.style_list[0][0] == 'red'
         
         # Second row from pool2 should have blue style
-        styles1 = df['_inline_styles'].iloc[1]
-        assert len(styles1) > 0
-        assert styles1[0][0] == 'blue'
+        seq_style1 = df['_inline_styles'].iloc[1]
+        assert len(seq_style1.style_list) > 0
+        assert seq_style1.style_list[0][0] == 'blue'
     
     def test_repeat_passes_styles_unchanged(self):
         """repeat_states() passes through parent styles unchanged."""
@@ -1013,9 +1014,9 @@ class TestStackRepeatStylePropagation:
         
         # All rows should have the green style
         for i in range(3):
-            styles = df['_inline_styles'].iloc[i]
-            assert len(styles) > 0
-            assert styles[0][0] == 'green'
+            seq_style = df['_inline_styles'].iloc[i]
+            assert len(seq_style.style_list) > 0
+            assert seq_style.style_list[0][0] == 'green'
 
 
 class TestCompositeOperationsStyleChain:
@@ -1030,10 +1031,10 @@ class TestCompositeOperationsStyleChain:
             stacked = pp.stack([mutated]).named('stacked')
         
         df = stacked.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Should have both red (from stylize) and yellow (from mutagenize changes)
-        style_specs = [spec for spec, _ in styles]
+        style_specs = [spec for spec, _ in seq_style.style_list]
         assert 'red' in style_specs
         assert 'yellow' in style_specs
     
@@ -1051,8 +1052,8 @@ class TestCompositeOperationsStyleChain:
         
         # All rows should have styles
         for i in range(3):
-            styles = df['_inline_styles'].iloc[i]
-            assert len(styles) > 0
+            seq_style = df['_inline_styles'].iloc[i]
+            assert len(seq_style.style_list) > 0
 
 
 class TestFromSeqStyle:
@@ -1064,10 +1065,10 @@ class TestFromSeqStyle:
             pool = pp.from_seq('ACGT', style='red').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
-        assert len(styles) == 1
-        spec, positions = styles[0]
+        assert len(seq_style.style_list) == 1
+        spec, positions = seq_style.style_list[0]
         assert spec == 'red'
         assert list(positions) == [0, 1, 2, 3]
     
@@ -1077,8 +1078,8 @@ class TestFromSeqStyle:
             pool = pp.from_seq('ACGT').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
-        assert styles == []
+        seq_style = df['_inline_styles'].iloc[0]
+        assert not seq_style
 
 
 class TestFromSeqsStyle:
@@ -1092,9 +1093,9 @@ class TestFromSeqsStyle:
         df = pool.generate_library(num_seqs=2, report_design_cards=True)
         
         for i in range(2):
-            styles = df['_inline_styles'].iloc[i]
-            assert len(styles) == 1
-            spec, positions = styles[0]
+            seq_style = df['_inline_styles'].iloc[i]
+            assert len(seq_style.style_list) == 1
+            spec, positions = seq_style.style_list[0]
             assert spec == 'blue'
             assert list(positions) == [0, 1, 2, 3]
     
@@ -1115,10 +1116,10 @@ class TestGetKmersStyle:
             pool = pp.get_kmers(length=3, mode='sequential', style='green').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
-        assert len(styles) == 1
-        spec, positions = styles[0]
+        assert len(seq_style.style_list) == 1
+        spec, positions = seq_style.style_list[0]
         assert spec == 'green'
         assert list(positions) == [0, 1, 2]
     
@@ -1141,9 +1142,9 @@ class TestInsertKmersStyleParams:
                                     style='red').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
-        red_styles = [(spec, pos) for spec, pos in styles if spec == 'red']
+        red_styles = [(spec, pos) for spec, pos in seq_style.style_list if spec == 'red']
         assert len(red_styles) == 1
         _, positions = red_styles[0]
         assert len(positions) == 2  # kmer length
@@ -1155,11 +1156,11 @@ class TestInsertKmersStyleParams:
             pool = bg.stylize(style='blue').insert_kmers(region='kmer', length=2, mode='sequential').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
         # Collect all blue-styled positions (may be split across entries)
         blue_positions = []
-        for spec, pos in styles:
+        for spec, pos in seq_style.style_list:
             if spec == 'blue':
                 blue_positions.extend(pos.tolist())
         
@@ -1177,9 +1178,9 @@ class TestInsertKmersStyleParams:
                                     style='red').named('result')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
+        seq_style = df['_inline_styles'].iloc[0]
         
-        style_specs = [spec for spec, _ in styles]
+        style_specs = [spec for spec, _ in seq_style.style_list]
         assert 'red' in style_specs
         assert 'blue' in style_specs
 

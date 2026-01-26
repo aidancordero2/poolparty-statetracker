@@ -1,7 +1,7 @@
 """Mutagenize operation - apply mutations to a sequence."""
 from itertools import combinations
 from math import comb, prod
-from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, beartype, StyleList
+from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, beartype, SeqStyle
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
@@ -368,7 +368,7 @@ class MutagenizeOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[StyleList] | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Return design card, mutated sequence, and styles together.
         
@@ -434,21 +434,19 @@ class MutagenizeOp(Operation):
         
         # Build output styles: pass through parent styles (mutagenize preserves length)
         # and add mutation style if _style is set
-        output_styles: StyleList = []
-        if parent_styles and len(parent_styles) > 0:
-            output_styles.extend(parent_styles[0])
+        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(result_seq))
         
         if self._style is not None and len(positions) > 0:
             # Convert logical positions to raw positions for styling
             raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
-            output_styles.append((self._style, raw_positions))
+            output_style = output_style.add_style(self._style, raw_positions)
         
         return {
             'positions': positions,
             'wt_chars': wt_chars,
             'mut_chars': mut_chars,
             'seq': result_seq,
-            'style': output_styles,
+            'style': output_style,
         }
     
     def _get_copy_params(self) -> dict:

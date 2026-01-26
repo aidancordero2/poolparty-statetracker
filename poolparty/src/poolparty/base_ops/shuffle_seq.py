@@ -1,6 +1,6 @@
 """SeqShuffle operation - shuffle characters within a sequence region."""
 from numbers import Real
-from ..types import Pool_type, ModeType, Optional, Union, RegionType, beartype
+from ..types import Pool_type, ModeType, Optional, Union, RegionType, beartype, SeqStyle
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -142,7 +142,7 @@ class SeqShuffleOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Return design card and shuffled sequence together.
         
@@ -187,18 +187,18 @@ class SeqShuffleOp(Operation):
             seq_list[pos] = shuffled_molecular[i]
         shuffled_seq = ''.join(seq_list)
         
-        # Apply styling to shuffled characters if requested
-        from ..types import StyleList
-        output_styles: StyleList = []
+        # Pass through parent styles and add styling to shuffled characters if requested
+        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(shuffled_seq))
         if self._style and molecular_positions:
-            output_styles = [
-                (self._style, np.array(molecular_positions, dtype=np.int64))
-            ]
+            output_style = output_style.add_style(
+                self._style, 
+                np.array(molecular_positions, dtype=np.int64)
+            )
         
         return {
             'permutation': permutation,
             'seq': shuffled_seq,
-            'style': output_styles,
+            'style': output_style,
         }
     
     def compute_seq_names(

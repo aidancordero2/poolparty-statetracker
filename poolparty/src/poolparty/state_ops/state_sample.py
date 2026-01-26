@@ -1,7 +1,7 @@
 """StateSample operation - sample states from a pool."""
 from numbers import Real
 import statetracker as st
-from ..types import Optional, Sequence, Integral, Real, beartype
+from ..types import Optional, Sequence, Integral, Real, beartype, SeqStyle
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -103,11 +103,12 @@ class StateSampleOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Return parent sequence (state mapping handled by counter)."""
-        output_styles = parent_styles[0] if parent_styles and len(parent_styles) > 0 else []
-        return {'seq': parent_seqs[0], 'style': output_styles}
+        seq = parent_seqs[0]
+        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(seq))
+        return {'seq': seq, 'style': output_style}
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

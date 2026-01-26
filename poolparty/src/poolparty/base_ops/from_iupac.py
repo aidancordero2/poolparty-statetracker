@@ -1,6 +1,6 @@
 """FromIupac operation - generate DNA sequences from IUPAC notation."""
 from numbers import Real
-from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
+from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype, SeqStyle
 from ..operation import Operation
 from ..pool import Pool
 from ..utils import dna_utils
@@ -167,7 +167,7 @@ class FromIupacOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Return design card and DNA sequence together."""
         if self.mode == 'random':
@@ -188,17 +188,16 @@ class FromIupacOp(Operation):
         seq = ''.join(result)
         
         # Apply styling if requested
-        from ..types import StyleList
-        output_styles: StyleList = []
+        output_style = SeqStyle.empty(len(seq))
         if self._style:
             # Style all positions of the generated sequence
             positions = np.arange(len(seq), dtype=np.int64)
-            output_styles = [(self._style, positions)]
+            output_style = output_style.add_style(self._style, positions)
         
         return {
             'iupac_state': state,
             'seq': seq,
-            'style': output_styles,
+            'style': output_style,
         }
 
     def _get_copy_params(self) -> dict:

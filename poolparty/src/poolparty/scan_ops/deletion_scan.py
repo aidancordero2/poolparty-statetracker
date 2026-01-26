@@ -2,7 +2,7 @@
 from numbers import Integral, Real
 import numpy as np
 
-from ..types import Union, ModeType, Optional, PositionsType, RegionType, StyleList, beartype
+from ..types import Union, ModeType, Optional, PositionsType, RegionType, SeqStyle, beartype
 from ..party import get_active_party
 from ..pool import Pool
 from ..operation import Operation
@@ -207,7 +207,7 @@ class DeletionScanOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Return design card and sequence with deletion applied.
         
@@ -252,7 +252,7 @@ class DeletionScanOp(Operation):
         result_seq = seq[:start_literal] + gap_content + seq[end_literal:]
         
         # Adjust styles in one pass
-        output_styles = self._adjust_styles(
+        output_style = self._adjust_styles(
             parent_styles, 
             start_literal, 
             end_literal, 
@@ -267,21 +267,19 @@ class DeletionScanOp(Operation):
             'length': self._deletion_length,
             'deleted_content': deleted_content,
             'seq': result_seq,
-            'style': output_styles,
+            'style': output_style,
         }
     
     def _adjust_styles(
         self, 
-        parent_styles: list | None, 
+        parent_styles: list[SeqStyle] | None, 
         del_start: int, 
         del_end: int, 
         gap_content: str,
-        seq_len: int
-    ) -> StyleList:
+        seq_len: int,
+    ) -> SeqStyle:
         """Adjust style positions for deletion + optional gap insertion."""
-        from ..utils.style_utils import SeqStyle
-        
-        input_style = SeqStyle.from_style_list(parent_styles[0], seq_len) if parent_styles else SeqStyle.empty(seq_len)
+        input_style = parent_styles[0] if parent_styles else SeqStyle.empty(seq_len)
         
         output_style = SeqStyle.join([
             input_style[:del_start],           # Prefix
@@ -294,7 +292,7 @@ class DeletionScanOp(Operation):
             gap_positions = np.arange(del_start, del_start + len(gap_content), dtype=np.int64)
             output_style = output_style.add_style(self._style, gap_positions)
         
-        return output_style.style_list
+        return output_style
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

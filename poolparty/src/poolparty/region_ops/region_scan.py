@@ -1,5 +1,5 @@
 """RegionScan operation - insert XML region tags at scanning positions."""
-from poolparty.types import Union, Optional, Literal, RegionType
+from poolparty.types import Union, Optional, Literal, RegionType, SeqStyle
 from numbers import Integral, Real
 import numpy as np
 
@@ -224,10 +224,9 @@ class RegionScanOp(Operation):
         self,
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list | None = None,
+        parent_styles: list[SeqStyle] | None = None,
     ) -> dict:
         """Return design card and sequence with region tags inserted together."""
-        from ..types import StyleList
         
         seq = parent_seqs[0]
         
@@ -317,10 +316,8 @@ class RegionScanOp(Operation):
             result_seq = seq[:raw_position] + region_tag + seq[raw_position:]
         
         # Adjust parent styles to account for tag insertion
-        from ..utils.style_utils import SeqStyle
-        
         seq_len = len(seq)
-        input_style = SeqStyle.from_style_list(parent_styles[0], seq_len) if parent_styles else SeqStyle.empty(seq_len)
+        input_style = parent_styles[0] if parent_styles else SeqStyle.empty(seq_len)
         
         if self._region_length > 0:
             # Region tags: split and reassemble with tag spacers
@@ -339,8 +336,6 @@ class RegionScanOp(Operation):
                 input_style[raw_position:],              # After tag
             ])
         
-        output_styles = output_style.style_list
-        
         return {
             'position_index': position_index,
             'start': start,
@@ -351,7 +346,7 @@ class RegionScanOp(Operation):
             'strand': strand,
             'region_seq': region_tag,
             'seq': result_seq,
-            'style': output_styles,
+            'style': output_style,
         }
     
     def _get_copy_params(self) -> dict:
