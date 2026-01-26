@@ -42,7 +42,7 @@ def from_seq(
         A Pool object yielding the provided sequence (or bg_pool with region replaced).
     """
     from ..party import get_active_party
-    from ..region_ops.parsing import _validate_regions
+    from ..utils.parsing_utils import _validate_regions
     from .fixed import fixed_operation
     
     party = get_active_party()

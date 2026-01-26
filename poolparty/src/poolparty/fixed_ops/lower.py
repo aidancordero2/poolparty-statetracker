@@ -2,7 +2,7 @@
 from numbers import Real
 from ..types import Pool_type, Union, Optional, RegionType, beartype
 from ..pool import Pool
-from ..region_ops.parsing import transform_nontag_chars
+from ..utils.parsing_utils import transform_nontag_chars
 
 
 @beartype

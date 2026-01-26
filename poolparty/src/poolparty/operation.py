@@ -163,7 +163,7 @@ class Operation:
         
         if isinstance(region, str):
             # Region name - look up in sequence
-            from .region_ops.parsing import validate_single_region
+            from .utils.parsing_utils import validate_single_region
             region_obj = validate_single_region(seq, region)
             return (region_obj.content_start, region_obj.content_end)
         else:
@@ -221,7 +221,7 @@ class Operation:
         
         if isinstance(self._region, str):
             # Region is a region name
-            from .region_ops.parsing import parse_region, build_region_tags
+            from .utils.parsing_utils import parse_region, build_region_tags
             clean_prefix, _, _, strand = parse_region(parent_seq, self._region)
             prefix_len = len(clean_prefix)
             
@@ -416,7 +416,7 @@ class Operation:
         
         # Parse region info for sequence reassembly (if region is a region name)
         if isinstance(self._region, str):
-            from .region_ops.parsing import parse_region, build_region_tags
+            from .utils.parsing_utils import parse_region, build_region_tags
             clean_prefix, _, clean_suffix, strand = parse_region(
                 parent_seqs[0], self._region
             )
@@ -449,7 +449,7 @@ class Operation:
                 # Suffix styles: for regions, use region.end (where suffix starts in original)
                 #                 for intervals, use region_end (where suffix starts)
                 if isinstance(self._region, str):
-                    from .region_ops.parsing import validate_single_region, build_region_tags
+                    from .utils.parsing_utils import validate_single_region, build_region_tags
                     region_info = validate_single_region(parent_seqs[0], self._region)
                     clean_prefix_len = len(clean_prefix)
                     

@@ -2,7 +2,7 @@
 from numbers import Real
 from poolparty.types import Union, Optional
 
-from .parsing import validate_single_region
+from ..utils.parsing_utils import validate_single_region
 from ..utils import dna_utils
 
 

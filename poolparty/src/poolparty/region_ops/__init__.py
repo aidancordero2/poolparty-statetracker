@@ -1,7 +1,7 @@
 """Region module for poolparty - XML-style region tags for sequence annotation."""
 
 # Import parsing utilities (no dependencies on Operation)
-from .parsing import (
+from ..utils.parsing_utils import (
     TAG_PATTERN,
     ParsedRegion,
     parse_region,

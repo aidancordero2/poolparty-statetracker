@@ -6,7 +6,7 @@ from ..types import Union, ModeType, Optional, PositionsType, RegionType, StyleL
 from ..party import get_active_party
 from ..pool import Pool
 from ..operation import Operation
-from ..region_ops.parsing import get_nontag_positions
+from ..utils.parsing_utils import get_nontag_positions
 
 
 def _validate_positions(positions: PositionsType, max_position: int, min_position: int = 0) -> list[int]:

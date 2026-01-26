@@ -3,7 +3,7 @@ from poolparty.types import Union, Optional, Literal, RegionType
 from numbers import Integral, Real
 import numpy as np
 
-from .parsing import build_region_tags, TAG_PATTERN, get_nontag_positions
+from ..utils.parsing_utils import build_region_tags, TAG_PATTERN, get_nontag_positions
 from ..operation import Operation
 
 # Type aliases

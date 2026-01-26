@@ -2,7 +2,7 @@
 from numbers import Real
 from poolparty.types import Union, Optional
 
-from .parsing import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos
+from ..utils.parsing_utils import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos
 
 
 def insert_tags(

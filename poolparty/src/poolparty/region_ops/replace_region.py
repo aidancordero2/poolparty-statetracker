@@ -3,7 +3,7 @@ from numbers import Real
 from poolparty.types import Optional
 import numpy as np
 
-from .parsing import validate_single_region
+from ..utils.parsing_utils import validate_single_region
 from ..operation import Operation
 from ..utils import dna_utils
 

@@ -80,14 +80,14 @@ def get_mutations(char: str) -> list[str]:
 @beartype
 def get_nontag_positions(seq: str) -> list[int]:
     """Get raw string positions of all chars excluding region tag interiors."""
-    from ..region_ops.parsing import get_nontag_positions as _get_nontag_positions
+    from .parsing_utils import get_nontag_positions as _get_nontag_positions
     return _get_nontag_positions(seq)
 
 
 @beartype
 def get_length_without_tags(seq: str) -> int:
     """Get sequence length excluding region tags (includes all other chars)."""
-    from ..region_ops.parsing import get_length_without_tags as _get_length_without_tags
+    from .parsing_utils import get_length_without_tags as _get_length_without_tags
     return _get_length_without_tags(seq)
 
 

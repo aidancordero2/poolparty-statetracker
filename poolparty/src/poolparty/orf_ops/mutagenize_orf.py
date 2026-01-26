@@ -8,7 +8,7 @@ from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
 from ..utils.orf_utils import validate_orf_extent
-from ..region_ops.parsing import TAG_PATTERN, strip_all_tags, find_all_regions
+from ..utils.parsing_utils import TAG_PATTERN, strip_all_tags, find_all_regions
 import numpy as np
 from ..codon_table import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
 

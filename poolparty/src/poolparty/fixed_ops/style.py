@@ -125,7 +125,7 @@ class StylizeOp(Operation):
                 return re.compile(f'[{escaped}]')
             case 'tags':
                 if self._style_region is None or not isinstance(self._style_region, str):
-                    from ..region_ops.parsing import TAG_PATTERN
+                    from ..utils.parsing_utils import TAG_PATTERN
                     return TAG_PATTERN
                 else:
                     name = re.escape(self._style_region)
@@ -135,7 +135,7 @@ class StylizeOp(Operation):
 
     def _get_tag_positions(self, text: str) -> set[int]:
         """Get positions of all characters inside XML tags."""
-        from ..region_ops.parsing import TAG_PATTERN
+        from ..utils.parsing_utils import TAG_PATTERN
         tag_positions: set[int] = set()
         for match in TAG_PATTERN.finditer(text):
             for i in range(match.start(), match.end()):
@@ -153,7 +153,7 @@ class StylizeOp(Operation):
             return (start, stop)
 
         # Handle region name
-        from ..region_ops.parsing import find_all_regions
+        from ..utils.parsing_utils import find_all_regions
 
         try:
             regions = find_all_regions(text)

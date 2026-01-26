@@ -2,7 +2,7 @@
 from numbers import Real
 from ..types import Pool_type, Union, Optional, RegionType, beartype
 from ..pool import Pool
-from ..region_ops.parsing import reverse_complement_with_tags
+from ..utils.parsing_utils import reverse_complement_with_tags
 from ..utils import dna_utils
 
 

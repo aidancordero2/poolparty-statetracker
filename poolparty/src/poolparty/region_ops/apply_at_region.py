@@ -104,7 +104,7 @@ def _replace_keeping_tags(
 ):
     """Replace region content while preserving region tags."""
     from ..fixed_ops.fixed import fixed_operation
-    from .parsing import validate_single_region, build_region_tags
+    from ..utils.parsing_utils import validate_single_region, build_region_tags
     
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         bg_seq = seqs[0]

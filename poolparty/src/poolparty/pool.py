@@ -882,7 +882,7 @@ class Pool:
     def clear_tags(self, **kwargs) -> Pool_type:
         """Remove all region tags from sequences, keeping content."""
         from .fixed_ops.fixed import fixed_operation
-        from .region_ops.parsing import strip_all_tags
+        from .utils.parsing_utils import strip_all_tags
         
         result = fixed_operation(
             parent_pools=[self],

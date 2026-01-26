@@ -3,7 +3,7 @@ from poolparty.types import Union, Optional, Sequence, Literal
 from numbers import Integral, Real
 import numpy as np
 
-from .parsing import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos
+from ..utils.parsing_utils import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos
 from ..operation import Operation
 
 # Type aliases
@@ -305,7 +305,7 @@ class RegionMultiScanOp(Operation):
                 literal_end = nontag_pos_to_literal_pos(seq, idx + self._region_length)
                 content = seq[literal_start:literal_end]
                 # Strip any existing tags from content (keep only actual characters)
-                from .parsing import strip_all_tags
+                from ..utils.parsing_utils import strip_all_tags
                 content = strip_all_tags(content)
             else:
                 content = ''
