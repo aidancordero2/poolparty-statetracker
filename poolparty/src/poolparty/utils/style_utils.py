@@ -1,7 +1,8 @@
 """Inline sequence styling with ANSI colors."""
 import re
-from ..types import Literal, Optional, beartype, StyleList
+from ..types import Literal, Optional, beartype, StyleList, Sequence
 import numpy as np
+from dataclasses import dataclass
 
 # ANSI escape codes for styling
 STYLE_CODES = {
@@ -129,6 +130,141 @@ def _resolve_styles(styles_with_priority: dict[str, int]) -> list[str]:
     return result
 
 
+@dataclass(frozen=True)
+class SeqStyle:
+    """Immutable container for inline styles with associated sequence length.
+    
+    Provides Pythonic operations for extracting, reversing, and concatenating
+    styles while maintaining position correctness.
+    """
+    _style_list: StyleList
+    length: int
+    
+    # --- Access ---
+    @property
+    def style_list(self) -> StyleList:
+        """Get underlying StyleList."""
+        return self._style_list
+    
+    def __len__(self) -> int:
+        return self.length
+    
+    def __bool__(self) -> bool:
+        """Return True if has any styles."""
+        return len(self._style_list) > 0
+    
+    def __repr__(self) -> str:
+        n = len(self._style_list)
+        return f"SeqStyle({n} style{'s' if n != 1 else ''}, length={self.length})"
+    
+    # --- Construction ---
+    @classmethod
+    def empty(cls, length: int) -> 'SeqStyle':
+        """Create a SeqStyle with no styles (spacer)."""
+        return cls([], length)
+    
+    @classmethod
+    def from_style_list(cls, style_list: StyleList, length: int) -> 'SeqStyle':
+        """Create from existing StyleList."""
+        return cls(style_list, length)
+    
+    # --- Adding styles (returns new SeqStyle) ---
+    def add_style(self, spec: str, positions: np.ndarray) -> 'SeqStyle':
+        """Return new SeqStyle with additional style appended."""
+        new_style_list = self._style_list + [(spec, positions)]
+        return SeqStyle(new_style_list, self.length)
+    
+    # --- Slicing ---
+    def __getitem__(self, key: slice) -> 'SeqStyle':
+        """Extract region: seq_style[start:end] returns 0-indexed SeqStyle.
+        
+        Examples:
+            seq_style[10:50]  # positions 10-49 -> 0-indexed, length=40
+            seq_style[:50]    # first 50 positions
+            seq_style[50:]    # from position 50 to end
+        """
+        if not isinstance(key, slice):
+            raise TypeError("SeqStyle only supports slice indexing")
+        if key.step is not None:
+            raise ValueError("SeqStyle slicing does not support step")
+        
+        start = key.start if key.start is not None else 0
+        end = key.stop if key.stop is not None else self.length
+        new_length = end - start
+        
+        if new_length <= 0:
+            return SeqStyle.empty(0)
+        
+        result: StyleList = []
+        for spec, positions in self._style_list:
+            mask = (positions >= start) & (positions < end)
+            filtered = positions[mask]
+            if len(filtered) > 0:
+                # Shift to 0-indexed
+                result.append((spec, filtered - start))
+        
+        return SeqStyle(result, new_length)
+    
+    # --- Reversal ---
+    def reversed(self, do_reverse: bool = True) -> 'SeqStyle':
+        """Return SeqStyle with positions mirrored within length.
+        
+        Useful for reverse complement operations. If do_reverse=False,
+        returns self unchanged (convenient for conditional reversal).
+        """
+        if not do_reverse:
+            return self
+        
+        result: StyleList = []
+        for spec, positions in self._style_list:
+            # Mirror: new_pos = length - 1 - old_pos
+            mirrored = self.length - 1 - positions
+            result.append((spec, mirrored))
+        
+        return SeqStyle(result, self.length)
+    
+    # --- Concatenation ---
+    @classmethod
+    def join(cls, seq_styles: Sequence['SeqStyle']) -> 'SeqStyle':
+        """Concatenate multiple SeqStyles with automatic position offsets."""
+        if not seq_styles:
+            return cls.empty(0)
+        
+        result: StyleList = []
+        offset = 0
+        
+        for seq_style in seq_styles:
+            for spec, positions in seq_style._style_list:
+                if len(positions) > 0:
+                    result.append((spec, positions + offset))
+            offset += seq_style.length
+        
+        return cls(result, offset)
+    
+    def __add__(self, other: 'SeqStyle') -> 'SeqStyle':
+        """Enable: seq_style_a + seq_style_b"""
+        return SeqStyle.join([self, other])
+    
+    # --- Splitting ---
+    def split(self, breakpoints: list[int]) -> tuple['SeqStyle', ...]:
+        """Split at breakpoints, returning N+1 SeqStyle objects.
+        
+        Example: seq_style.split([10, 30]) on length=50 returns:
+            (seq_style[0:10], seq_style[10:30], seq_style[30:50])
+        """
+        points = [0] + sorted(breakpoints) + [self.length]
+        return tuple(self[points[i]:points[i+1]] for i in range(len(points) - 1))
+    
+    # --- Validation and application ---
+    def validate(self) -> None:
+        """Validate all positions are within [0, length)."""
+        validate_style_positions(self.length, self._style_list)
+    
+    def apply(self, seq: str) -> str:
+        """Apply styles to sequence, returning ANSI-styled string."""
+        return apply_inline_styles(seq, self._style_list)
+
+
 def reset(text: str) -> str:
     """Strip all ANSI escape codes from text."""
     return ANSI_ESCAPE_PATTERN.sub('', text)
@@ -164,142 +300,11 @@ def validate_style_positions(seq_len: int, styles: StyleList) -> None:
             )
 
 
-@beartype
-def split_styles_by_region(
-    styles: StyleList,
-    region_start: int,
-    region_end: int,
-) -> tuple[StyleList, StyleList, StyleList]:
-    """Split styles into (prefix, region, suffix) based on position bounds.
-    
-    Positions in [0, region_start) go to prefix.
-    Positions in [region_start, region_end) go to region (shifted to 0-indexed).
-    Positions in [region_end, ...) go to suffix.
-    
-    Parameters
-    ----------
-    styles : StyleList
-        List of (spec, positions) tuples to split.
-    region_start : int
-        Start position of region (inclusive).
-    region_end : int
-        End position of region (exclusive).
-    
-    Returns
-    -------
-    tuple[StyleList, StyleList, StyleList]
-        (prefix_styles, region_styles, suffix_styles) where:
-        - prefix_styles: positions < region_start (unchanged)
-        - region_styles: positions in [region_start, region_end) shifted to 0-indexed
-        - suffix_styles: positions >= region_end (unchanged)
-    """
-    prefix_styles: StyleList = []
-    region_styles: StyleList = []
-    suffix_styles: StyleList = []
-    
-    for spec, positions in styles:
-        if len(positions) == 0:
-            continue
-        
-        # Split positions into three groups
-        prefix_mask = positions < region_start
-        region_mask = (positions >= region_start) & (positions < region_end)
-        suffix_mask = positions >= region_end
-        
-        if np.any(prefix_mask):
-            prefix_styles.append((spec, positions[prefix_mask]))
-        
-        if np.any(region_mask):
-            # Shift to region-relative coordinates (0-indexed)
-            adjusted_positions = positions[region_mask] - region_start
-            region_styles.append((spec, adjusted_positions))
-        
-        if np.any(suffix_mask):
-            suffix_styles.append((spec, positions[suffix_mask]))
-    
-    return prefix_styles, region_styles, suffix_styles
-
-
-@beartype
-def shift_style_positions(styles: StyleList, offset: int) -> StyleList:
-    """Shift all positions in styles by offset.
-    
-    Parameters
-    ----------
-    styles : StyleList
-        List of (spec, positions) tuples.
-    offset : int
-        Amount to shift positions (can be negative).
-    
-    Returns
-    -------
-    StyleList
-        New StyleList with all positions shifted by offset.
-    """
-    if not styles:
-        return []
-    
-    shifted: StyleList = []
-    for spec, positions in styles:
-        if len(positions) > 0:
-            shifted.append((spec, positions + offset))
-        else:
-            shifted.append((spec, positions))
-    
-    return shifted
-
-
-@beartype
-def reassemble_styles(
-    prefix_styles: StyleList,
-    region_styles: StyleList,
-    suffix_styles: StyleList,
-    prefix_len: int,
-    old_region_len: int,
-    new_region_len: int,
-) -> StyleList:
-    """Reassemble styles after region operation.
-    
-    - prefix_styles: unchanged
-    - region_styles: shifted by prefix_len
-    - suffix_styles: shifted by (prefix_len + new_region_len - old_region_len)
-    
-    Parameters
-    ----------
-    prefix_styles : StyleList
-        Styles for positions before the region (unchanged).
-    region_styles : StyleList
-        Styles from region operation (will be shifted by prefix_len).
-    suffix_styles : StyleList
-        Styles for positions after the region (will be shifted by length delta).
-    prefix_len : int
-        Length of prefix before region.
-    old_region_len : int
-        Original length of region content.
-    new_region_len : int
-        New length of region content after operation.
-    
-    Returns
-    -------
-    StyleList
-        Reassembled styles with correct positions.
-    """
-    result: StyleList = []
-    
-    # Add prefix styles unchanged
-    result.extend(prefix_styles)
-    
-    # Shift region styles by prefix length
-    shifted_region = shift_style_positions(region_styles, prefix_len)
-    result.extend(shifted_region)
-    
-    # Shift suffix styles by prefix_len + length_delta
-    length_delta = new_region_len - old_region_len
-    suffix_offset = prefix_len + length_delta
-    shifted_suffix = shift_style_positions(suffix_styles, suffix_offset)
-    result.extend(shifted_suffix)
-    
-    return result
+# Deprecated functions - replaced by SeqStyle class
+# These are kept for reference but should not be used in new code:
+# - split_styles_by_region -> use SeqStyle.split()
+# - shift_style_positions -> internal to SeqStyle operations
+# - reassemble_styles -> use SeqStyle.join()
 
 
 @beartype

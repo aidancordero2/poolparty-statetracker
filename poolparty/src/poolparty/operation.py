@@ -375,7 +375,7 @@ class Operation:
         5. Adjusts output style positions to account for prefix
         6. Removes region tags if remove_tags=True and region is a region name
         """
-        from .utils.style_utils import split_styles_by_region, reassemble_styles
+        from .utils.style_utils import SeqStyle
         
         if self._region is None:
             return self.compute(parent_seqs, rng, parent_styles)
@@ -390,17 +390,18 @@ class Operation:
         region_start = bounds[0] if bounds else 0
         region_end = bounds[1] if bounds else len(parent_seqs[0])
         
-        # Split styles for first parent using utility function
+        # Split styles for first parent using SeqStyle
         modified_styles = None
         prefix_styles: StyleList = []
         suffix_styles: StyleList = []
         if parent_styles:
             modified_styles = list(parent_styles)  # Copy the list
             if modified_styles and len(modified_styles) > 0:
-                prefix_styles, region_styles, suffix_styles = split_styles_by_region(
-                    modified_styles[0], region_start, region_end
-                )
-                modified_styles[0] = region_styles
+                parent_style = SeqStyle.from_style_list(modified_styles[0], len(parent_seqs[0]))
+                prefix_seq_style, region_seq_style, suffix_seq_style = parent_style.split([region_start, region_end])
+                prefix_styles = prefix_seq_style.style_list
+                suffix_styles = suffix_seq_style.style_list
+                modified_styles[0] = region_seq_style.style_list
         
         # Call subclass with region content as first sequence
         modified_seqs = [region_content] + parent_seqs[1:]
@@ -441,72 +442,62 @@ class Operation:
             elif is_style_output(key):
                 # Get the output sequence to determine new region length
                 output_seq = result.get('seq', '')
+                from .utils.style_utils import SeqStyle
                 
-                # Calculate prefix length for style reassembly
-                # For regions with remove_tags=False, region styles need prefix + opening tag
-                # For regions with remove_tags=True, region styles just need prefix
-                # For intervals, region styles just need prefix
-                # Suffix styles: for regions, use region.end (where suffix starts in original)
-                #                 for intervals, use region_end (where suffix starts)
+                # Calculate lengths for style reassembly
+                # The prefix_styles, suffix_styles were extracted from the original sequence
+                # which includes tags. We need to calculate the correct positions.
                 if isinstance(self._region, str):
                     from .utils.parsing_utils import validate_single_region, build_region_tags
                     region_info = validate_single_region(parent_seqs[0], self._region)
                     clean_prefix_len = len(clean_prefix)
                     
                     if self._remove_tags:
-                        # Region styles shifted by clean_prefix only
-                        region_prefix_len = clean_prefix_len
-                        # Suffix styles: suffix starts at region.content_end in original
-                        suffix_start_pos = region_info.content_end
+                        # When tags removed: prefix + region + suffix
+                        prefix_seq_style = SeqStyle.from_style_list(prefix_styles, clean_prefix_len)
+                        region_seq_style = SeqStyle.from_style_list(value, len(output_seq))
+                        suffix_seq_style = SeqStyle.from_style_list(suffix_styles, len(suffix))
+                        
+                        result_style = SeqStyle.join([
+                            prefix_seq_style,
+                            region_seq_style,
+                            suffix_seq_style,
+                        ])
                     else:
-                        # Region styles shifted by clean_prefix + opening tag
+                        # When tags kept: prefix + opening_tag + region + closing_tag + suffix
+                        # prefix_styles span [0, region.start) which includes clean_prefix
+                        # suffix_styles span [region.end, ...) which includes clean_suffix
                         test_tag = build_region_tags(self._region, 'X', strand=strand)
                         opening_tag_len = test_tag.index('>') + 1
-                        region_prefix_len = clean_prefix_len + opening_tag_len
-                        # Suffix styles: suffix starts at region.end in original
-                        suffix_start_pos = region_info.end
-                else:
-                    # Region is [start, stop] interval
-                    region_prefix_len = len(prefix)
-                    suffix_start_pos = region_end
-                
-                # Calculate old and new region lengths accounting for tag changes
-                if isinstance(self._region, str):
-                    if self._remove_tags:
-                        # When removing tags: compare new content length vs old tag span
-                        # (suffix positions need to shift by the removed tag length)
-                        old_region_len = region_info.end - region_info.start
-                        new_region_len = len(output_seq)
-                    else:
-                        # When keeping tags: compare new tag span vs old tag span
-                        old_region_len = region_info.end - region_info.start
                         new_wrapped = build_region_tags(self._region, output_seq, strand=strand)
-                        new_region_len = len(new_wrapped)
+                        closing_tag_len = len(new_wrapped) - opening_tag_len - len(output_seq)
+                        
+                        # prefix_styles cover clean_prefix only (tags are in between prefix and region)
+                        prefix_seq_style = SeqStyle.from_style_list(prefix_styles, clean_prefix_len)
+                        region_seq_style = SeqStyle.from_style_list(value, len(output_seq))
+                        # suffix_styles cover clean_suffix only
+                        suffix_seq_style = SeqStyle.from_style_list(suffix_styles, len(suffix))
+                        
+                        result_style = SeqStyle.join([
+                            prefix_seq_style,
+                            SeqStyle.empty(opening_tag_len),
+                            region_seq_style,
+                            SeqStyle.empty(closing_tag_len),
+                            suffix_seq_style,
+                        ])
                 else:
                     # Region is [start, stop] interval
-                    old_region_len = len(region_content)
-                    new_region_len = len(output_seq)
+                    prefix_seq_style = SeqStyle.from_style_list(prefix_styles, len(prefix))
+                    region_seq_style = SeqStyle.from_style_list(value, len(output_seq))
+                    suffix_seq_style = SeqStyle.from_style_list(suffix_styles, len(suffix))
+                    
+                    result_style = SeqStyle.join([
+                        prefix_seq_style,
+                        region_seq_style,
+                        suffix_seq_style,
+                    ])
                 
-                # Reassemble styles manually to use different prefix lengths for region vs suffix
-                region_styles = value
-                result_styles: StyleList = []
-                
-                # Add prefix styles unchanged
-                result_styles.extend(prefix_styles)
-                
-                # Shift region styles by region_prefix_len
-                from .utils.style_utils import shift_style_positions
-                shifted_region = shift_style_positions(region_styles, region_prefix_len)
-                result_styles.extend(shifted_region)
-                
-                # Shift suffix styles: they start at suffix_start_pos in original,
-                # and need to move to suffix_start_pos + length_delta in new sequence
-                length_delta = new_region_len - old_region_len
-                suffix_offset = length_delta
-                shifted_suffix = shift_style_positions(suffix_styles, suffix_offset)
-                result_styles.extend(shifted_suffix)
-                
-                reassembled[key] = result_styles
+                reassembled[key] = result_style.style_list
             else:
                 # Keep design card keys as-is
                 reassembled[key] = value

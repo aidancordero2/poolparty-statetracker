@@ -8,6 +8,7 @@ from poolparty.utils.style_utils import (
     apply_inline_styles,
     validate_style_positions,
     reset,
+    SeqStyle,
 )
 
 
@@ -1181,3 +1182,291 @@ class TestInsertKmersStyleParams:
         style_specs = [spec for spec, _ in styles]
         assert 'red' in style_specs
         assert 'blue' in style_specs
+
+
+class TestSeqStyle:
+    """Test SeqStyle class operations."""
+    
+    # Construction
+    def test_empty_creates_spacer(self):
+        """SeqStyle.empty(n) creates SeqStyle with no styles and length n."""
+        s = SeqStyle.empty(10)
+        assert s.length == 10
+        assert len(s) == 10
+        assert s.style_list == []
+        assert not s  # bool(s) should be False
+    
+    def test_from_style_list(self):
+        """SeqStyle.from_style_list wraps existing StyleList."""
+        style_list = [('red', np.array([0, 1, 2])), ('blue', np.array([5, 6]))]
+        s = SeqStyle.from_style_list(style_list, length=10)
+        assert s.length == 10
+        assert len(s.style_list) == 2
+        assert s  # bool(s) should be True
+    
+    def test_add_style_returns_new(self):
+        """add_style() returns new SeqStyle with appended style."""
+        s = SeqStyle.empty(10)
+        s2 = s.add_style('red', np.array([0, 1]))
+        # Original unchanged
+        assert s.style_list == []
+        # New has added style
+        assert len(s2.style_list) == 1
+        assert s2.style_list[0][0] == 'red'
+        assert list(s2.style_list[0][1]) == [0, 1]
+    
+    # Slicing
+    def test_slice_extracts_region(self):
+        """seq_style[10:50] extracts and 0-indexes positions."""
+        style_list = [('red', np.array([15, 20, 25]))]
+        s = SeqStyle.from_style_list(style_list, length=100)
+        region = s[10:50]
+        
+        assert region.length == 40
+        assert len(region.style_list) == 1
+        # Positions should be shifted to 0-indexed: 15->5, 20->10, 25->15
+        assert list(region.style_list[0][1]) == [5, 10, 15]
+    
+    def test_slice_start_only(self):
+        """seq_style[50:] extracts from position to end."""
+        style_list = [('blue', np.array([60, 80]))]
+        s = SeqStyle.from_style_list(style_list, length=100)
+        region = s[50:]
+        
+        assert region.length == 50
+        # Positions 60->10, 80->30
+        assert list(region.style_list[0][1]) == [10, 30]
+    
+    def test_slice_end_only(self):
+        """seq_style[:50] extracts first n positions."""
+        style_list = [('green', np.array([10, 20, 30]))]
+        s = SeqStyle.from_style_list(style_list, length=100)
+        region = s[:50]
+        
+        assert region.length == 50
+        # Positions unchanged: 10, 20, 30
+        assert list(region.style_list[0][1]) == [10, 20, 30]
+    
+    def test_slice_filters_positions(self):
+        """Positions outside slice range are excluded."""
+        style_list = [('red', np.array([5, 15, 25, 35]))]
+        s = SeqStyle.from_style_list(style_list, length=100)
+        region = s[10:30]
+        
+        # Only positions 15 and 25 are in [10, 30)
+        # They become 5 and 15 in the new 0-indexed region
+        assert list(region.style_list[0][1]) == [5, 15]
+    
+    def test_slice_empty_when_no_positions(self):
+        """Slice with no matching positions returns empty style_list."""
+        style_list = [('red', np.array([5, 6, 7]))]
+        s = SeqStyle.from_style_list(style_list, length=100)
+        region = s[50:60]
+        
+        # No positions in [50, 60), so style_list is empty
+        assert region.style_list == []
+        assert not region  # bool(region) is False
+    
+    # Reversal
+    def test_reversed_mirrors_positions(self):
+        """reversed() mirrors positions within length."""
+        style_list = [('red', np.array([0, 1, 8, 9]))]
+        s = SeqStyle.from_style_list(style_list, length=10)
+        rev = s.reversed()
+        
+        # Positions: 0->9, 1->8, 8->1, 9->0
+        assert set(rev.style_list[0][1]) == {0, 1, 8, 9}
+    
+    def test_reversed_false_returns_self(self):
+        """reversed(False) returns unchanged SeqStyle."""
+        style_list = [('blue', np.array([0, 1, 2]))]
+        s = SeqStyle.from_style_list(style_list, length=10)
+        rev = s.reversed(do_reverse=False)
+        
+        # Should be identical
+        assert rev is s
+    
+    def test_reversed_with_multiple_styles(self):
+        """reversed() works with multiple styles."""
+        style_list = [
+            ('red', np.array([0, 1])),
+            ('blue', np.array([8, 9]))
+        ]
+        s = SeqStyle.from_style_list(style_list, length=10)
+        rev = s.reversed()
+        
+        # red: 0->9, 1->8
+        # blue: 8->1, 9->0
+        assert set(rev.style_list[0][1]) == {8, 9}
+        assert set(rev.style_list[1][1]) == {0, 1}
+    
+    # Concatenation
+    def test_join_concatenates(self):
+        """SeqStyle.join shifts positions by cumulative lengths."""
+        s1 = SeqStyle.from_style_list([('red', np.array([0, 1]))], length=5)
+        s2 = SeqStyle.from_style_list([('blue', np.array([0, 1]))], length=5)
+        s3 = SeqStyle.from_style_list([('green', np.array([0, 1]))], length=5)
+        
+        combined = SeqStyle.join([s1, s2, s3])
+        
+        assert combined.length == 15
+        assert len(combined.style_list) == 3
+        # s1: 0, 1 (unchanged)
+        # s2: 0->5, 1->6
+        # s3: 0->10, 1->11
+        assert list(combined.style_list[0][1]) == [0, 1]
+        assert list(combined.style_list[1][1]) == [5, 6]
+        assert list(combined.style_list[2][1]) == [10, 11]
+    
+    def test_join_empty_list(self):
+        """SeqStyle.join([]) returns empty SeqStyle."""
+        combined = SeqStyle.join([])
+        assert combined.length == 0
+        assert combined.style_list == []
+    
+    def test_add_operator(self):
+        """seq_style1 + seq_style2 concatenates."""
+        s1 = SeqStyle.from_style_list([('red', np.array([0, 1]))], length=5)
+        s2 = SeqStyle.from_style_list([('blue', np.array([0, 1]))], length=5)
+        
+        combined = s1 + s2
+        
+        assert combined.length == 10
+        assert list(combined.style_list[0][1]) == [0, 1]
+        assert list(combined.style_list[1][1]) == [5, 6]
+    
+    def test_join_with_empty_styles(self):
+        """SeqStyle.join works with empty SeqStyles (spacers)."""
+        s1 = SeqStyle.from_style_list([('red', np.array([0, 1]))], length=5)
+        spacer = SeqStyle.empty(3)
+        s2 = SeqStyle.from_style_list([('blue', np.array([0, 1]))], length=5)
+        
+        combined = SeqStyle.join([s1, spacer, s2])
+        
+        assert combined.length == 13
+        # s1: 0, 1
+        # spacer: no styles
+        # s2: 0->8, 1->9
+        assert list(combined.style_list[0][1]) == [0, 1]
+        assert list(combined.style_list[1][1]) == [8, 9]
+    
+    # Split
+    def test_split_single_breakpoint(self):
+        """split([n]) returns two parts."""
+        style_list = [
+            ('red', np.array([0, 1, 2])),
+            ('blue', np.array([5, 6, 7]))
+        ]
+        s = SeqStyle.from_style_list(style_list, length=10)
+        parts = s.split([5])
+        
+        assert len(parts) == 2
+        # Part 0: [0:5], Part 1: [5:10]
+        assert parts[0].length == 5
+        assert parts[1].length == 5
+        
+        # Part 0 should have red positions 0,1,2
+        assert len(parts[0].style_list) == 1
+        assert list(parts[0].style_list[0][1]) == [0, 1, 2]
+        
+        # Part 1 should have blue positions 0,1,2 (shifted from 5,6,7)
+        assert len(parts[1].style_list) == 1
+        assert list(parts[1].style_list[0][1]) == [0, 1, 2]
+    
+    def test_split_two_breakpoints(self):
+        """split([a, b]) returns three parts."""
+        style_list = [('red', np.array([2, 5, 8]))]
+        s = SeqStyle.from_style_list(style_list, length=10)
+        parts = s.split([3, 7])
+        
+        assert len(parts) == 3
+        # Part 0: [0:3], Part 1: [3:7], Part 2: [7:10]
+        assert parts[0].length == 3
+        assert parts[1].length == 4
+        assert parts[2].length == 3
+        
+        # Part 0: position 2
+        assert list(parts[0].style_list[0][1]) == [2]
+        # Part 1: position 5 -> 2
+        assert list(parts[1].style_list[0][1]) == [2]
+        # Part 2: position 8 -> 1
+        assert list(parts[2].style_list[0][1]) == [1]
+    
+    def test_split_multiple_breakpoints(self):
+        """split([a, b, c]) returns four parts."""
+        s = SeqStyle.from_style_list([('red', np.array([1, 4, 7, 10]))], length=12)
+        parts = s.split([3, 6, 9])
+        
+        assert len(parts) == 4
+        assert [p.length for p in parts] == [3, 3, 3, 3]
+    
+    # Bool and repr
+    def test_bool_true_when_has_styles(self):
+        """bool(seq_style) is True when has styles."""
+        s = SeqStyle.from_style_list([('red', np.array([0]))], length=10)
+        assert bool(s) is True
+    
+    def test_bool_false_when_empty(self):
+        """bool(SeqStyle.empty(n)) is False."""
+        s = SeqStyle.empty(10)
+        assert bool(s) is False
+    
+    def test_repr_single_style(self):
+        """repr shows style count and length."""
+        s = SeqStyle.from_style_list([('red', np.array([0]))], length=10)
+        r = repr(s)
+        assert '1 style' in r
+        assert 'length=10' in r
+    
+    def test_repr_multiple_styles(self):
+        """repr pluralizes 'styles' correctly."""
+        s = SeqStyle.from_style_list([
+            ('red', np.array([0])),
+            ('blue', np.array([1]))
+        ], length=10)
+        r = repr(s)
+        assert '2 styles' in r
+        assert 'length=10' in r
+    
+    # Validation
+    def test_validate_passes_on_valid(self):
+        """validate() passes when positions are within bounds."""
+        s = SeqStyle.from_style_list([('red', np.array([0, 5, 9]))], length=10)
+        # Should not raise
+        s.validate()
+    
+    def test_validate_raises_on_invalid(self):
+        """validate() raises if positions out of bounds."""
+        s = SeqStyle.from_style_list([('red', np.array([0, 10]))], length=10)
+        with pytest.raises(ValueError):
+            s.validate()
+    
+    # Application
+    def test_apply_styles_sequence(self):
+        """apply() returns ANSI-styled string."""
+        s = SeqStyle.from_style_list([('red', np.array([0, 1]))], length=4)
+        result = s.apply('ACGT')
+        # Should contain ANSI codes
+        assert '\033[' in result
+        # Should contain the sequence
+        assert 'A' in result and 'C' in result
+    
+    # Edge cases
+    def test_slice_zero_length(self):
+        """Slicing with start==end returns empty SeqStyle."""
+        s = SeqStyle.from_style_list([('red', np.array([5]))], length=10)
+        region = s[5:5]
+        assert region.length == 0
+        assert region.style_list == []
+    
+    def test_slice_invalid_step_raises(self):
+        """Slicing with step raises ValueError."""
+        s = SeqStyle.empty(10)
+        with pytest.raises(ValueError):
+            _ = s[::2]
+    
+    def test_slice_non_slice_raises(self):
+        """Integer indexing raises TypeError."""
+        s = SeqStyle.empty(10)
+        with pytest.raises(TypeError):
+            _ = s[5]

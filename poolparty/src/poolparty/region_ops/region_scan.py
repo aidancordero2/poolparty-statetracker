@@ -317,39 +317,29 @@ class RegionScanOp(Operation):
             result_seq = seq[:raw_position] + region_tag + seq[raw_position:]
         
         # Adjust parent styles to account for tag insertion
-        output_styles: StyleList = []
-        if parent_styles and len(parent_styles) > 0:
-            input_styles = parent_styles[0]
-            
-            if self._region_length > 0:
-                # Region tags: positions shift based on where they fall
-                for spec, positions in input_styles:
-                    adjusted_positions = []
-                    for pos in positions:
-                        if pos < start_literal:
-                            # Before tags: unchanged
-                            adjusted_positions.append(pos)
-                        elif pos < end_literal:
-                            # Inside region: shift by opening tag length
-                            adjusted_positions.append(pos + opening_tag_len)
-                        else:
-                            # After region: shift by total tag length minus replaced content
-                            shift = total_tag_len - (end_literal - start_literal) + len(content)
-                            adjusted_positions.append(pos + shift)
-                    if adjusted_positions:
-                        output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
-            else:
-                # Zero-length region: positions >= insertion point shift by tag length
-                region_tag_len = len(region_tag)
-                for spec, positions in input_styles:
-                    adjusted_positions = []
-                    for pos in positions:
-                        if pos < raw_position:
-                            adjusted_positions.append(pos)
-                        else:
-                            adjusted_positions.append(pos + region_tag_len)
-                    if adjusted_positions:
-                        output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
+        from ..utils.style_utils import SeqStyle
+        
+        seq_len = len(seq)
+        input_style = SeqStyle.from_style_list(parent_styles[0], seq_len) if parent_styles else SeqStyle.empty(seq_len)
+        
+        if self._region_length > 0:
+            # Region tags: split and reassemble with tag spacers
+            output_style = SeqStyle.join([
+                input_style[:start_literal],              # Before tag
+                SeqStyle.empty(opening_tag_len),          # Opening tag spacer
+                input_style[start_literal:end_literal],   # Inside region
+                SeqStyle.empty(closing_tag_len),          # Closing tag spacer
+                input_style[end_literal:],                # After tag
+            ])
+        else:
+            # Zero-length region: insert tag spacer at position
+            output_style = SeqStyle.join([
+                input_style[:raw_position],              # Before tag
+                SeqStyle.empty(len(region_tag)),         # Tag spacer
+                input_style[raw_position:],              # After tag
+            ])
+        
+        output_styles = output_style.style_list
         
         return {
             'position_index': position_index,

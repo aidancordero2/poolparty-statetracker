@@ -171,56 +171,26 @@ class ReplaceRegionOp(Operation):
         suffix = bg_seq[region.end:]
         result_seq = prefix + content_seq + suffix
         
-        # Adjust styles from bg_pool (first parent) with position shifts
-        # Styles within the region are discarded, suffix styles are shifted
-        output_styles: StyleList = []
+        # Use SeqStyle for clean style assembly
+        from ..utils.style_utils import SeqStyle
         
-        if parent_styles and len(parent_styles) > 0:
-            bg_styles = parent_styles[0]
-            region_len = region.end - region.start
-            new_content_len = len(content_seq)
-            length_delta = new_content_len - region_len
-            
-            for spec, positions in bg_styles:
-                adjusted_positions = []
-                for pos in positions:
-                    if pos < region.start:
-                        # Before region: unchanged
-                        adjusted_positions.append(pos)
-                    elif pos >= region.end:
-                        # After region: shift by length change
-                        adjusted_positions.append(pos + length_delta)
-                    # Positions inside the region are discarded
-                if adjusted_positions:
-                    output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
+        bg_style = SeqStyle.from_style_list(parent_styles[0], len(bg_seq)) if parent_styles else SeqStyle.empty(len(bg_seq))
+        content_style = SeqStyle.from_style_list(parent_styles[1], len(parent_seqs[1])) if len(parent_styles) > 1 else SeqStyle.empty(len(content_seq))
         
-        # Handle content_pool styles (second parent) - inserted content retains its styling
-        if parent_styles and len(parent_styles) > 1:
-            content_styles = parent_styles[1]
-            original_content_len = len(parent_seqs[1])
-            
-            for spec, positions in content_styles:
-                adjusted_positions = []
-                for pos in positions:
-                    if region.strand == '-':
-                        # Flip position for reverse complement
-                        pos = original_content_len - 1 - pos
-                    # Shift by prefix length
-                    new_pos = region.start + pos
-                    adjusted_positions.append(new_pos)
-                if adjusted_positions:
-                    output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
+        output_style = SeqStyle.join([
+            bg_style[:region.start],                           # Prefix
+            content_style[:].reversed(region.strand == '-'),   # Content (maybe reversed)
+            bg_style[region.end:],                             # Suffix
+        ])
         
         # Apply style to all inserted content positions
-        original_content_len = len(parent_seqs[1])
-        ins_start = region.start
-        ins_end = ins_start + original_content_len
-        
         if self._style is not None:
+            ins_start = region.start
+            ins_end = ins_start + len(content_seq)
             ins_positions = np.arange(ins_start, ins_end, dtype=np.int64)
-            output_styles.append((self._style, ins_positions))
+            output_style = output_style.add_style(self._style, ins_positions)
         
-        return {'seq': result_seq, 'style': output_styles}
+        return {'seq': result_seq, 'style': output_style.style_list}
     
     def compute_seq_names(
         self,

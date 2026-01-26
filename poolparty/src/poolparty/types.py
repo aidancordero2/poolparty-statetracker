@@ -32,6 +32,9 @@ RegionType: TypeAlias = Union[str, Sequence[Integral], None]
 StyleTuple: TypeAlias = tuple[str, np.ndarray]
 StyleList: TypeAlias = list[StyleTuple]
 
+# Import SeqStyle class for convenience
+from .utils.style_utils import SeqStyle
+
 __all__ = [
     'beartype',
     'Union',
@@ -52,4 +55,5 @@ __all__ = [
     'RegionType',
     'StyleTuple',
     'StyleList',
+    'SeqStyle',
 ]

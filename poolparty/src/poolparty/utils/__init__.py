@@ -4,9 +4,8 @@
 from .utils import validate_iteration_order, clean_df_int_columns
 from .style_utils import (
     STYLE_CODES, CSS_COLORS, ANSI_ESCAPE_PATTERN, DEFAULT_GAP_CHARS,
-    reset, validate_style_positions, split_styles_by_region,
-    shift_style_positions, reassemble_styles, apply_inline_styles,
-    print_named_colors,
+    reset, validate_style_positions, apply_inline_styles,
+    print_named_colors, SeqStyle,
 )
 from .orf_utils import validate_orf_extent
 from .dna_utils import (
@@ -27,9 +26,8 @@ __all__ = [
     'validate_iteration_order', 'clean_df_int_columns',
     # style_utils
     'STYLE_CODES', 'CSS_COLORS', 'ANSI_ESCAPE_PATTERN', 'DEFAULT_GAP_CHARS',
-    'reset', 'validate_style_positions', 'split_styles_by_region',
-    'shift_style_positions', 'reassemble_styles', 'apply_inline_styles',
-    'print_named_colors',
+    'reset', 'validate_style_positions', 'apply_inline_styles',
+    'print_named_colors', 'SeqStyle',
     # orf_utils
     'validate_orf_extent',
     # dna_utils

@@ -256,7 +256,8 @@ class DeletionScanOp(Operation):
             parent_styles, 
             start_literal, 
             end_literal, 
-            gap_content
+            gap_content,
+            len(seq)
         )
         
         return {
@@ -274,41 +275,26 @@ class DeletionScanOp(Operation):
         parent_styles: list | None, 
         del_start: int, 
         del_end: int, 
-        gap_content: str
+        gap_content: str,
+        seq_len: int
     ) -> StyleList:
         """Adjust style positions for deletion + optional gap insertion."""
-        output_styles: StyleList = []
+        from ..utils.style_utils import SeqStyle
         
-        if not parent_styles or len(parent_styles) == 0:
-            # No parent styles, just add style if specified
-            if self._style and gap_content:
-                gap_positions = np.arange(del_start, del_start + len(gap_content), dtype=np.int64)
-                output_styles.append((self._style, gap_positions))
-            return output_styles
+        input_style = SeqStyle.from_style_list(parent_styles[0], seq_len) if parent_styles else SeqStyle.empty(seq_len)
         
-        input_styles = parent_styles[0]
-        length_delta = len(gap_content) - (del_end - del_start)
+        output_style = SeqStyle.join([
+            input_style[:del_start],           # Prefix
+            SeqStyle.empty(len(gap_content)),  # Gap spacer
+            input_style[del_end:],             # Suffix
+        ])
         
-        # Adjust existing styles
-        for spec, positions in input_styles:
-            adjusted_positions = []
-            for pos in positions:
-                if pos < del_start:
-                    # Before deletion: unchanged
-                    adjusted_positions.append(pos)
-                elif pos >= del_end:
-                    # After deletion: shift by length change
-                    adjusted_positions.append(pos + length_delta)
-                # Positions inside deleted region are discarded
-            if adjusted_positions:
-                output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
-        
-        # Add style for gap characters
+        # Add gap style if specified
         if self._style and gap_content:
             gap_positions = np.arange(del_start, del_start + len(gap_content), dtype=np.int64)
-            output_styles.append((self._style, gap_positions))
+            output_style = output_style.add_style(self._style, gap_positions)
         
-        return output_styles
+        return output_style.style_list
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
