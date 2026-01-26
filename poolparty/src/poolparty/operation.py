@@ -143,55 +143,6 @@ class Operation:
         """Get raw string positions of valid DNA characters, excluding marker interiors."""
         return dna_utils.get_molecular_positions(seq)
     
-    def _resolve_region(self, seq: str, region: RegionType) -> tuple[int, int] | None:
-        """Resolve region to (start, stop) interval, or None if no region specified.
-        
-        Parameters
-        ----------
-        seq : str
-            The sequence containing potential regions.
-        region : RegionType
-            Region specification: region name (str), [start, stop] interval, or None.
-        
-        Returns
-        -------
-        tuple[int, int] | None
-            (start, stop) interval in raw string positions, or None if region is None.
-        """
-        if region is None:
-            return None
-        
-        if isinstance(region, str):
-            # Region name - look up in sequence
-            from .utils.parsing_utils import validate_single_region
-            region_obj = validate_single_region(seq, region)
-            return (region_obj.content_start, region_obj.content_end)
-        else:
-            # Explicit [start, stop] interval
-            return (int(region[0]), int(region[1]))
-    
-    def _extract_region_parts(self, seq: str, region: RegionType) -> tuple[str, str, str]:
-        """Extract (prefix, region_content, suffix) from sequence based on region.
-        
-        Parameters
-        ----------
-        seq : str
-            The sequence to split.
-        region : RegionType
-            Region specification: region name (str), [start, stop] interval, or None.
-        
-        Returns
-        -------
-        tuple[str, str, str]
-            (prefix, region_content, suffix) where prefix + region_content + suffix == seq.
-            If region is None, returns ('', seq, '').
-        """
-        bounds = self._resolve_region(seq, region)
-        if bounds is None:
-            return ('', seq, '')
-        start, stop = bounds
-        return (seq[:start], seq[start:stop], seq[stop:])
-    
     @staticmethod
     def _validate_region(region: RegionType) -> None:
         """Validate region parameter format.
@@ -328,133 +279,31 @@ class Operation:
         5. Adjusts output style positions to account for prefix
         6. Removes region tags if remove_tags=True and region is a region name
         """
-        from .utils.style_utils import SeqStyle
-        
         if self._region is None:
             return self.compute(parent_seqs, rng, parent_styles)
         
-        # Extract region parts from parent_seqs[0]
-        prefix, region_content, suffix = self._extract_region_parts(
-            parent_seqs[0], self._region
+        # Create context from first parent sequence
+        from .utils.region_context import RegionContext
+        ctx = RegionContext.from_sequence(
+            parent_seqs[0], self._region, self._remove_tags
         )
         
-        # Get region bounds for position adjustment
-        bounds = self._resolve_region(parent_seqs[0], self._region)
-        region_start = bounds[0] if bounds else 0
-        region_end = bounds[1] if bounds else len(parent_seqs[0])
+        # Split styles and prepare modified inputs
+        region_style = ctx.split_parent_styles(parent_styles)
+        modified_seqs = [ctx.region_content] + parent_seqs[1:]
+        modified_styles = [region_style] + list(parent_styles[1:]) if parent_styles else None
         
-        # Split styles for first parent using SeqStyle
-        # Store as raw StyleLists initially (will rebuild with clean lengths during reassembly)
-        from .types import StyleList
-        prefix_styles: StyleList = []
-        suffix_styles: StyleList = []
-        if parent_styles and len(parent_styles) > 0:
-            parent_style = parent_styles[0]
-            temp_prefix, region_seq_style, temp_suffix = parent_style.split([region_start, region_end])
-            prefix_styles = temp_prefix.style_list
-            suffix_styles = temp_suffix.style_list
-            modified_styles = [region_seq_style] + list(parent_styles[1:])
-        else:
-            # No parent styles - create empty SeqStyle for region
-            region_seq_style = SeqStyle.empty(len(region_content))
-            modified_styles = [region_seq_style]
-        
-        # Call subclass with region content as first sequence
-        modified_seqs = [region_content] + parent_seqs[1:]
+        # Call subclass compute
         result = self.compute(modified_seqs, rng, modified_styles)
         
-        # Helper to identify sequence output key
-        def is_seq_output(key: str) -> bool:
-            return key == 'seq'
-        
-        # Helper to identify style output key
-        def is_style_output(key: str) -> bool:
-            return key == 'style'
-        
-        # Parse region info for sequence reassembly (if region is a region name)
-        if isinstance(self._region, str):
-            from .utils.parsing_utils import parse_region, build_region_tags
-            clean_prefix, _, clean_suffix, strand = parse_region(
-                parent_seqs[0], self._region
-            )
-        
-        # Reassemble each output sequence and style
+        # Reassemble outputs
         reassembled = {}
         for key, value in result.items():
-            if is_seq_output(key):
-                seq = value
-                
-                if isinstance(self._region, str):
-                    if self._remove_tags:
-                        # Remove tags
-                        reassembled[key] = clean_prefix + seq + clean_suffix
-                    else:
-                        # Keep tags - rebuild with new content
-                        wrapped = build_region_tags(self._region, seq, strand=strand)
-                        reassembled[key] = clean_prefix + wrapped + clean_suffix
-                else:
-                    # Region is [start, stop] interval - just reassemble
-                    reassembled[key] = prefix + seq + suffix
-            elif is_style_output(key):
-                # Get the output sequence to determine new region length
+            if key == 'seq':
+                reassembled[key] = ctx.reassemble_seq(value)
+            elif key == 'style':
                 output_seq = result.get('seq', '')
-                region_seq_style = value  # Already a SeqStyle
-                
-                # Calculate lengths for style reassembly
-                if isinstance(self._region, str):
-                    from .utils.parsing_utils import build_region_tags, validate_single_region
-                    clean_prefix_len = len(clean_prefix)
-                    clean_suffix_len = len(clean_suffix)
-                    
-                    if self._remove_tags:
-                        # When tags removed: prefix + region + suffix
-                        # Need to slice prefix/suffix SeqStyles to exclude tag positions
-                        region_obj = validate_single_region(parent_seqs[0], self._region)
-                        
-                        # Calculate tag lengths
-                        opening_tag_len = region_start - region_obj.start  # content_start - tag_start
-                        closing_tag_len = region_obj.end - region_end      # tag_end - content_end
-                        
-                        # Slice to exclude tag positions
-                        prefix_seq_style = temp_prefix[:region_obj.start]   # Exclude opening tag
-                        suffix_seq_style = temp_suffix[closing_tag_len:]    # Skip closing tag positions
-                        
-                        result_style = SeqStyle.join([
-                            prefix_seq_style,
-                            region_seq_style,
-                            suffix_seq_style,
-                        ])
-                    else:
-                        # When tags kept: prefix + opening_tag + region + closing_tag + suffix
-                        test_tag = build_region_tags(self._region, 'X', strand=strand)
-                        opening_tag_len = test_tag.index('>') + 1
-                        new_wrapped = build_region_tags(self._region, output_seq, strand=strand)
-                        closing_tag_len = len(new_wrapped) - opening_tag_len - len(output_seq)
-                        
-                        # Rebuild prefix/suffix with clean lengths
-                        prefix_seq_style = SeqStyle.from_style_list(prefix_styles, clean_prefix_len)
-                        suffix_seq_style = SeqStyle.from_style_list(suffix_styles, clean_suffix_len)
-                        
-                        result_style = SeqStyle.join([
-                            prefix_seq_style,
-                            SeqStyle.empty(opening_tag_len),
-                            region_seq_style,
-                            SeqStyle.empty(closing_tag_len),
-                            suffix_seq_style,
-                        ])
-                else:
-                    # Region is [start, stop] interval
-                    # Rebuild prefix/suffix with actual lengths
-                    prefix_seq_style = SeqStyle.from_style_list(prefix_styles, len(prefix))
-                    suffix_seq_style = SeqStyle.from_style_list(suffix_styles, len(suffix))
-                    
-                    result_style = SeqStyle.join([
-                        prefix_seq_style,
-                        region_seq_style,
-                        suffix_seq_style,
-                    ])
-                
-                reassembled[key] = result_style
+                reassembled[key] = ctx.reassemble_style(value, output_seq)
             else:
                 # Keep design card keys as-is
                 reassembled[key] = value
