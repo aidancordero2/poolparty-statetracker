@@ -7,26 +7,7 @@ from ..party import get_active_party
 from ..pool import Pool
 from ..operation import Operation
 from ..utils.parsing_utils import get_nontag_positions
-
-
-def _validate_positions(positions: PositionsType, max_position: int, min_position: int = 0) -> list[int]:
-    """Validate and normalize position specification."""
-    if positions is None:
-        return list(range(min_position, max_position + 1))
-    
-    if isinstance(positions, slice):
-        start = positions.start if positions.start is not None else min_position
-        stop = positions.stop if positions.stop is not None else max_position + 1
-        step = positions.step if positions.step is not None else 1
-        return list(range(start, stop, step))
-    
-    positions_list = list(positions)
-    for p in positions_list:
-        if p < min_position or p > max_position:
-            raise ValueError(
-                f"Position {p} out of range [{min_position}, {max_position}]"
-            )
-    return positions_list
+from ..utils import validate_positions, build_scan_cache
 
 
 @beartype
@@ -186,35 +167,12 @@ class DeletionScanOp(Operation):
     
     def _build_caches(self) -> int:
         """Build caches for sequential enumeration based on seq_length."""
-        if self._seq_length is None:
-            if self._positions is not None:
-                positions_list = _validate_positions(
-                    self._positions,
-                    max_position=1000000,
-                    min_position=0,
-                )
-                return max(1, len(positions_list))
-            return 1
-        
-        # For deletions, we need room for deletion_length bases
-        max_start = self._seq_length - self._deletion_length
-        if max_start < 0:
-            max_start = 0
-        
-        num_all_positions = max_start + 1
-        if self._positions is not None:
-            indices = _validate_positions(
-                self._positions,
-                max_position=num_all_positions - 1,
-                min_position=0,
-            )
-            num_states = len(indices)
-        else:
-            num_states = num_all_positions
-        
-        if num_states == 0:
-            raise ValueError("No valid positions for deletion")
-        return num_states
+        return build_scan_cache(
+            seq_length=self._seq_length,
+            item_length=self._deletion_length,
+            positions=self._positions,
+            error_context="deletion",
+        )
     
     def _get_valid_deletion_positions(self, seq: str) -> tuple[list[int], list[int]]:
         """Get valid deletion positions, excluding marker interiors.
@@ -235,7 +193,7 @@ class DeletionScanOp(Operation):
         
         # Apply user position filter
         if self._positions is not None:
-            indices = _validate_positions(
+            indices = validate_positions(
                 self._positions,
                 max_position=len(all_valid_indices) - 1,
                 min_position=0,

@@ -20,6 +20,7 @@ from .df_utils import (
     organize_columns, finalize_generate_df,
 )
 from .seq_utils import validate_positions
+from .scan_utils import build_scan_cache
 
 __all__ = [
     # utils
@@ -41,4 +42,6 @@ __all__ = [
     'organize_columns', 'finalize_generate_df',
     # seq_utils
     'validate_positions',
+    # scan_utils
+    'build_scan_cache',
 ]
