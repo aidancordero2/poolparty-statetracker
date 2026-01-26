@@ -113,7 +113,7 @@ class GetKmersOp(Operation):
         self.alpha_size = len(dna_utils.BASES)
         total_kmers = self.alpha_size ** length
         if mode == 'sequential':
-            num_states = self.validate_num_values(total_kmers, mode)
+            num_states = self.validate_num_states(total_kmers, mode)
         elif mode == 'random':
             # num_states stays None for pure random mode
             pass
@@ -147,7 +147,7 @@ class GetKmersOp(Operation):
         
         super().__init__(
             parent_pools=parent_pools,
-            num_values=num_states,
+            num_states=num_states,
             mode=mode,
             seq_length=seq_length,
             name=name,
@@ -201,19 +201,4 @@ class GetKmersOp(Operation):
             'kmer': kmer,
             'seq': kmer,
             'style': output_style,
-        }
-    
-    def _get_copy_params(self) -> dict:
-        """Return parameters needed to create a copy of this operation."""
-        return {
-            'length': self.length,
-            'pool': self.parent_pools[0] if self.parent_pools else None,
-            'region': self._region,
-            'style': self._style,
-            'case': self.case,
-            'prefix': self.name_prefix,
-            'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
-            'name': None,
-            'iter_order': self.iter_order,
         }

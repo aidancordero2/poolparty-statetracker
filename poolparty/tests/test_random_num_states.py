@@ -15,18 +15,18 @@ class TestRandomNumStatesBasic:
         """Test that random mode with num_states uses num_states for counter."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=100)
-            assert pool.operation.num_values == 100
+            assert pool.operation.num_states == 100
     
     def test_random_mode_syncs_to_parent(self):
         """Test that random mode without num_states syncs to parent state."""
         with pp.Party() as party:
             # With a parent (from_seq creates a parent with num_values=1), syncs to parent
             pool = mutagenize('ACGT', num_mutations=1, mode='random')
-            assert pool.operation.num_values == 1  # Synced to from_seq parent
+            assert pool.operation.num_states == 1  # Synced to from_seq parent
             
             # Without a parent (source operation), stays stateless
             source_pool = get_kmers(length=4, mode='random')
-            assert source_pool.operation.num_values is None
+            assert source_pool.operation.num_states is None
     
     def test_random_mode_generates_correct_count(self):
         """Test that random mode with num_states generates the expected number of sequences."""
@@ -138,7 +138,7 @@ class TestRandomNumStatesGetKmers:
         """Test that get_kmers random mode with num_states uses correct num_states."""
         with pp.Party() as party:
             pool = get_kmers(length=3, mode='random', num_states=100)
-            assert pool.operation.num_values == 100
+            assert pool.operation.num_states == 100
     
     def test_get_kmers_random_valid_kmers(self):
         """Test that random get_kmers with num_states produces valid k-mers."""
@@ -176,7 +176,7 @@ class TestRandomNumStatesFromSeqs:
         """Test that from_seqs random mode with num_states uses correct num_states."""
         with pp.Party() as party:
             pool = from_seqs(['AAA', 'TTT', 'GGG'], mode='random', num_states=100)
-            assert pool.operation.num_values == 100
+            assert pool.operation.num_states == 100
     
     def test_from_seqs_random_random_selection(self):
         """Test that from_seqs random mode with num_states randomly selects sequences."""
@@ -218,15 +218,15 @@ class TestRandomNumStatesVsRandomMode:
         with pp.Party() as party:
             # With explicit num_states, uses that value
             random_num_states_pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=50)
-            assert random_num_states_pool.operation.num_values == 50
+            assert random_num_states_pool.operation.num_states == 50
             
             # Without explicit num_states, syncs to parent (from_seq has 1 state)
             random_pool = mutagenize('ACGT', num_mutations=1, mode='random')
-            assert random_pool.operation.num_values == 1  # Synced to from_seq
+            assert random_pool.operation.num_states == 1  # Synced to from_seq
             
             # For truly stateless, need source op with no parents
             stateless_pool = get_kmers(length=4, mode='random')
-            assert stateless_pool.operation.num_values is None
+            assert stateless_pool.operation.num_states is None
     
     def test_random_with_num_states_iterates_deterministically(self):
         """Test that random mode with num_states iterates through states deterministically."""
@@ -308,7 +308,7 @@ class TestRandomAutoSyncToParent:
             
             # Operation should have state synced to parent (3 states)
             assert child.operation.state is not None
-            assert child.operation.num_values == 3
+            assert child.operation.num_states == 3
             # Pool should also have 3 states
             assert child.num_states == 3
     
@@ -412,7 +412,7 @@ class TestRandomAutoSyncToParent:
             child = mutagenize(parent, num_mutations=1, mode='random', num_states=10).named('mutant')
             
             # Should have 10 states (explicit), not synced
-            assert child.operation.num_values == 10
+            assert child.operation.num_states == 10
             # Pool state is product: 3 * 10 = 30
             assert child.num_states == 30
     

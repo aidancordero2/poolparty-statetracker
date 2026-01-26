@@ -100,7 +100,7 @@ class StylizeOp(Operation):
 
         super().__init__(
             parent_pools=[pool],
-            num_values=1,
+            num_states=1,
             mode='fixed',
             seq_length=pool.seq_length,
             name=name,
@@ -219,15 +219,11 @@ class StylizeOp(Operation):
             output_style = output_style.add_style(self.style, positions)
 
         return {'seq': seq, 'style': output_style}
-
+    
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
-        return {
-            'pool': self.parent_pools[0],
-            'style': self.style,
-            'region': self._style_region,
-            'which': self.which,
-            'regex': self.regex,
-            'name': None,
-            'iter_order': self.iter_order,
-        }
+        params = super()._get_copy_params()
+        # region parameter is stored as _style_region (non-standard naming)
+        params['region'] = self._style_region
+        return params
+

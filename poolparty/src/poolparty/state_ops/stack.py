@@ -71,7 +71,7 @@ class StackOp(Operation):
             seq_length = None
         super().__init__(
             parent_pools=parent_pools,
-            num_values=len(parent_pools),  # Number of branches
+            num_states=len(parent_pools),  # Number of branches
             mode='sequential',  # Stack needs its own state to track active branch
             seq_length=seq_length,
             name=name,
@@ -130,19 +130,10 @@ class StackOp(Operation):
             name = parent_names[active]
         
         # Append prefix if set
-        if self.name_prefix is not None:
+        if self.prefix is not None:
             state = self.state.value
             if state is not None:
-                op_name = f'{self.name_prefix}{state}'
+                op_name = f'{self.prefix}{state}'
                 name = f'{name}.{op_name}' if name else op_name
         
         return name
-    
-    def _get_copy_params(self) -> dict:
-        """Return parameters needed to create a copy of this operation."""
-        return {
-            'parent_pools': self.parent_pools,
-            'prefix': self.name_prefix,
-            'name': None,
-            'iter_order': self.iter_order,
-        }

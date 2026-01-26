@@ -157,7 +157,7 @@ class TestJoinFixedMode:
             a = pp.from_seqs(['AAA'])
             b = pp.from_seqs(['TTT'])
             combined = join([a, b])
-            assert combined.operation.num_values == 1
+            assert combined.operation.num_states == 1
     
     def test_variability_from_parents(self):
         """Test that variability comes from parent pools."""
@@ -432,7 +432,7 @@ class TestStackBranchIndex:
         assert list(df[stack_state_col]) == list(df[active_parent_col])
     
     def test_stack_num_states_equals_num_branches(self):
-        """Test that StackOp.num_values equals number of parent pools."""
+        """Test that StackOp.num_states equals number of parent pools."""
         with pp.Party() as party:
             # Use sequential mode to ensure pools have state (required for stacking)
             a = pp.from_seqs(['A1', 'A2'], mode='sequential')
@@ -441,5 +441,5 @@ class TestStackBranchIndex:
             stacked = pp.stack([a, b, c])
             
             # Operation counter should have num_states = 3 (number of branches)
-            assert stacked.operation.num_values == 3
+            assert stacked.operation.num_states == 3
             assert stacked.operation.state.num_values == 3

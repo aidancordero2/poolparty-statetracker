@@ -57,7 +57,7 @@ class TestFromSeqsSequentialMode:
         """Test num_states equals number of sequences."""
         with pp.Party() as party:
             pool = from_seqs(['A', 'B', 'C'], mode='sequential')
-            assert pool.operation.num_values == 3
+            assert pool.operation.num_states == 3
 
 
 class TestFromSeqsRandomMode:
@@ -88,7 +88,7 @@ class TestFromSeqsRandomMode:
         """Test that random mode has num_values=None."""
         with pp.Party() as party:
             pool = from_seqs(['A', 'B', 'C'], mode='random')
-            assert pool.operation.num_values is None
+            assert pool.operation.num_states is None
 
 
 class TestFromSeqsFixedMode:
@@ -112,7 +112,7 @@ class TestFromSeqsFixedMode:
         """Test that fixed mode has num_values=1."""
         with pp.Party() as party:
             pool = from_seqs(['AAA'], mode='fixed')
-            assert pool.operation.num_values == 1
+            assert pool.operation.num_states == 1
 
 
 class TestFromSeqsNames:

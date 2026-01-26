@@ -193,7 +193,7 @@ class TestStateSampleWithReplacement:
         """Test that with_replacement=False raises when num_states > parent."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
-            with pytest.raises(ValueError, match="exceeds parent.num_values"):
+            with pytest.raises(ValueError, match="exceeds parent"):
                 state_sample(pool, num_values=10, with_replacement=False)
 
 

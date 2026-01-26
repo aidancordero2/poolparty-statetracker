@@ -474,7 +474,7 @@ class TestPrintGraph:
         # Should contain full repr format
         assert 'Pool(' in captured.out
         assert "name='mypool'" in captured.out
-        assert 'num_values=' in captured.out
+        assert 'num_states=' in captured.out
     
     def test_print_graph_chain(self, capsys):
         """Test print_graph() with a chain of pools."""
@@ -566,7 +566,7 @@ class TestPrintGraph:
         
         # Should start with Pool repr
         assert captured.out.startswith('Pool(')
-        assert 'num_values=3' in captured.out
+        assert 'num_states=3' in captured.out
     
     def test_operation_print_dag(self, capsys):
         """Test Operation.print_dag() method directly."""

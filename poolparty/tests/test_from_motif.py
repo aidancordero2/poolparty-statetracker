@@ -70,7 +70,7 @@ class TestFromMotifRandomMode:
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
             pool = from_motif(prob_df, mode='random')
-            assert pool.operation.num_values is None
+            assert pool.operation.num_states is None
     
     def test_deterministic_with_seed(self):
         """Test that same seed produces same results."""
@@ -96,7 +96,7 @@ class TestFromMotifHybridMode:
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
             pool = from_motif(prob_df, mode='random', num_states=10)
-            assert pool.operation.num_values == 10
+            assert pool.operation.num_states == 10
     
 
 

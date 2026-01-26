@@ -156,7 +156,7 @@ class DeletionScanOp(Operation):
         # Initialize as Operation
         super().__init__(
             parent_pools=[parent_pool],
-            num_values=num_states,
+            num_states=num_states,
             mode=mode,
             seq_length=None,  # Variable due to deletion/gap insertion
             name=name,
@@ -294,18 +294,3 @@ class DeletionScanOp(Operation):
         
         return output_style
     
-    def _get_copy_params(self) -> dict:
-        """Return parameters needed to create a copy of this operation."""
-        return {
-            'parent_pool': self.parent_pools[0],
-            'deletion_length': self._deletion_length,
-            'gap_char': self._gap_char,
-            'positions': self._positions,
-            'region': self._region,
-            'prefix': self.name_prefix,
-            'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
-            'style': self._style,
-            'name': None,
-            'iter_order': self.iter_order,
-        }

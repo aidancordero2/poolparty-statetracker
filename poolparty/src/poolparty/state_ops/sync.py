@@ -29,9 +29,9 @@ def sync(
     if not pools:
         raise ValueError("Cannot sync empty sequence of pools")
 
-    sizes = set(p.num_values for p in pools)
+    sizes = set(p.num_states for p in pools)
     if len(sizes) > 1:
-        raise ValueError(f"Cannot sync pools with different num_values: {sizes=}")
+        raise ValueError(f"Cannot sync pools with different num_states: {sizes=}")
 
     states = [p.state for p in pools]
     shared_state = st.sync(states)

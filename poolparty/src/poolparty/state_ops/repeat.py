@@ -58,7 +58,7 @@ class RepeatOp(Operation):
         self.times = times
         super().__init__(
             parent_pools=[pool],
-            num_values=times,
+            num_states=times,
             mode='sequential',
             seq_length=pool.seq_length,
             name=name,
@@ -79,13 +79,3 @@ class RepeatOp(Operation):
         # Pass through parent styles
         output_style = SeqStyle.from_parent(parent_styles, 0, len(seq))
         return {'repeat_index': repeat_index, 'seq': seq, 'style': output_style}
-    
-    def _get_copy_params(self) -> dict:
-        """Return parameters needed to create a copy of this operation."""
-        return {
-            'pool': self.parent_pools[0],
-            'times': self.times,
-            'prefix': self.name_prefix,
-            'name': None,
-            'iter_order': self.iter_order,
-        }

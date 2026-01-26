@@ -139,7 +139,7 @@ class ReplaceRegionOp(Operation):
         # are inherited via the parent counter product.
         super().__init__(
             parent_pools=[parent_pool, content_pool],
-            num_values=1,  # Operation doesn't add states
+            num_states=1,  # Operation doesn't add states
             mode='fixed',  # Mode is determined by parent counters
             seq_length=None,  # Variable length
             name=name,
@@ -213,19 +213,3 @@ class ReplaceRegionOp(Operation):
         
         return '.'.join(name_parts) if name_parts else None
     
-    def _get_copy_params(self) -> dict:
-        """Return parameters needed to create a copy of this operation."""
-        return {
-            'parent_pool': self.parent_pools[0],
-            'content_pool': self.parent_pools[1],
-            'region_name': self.region_name,
-            'name': None,
-            'iter_order': self.iter_order,
-            '_seq_name_prefix': self._seq_name_prefix,
-            '_seq_name_pos_prefix': self._seq_name_pos_prefix,
-            '_seq_name_site_prefix': self._seq_name_site_prefix,
-            '_pos_state': self._pos_state,
-            '_site_state': self._site_state,
-            '_num_sites': self._num_sites,
-            '_style': self._style,
-        }

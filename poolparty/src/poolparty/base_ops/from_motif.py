@@ -129,7 +129,7 @@ class FromMotifOp(Operation):
         parent_pools_list = [parent_pool] if parent_pool is not None else []
         super().__init__(
             parent_pools=parent_pools_list,
-            num_values=num_states,
+            num_states=num_states,
             mode=mode,
             seq_length=len(self.prob_df),
             name=name,
@@ -160,20 +160,6 @@ class FromMotifOp(Operation):
             'prob_state': indices_list,
             'seq': seq,
             'style': output_style,
-        }
-
-    def _get_copy_params(self) -> dict:
-        """Return parameters needed to create a copy of this operation."""
-        return {
-            'prob_df': self.prob_df.copy(),
-            'parent_pool': self.parent_pools[0] if self.parent_pools else None,
-            'region': self._region,
-            'prefix': self.name_prefix,
-            'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
-            'name': None,
-            'iter_order': self.iter_order,
-            'style': self._style,
         }
 
 

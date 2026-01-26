@@ -162,7 +162,7 @@ class MutagenizeOrfOp(Operation):
         
         super().__init__(
             parent_pools=[parent_pool],
-            num_values=num_states,
+            num_states=num_states,
             mode=mode,
             seq_length=self._seq_length,
             name=name,
@@ -353,15 +353,7 @@ class MutagenizeOrfOp(Operation):
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
-        return {
-            'parent_pool': self.parent_pools[0],
-            'num_mutations': self.num_mutations,
-            'mutation_rate': self.mutation_rate,
-            'mutation_type': self.mutation_type,
-            'orf_extent': (self.orf_start, self.orf_end),
-            'codon_positions': self.eligible_positions,
-            'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
-            'name': None,
-            'iter_order': self.iter_order,
-        }
+        params = super()._get_copy_params()
+        # Build tuple from two separate attributes
+        params['orf_extent'] = (self.orf_start, self.orf_end)
+        return params

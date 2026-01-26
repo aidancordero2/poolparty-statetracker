@@ -59,7 +59,7 @@ class TestGetKmersSequentialMode:
         """Test num_states calculation."""
         with pp.Party() as party:
             pool = get_kmers(length=3, mode='sequential')
-            assert pool.operation.num_values == 64  # 4^3
+            assert pool.operation.num_states == 64  # 4^3
 
 
 class TestGetKmersRandomMode:
@@ -100,7 +100,7 @@ class TestGetKmersRandomMode:
         """Test that random mode has num_values=None."""
         with pp.Party() as party:
             pool = get_kmers(length=4, mode='random')
-            assert pool.operation.num_values is None
+            assert pool.operation.num_states is None
 
 
 class TestGetKmersDNA:
@@ -194,7 +194,7 @@ class TestGetKmersLargeSpace:
         with pp.Party() as party:
             # Random mode has num_values=None
             pool = get_kmers(length=20, mode='random')
-            assert pool.operation.num_values is None
+            assert pool.operation.num_states is None
 
 
 class TestGetKmersCompute:

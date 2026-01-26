@@ -14,26 +14,26 @@ class Operation:
     factory_name: str = "op"
     
     @classmethod
-    def validate_num_values(cls, num_values: int | float | None, mode: ModeType) -> int | float | None:
-        """Validate num_values against max_num_sequential_states."""
-        if num_values is None:
+    def validate_num_states(cls, num_states: int | float | None, mode: ModeType) -> int | float | None:
+        """Validate num_states against max_num_sequential_states."""
+        if num_states is None:
             return None
-        if num_values != np.inf and num_values < 1:
-            raise ValueError(f"num_values must be >= 1, np.inf, or None, got {num_values}")
-        if num_values > cls.max_num_sequential_states:
+        if num_states != np.inf and num_states < 1:
+            raise ValueError(f"num_states must be >= 1, np.inf, or None, got {num_states}")
+        if num_states > cls.max_num_sequential_states:
             if mode == 'sequential':
                 raise ValueError(
-                    f"Number of values ({num_values}) exceeds "
+                    f"Number of states ({num_states}) exceeds "
                     f"max_num_sequential_states ({cls.max_num_sequential_states}). "
                     f"Use mode='random' instead."
                 )
             return np.inf
-        return num_values
+        return num_states
     
     def __init__(
         self,
         parent_pools: Sequence[Pool_type],
-        num_values: int | None = 1,
+        num_states: int | None = 1,
         mode: ModeType = 'fixed',
         seq_length: Optional[int] = None,
         name: Optional[str] = None,
@@ -57,14 +57,14 @@ class Operation:
         # Set _name directly during init (state doesn't exist yet)
         self._name = name if name is not None else f'op[{self._id}]:{self.factory_name}'
         self._seq_length = seq_length
-        validated_num_values = self.validate_num_values(num_values, mode)
+        validated_num_states = self.validate_num_states(num_states, mode)
         
         # Track whether this operation's state is synced to parent states
         self._random_synced_to_parents = False
         
-        if validated_num_values is not None and mode != 'fixed':
-            # Non-fixed ops with explicit num_values - create state
-            self.state = st.State(num_values=validated_num_values, name=f"{self._name}.state", iter_order=iter_order)
+        if validated_num_states is not None and mode != 'fixed':
+            # Non-fixed ops with explicit num_states - create state
+            self.state = st.State(num_values=validated_num_states, name=f"{self._name}.state", iter_order=iter_order)
         elif mode == 'random' and parent_pools:
             # Random mode with no explicit num_states - check for parent states
             parent_states = [p.state for p in parent_pools if p.state is not None]
@@ -80,7 +80,7 @@ class Operation:
                 if iter_order is not None:
                     self.state.iter_order = iter_order
                 self._random_synced_to_parents = True
-                validated_num_values = self.state.num_values
+                validated_num_states = self.state.num_values
             else:
                 # All parents are stateless - remain stateless
                 self.state = None
@@ -89,9 +89,9 @@ class Operation:
             self.state = None
         
         self.rng: np.random.Generator | None = None
-        self.num_values = validated_num_values
+        self.num_states = validated_num_states
         # Sequence naming attributes
-        self.name_prefix: Optional[str] = prefix
+        self.prefix: Optional[str] = prefix
         self.clear_parent_names: bool = False
         self._block_seq_names: bool = False
         
@@ -260,8 +260,8 @@ class Operation:
         if self.mode == 'fixed':
             # Fixed operations: derive pool state from parents only (op.state is None)
             if not parent_states:
-                # No parents with state - create new state with this op's num_values
-                return st.State(num_values=self.num_values or 1)
+                # No parents with state - create new state with this op's num_states
+                return st.State(num_values=self.num_states or 1)
             elif len(parent_states) == 1:
                 # Single parent - create synced state (don't share object to avoid name conflicts)
                 return st.synced_to(parent_states[0])
@@ -482,8 +482,8 @@ class Operation:
         non_none_names = [n for n in parent_names if n is not None]
         parent_name = '.'.join(non_none_names) if non_none_names else None
         
-        # If no name_prefix, pass through parent name
-        if self.name_prefix is None:
+        # If no prefix, pass through parent name
+        if self.prefix is None:
             return parent_name
         
         # Build name with prefix
@@ -495,23 +495,65 @@ class Operation:
             # Inactive state - return None
             return None
         
-        op_name = f'{self.name_prefix}_{value}'
+        op_name = f'{self.prefix}_{value}'
         full_name = f'{parent_name}.{op_name}' if parent_name else op_name
         return full_name
     
     def __repr__(self) -> str:
-        num_values_str = "None" if self.num_values is None else str(self.num_values)
-        return f"{self.__class__.__name__}(id={self._id}, name={self.name!r}, mode={self.mode!r}, num_values={num_values_str})"
+        num_states_str = "None" if self.num_states is None else str(self.num_states)
+        return f"{self.__class__.__name__}(id={self._id}, name={self.name!r}, mode={self.mode!r}, num_states={num_states_str})"
     
     def _get_copy_params(self) -> dict:
-        """Return the parameters needed to create a copy of this operation.
+        """Auto-generate copy params from __init__ signature using conventions.
         
-        Subclasses must override this to return a dict of kwargs for __init__.
-        The 'name' key should be set to None so the copy gets a new auto-name.
+        Subclasses can override for custom behavior.
         """
-        raise NotImplementedError(
-            f"{self.__class__.__name__} must implement _get_copy_params()"
-        )
+        import inspect
+        sig = inspect.signature(self.__class__.__init__)
+        params = {}
+        
+        for param_name, param_spec in sig.parameters.items():
+            if param_name == 'self':
+                continue
+            value = self._resolve_param(param_name, param_spec)
+            params[param_name] = value
+        
+        # Always override name to None for fresh auto-naming
+        params['name'] = None
+        return params
+    
+    def _resolve_param(self, param_name: str, param_spec=None):
+        """Resolve parameter value using naming conventions."""
+        import inspect
+        
+        # Special cases that don't follow standard patterns
+        if param_name == 'name':
+            return None
+        elif param_name in ('pool', 'parent_pool'):
+            return self.parent_pools[0] if self.parent_pools else None
+        elif param_name == 'content_pool':
+            return self.parent_pools[1] if len(self.parent_pools) > 1 else None
+        elif param_name == 'num_states':
+            # Only preserve for random mode with explicit values > 1
+            if self.mode == 'random' and self.num_states is not None and self.num_states > 1:
+                return self.num_states
+            return None
+        
+        # Standard convention: try _param_name, then param_name
+        for attr_name in (f'_{param_name}', param_name):
+            if hasattr(self, attr_name):
+                value = getattr(self, attr_name)
+                # Auto-copy mutable objects with .copy() method
+                if hasattr(value, 'copy') and callable(value.copy):
+                    return value.copy()
+                return value
+        
+        # Couldn't resolve - use default from signature if available
+        if param_spec is not None and param_spec.default is not inspect.Parameter.empty:
+            return param_spec.default
+        
+        # Last resort - return None
+        return None
     
     def copy(self, name: Optional[str] = None) -> "Operation":
         """Create a copy of this operation with a new ID.

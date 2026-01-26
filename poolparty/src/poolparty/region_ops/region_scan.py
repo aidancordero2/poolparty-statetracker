@@ -167,7 +167,7 @@ class RegionScanOp(Operation):
         # Initialize as Operation
         super().__init__(
             parent_pools=[parent_pool],
-            num_values=num_states,
+            num_states=num_states,
             mode=mode,
             seq_length=None,  # Variable due to region tags
             name=name,
@@ -349,19 +349,3 @@ class RegionScanOp(Operation):
             'style': output_style,
         }
     
-    def _get_copy_params(self) -> dict:
-        """Return parameters needed to create a copy of this operation."""
-        return {
-            'parent_pool': self.parent_pools[0],
-            'region_name': self.region_name,
-            'positions': self._positions,
-            'region': self._region,
-            'remove_tags': self._remove_tags,
-            'strand': self._strand,
-            'region_length': self._region_length,
-            'prefix': self.name_prefix,
-            'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
-            'name': None,
-            'iter_order': self.iter_order,
-        }

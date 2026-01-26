@@ -61,7 +61,7 @@ class StateShuffleOp(Operation):
         self.permutation = permutation
         super().__init__(
             parent_pools=[parent_pool],
-            num_values=1,
+            num_states=1,
             name=name,
             iter_order=iter_order,
             prefix=prefix,
@@ -88,14 +88,3 @@ class StateShuffleOp(Operation):
         seq = parent_seqs[0]
         output_style = SeqStyle.from_parent(parent_styles, 0, len(seq))
         return {'seq': seq, 'style': output_style}
-    
-    def _get_copy_params(self) -> dict:
-        """Return parameters needed to create a copy of this operation."""
-        return {
-            'parent_pool': self.parent_pools[0],
-            'seed': self.seed,
-            'permutation': self.permutation,
-            'prefix': self.name_prefix,
-            'name': None,
-            'iter_order': self.iter_order,
-        }

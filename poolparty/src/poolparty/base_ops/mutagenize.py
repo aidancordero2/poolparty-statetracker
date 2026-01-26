@@ -218,7 +218,7 @@ class MutagenizeOp(Operation):
         
         super().__init__(
             parent_pools=[pool],
-            num_values=num_states,
+            num_states=num_states,
             mode=mode,
             seq_length=self._seq_length,
             name=name,
@@ -449,17 +449,3 @@ class MutagenizeOp(Operation):
             'style': output_style,
         }
     
-    def _get_copy_params(self) -> dict:
-        """Return parameters needed to create a copy of this operation."""
-        return {
-            'pool': self.parent_pools[0],
-            'num_mutations': self.num_mutations,
-            'mutation_rate': self.mutation_rate,
-            'allowed_chars': self.allowed_chars,
-            'region': self._region,
-            'style': self._style,
-            'prefix': self.name_prefix,
-            'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
-            'iter_order': self.iter_order,
-        }

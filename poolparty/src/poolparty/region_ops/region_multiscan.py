@@ -156,7 +156,7 @@ class RegionMultiScanOp(Operation):
         # num_states stays None for pure random mode
         super().__init__(
             parent_pools=[parent_pool],
-            num_values=num_states,
+            num_states=num_states,
             mode=mode,
             seq_length=None,
             name=name,
@@ -383,18 +383,3 @@ class RegionMultiScanOp(Operation):
             'style': SeqStyle.empty(len(result_seq)),
         }
 
-    def _get_copy_params(self) -> dict:
-        return {
-            'parent_pool': self.parent_pools[0],
-            'regions': self._region_names,
-            'num_insertions': self.num_insertions,
-            'positions': self._positions,
-            'strand': self._strand,
-            'region_length': self._region_length,
-            'insertion_mode': self.insertion_mode,
-            'prefix': self.name_prefix,
-            'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
-            'name': None,
-            'iter_order': self.iter_order,
-        }

@@ -137,7 +137,7 @@ class FromSeqsOp(Operation):
         parent_pools_list = [parent_pool] if parent_pool is not None else []
         super().__init__(
             parent_pools=parent_pools_list,
-            num_values=num_states,
+            num_states=num_states,
             mode=mode,
             seq_length=seq_length,
             name=name,
@@ -191,24 +191,16 @@ class FromSeqsOp(Operation):
             idx = card['seq_index']
             return self.seq_names[idx]
         # Otherwise fall back to prefix logic
-        if self.name_prefix is None:
+        if self.prefix is None:
             return None
         state = self.state.value
         if state is None:
             return None
-        return f'{self.name_prefix}{state}'
+        return f'{self.prefix}{state}'
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
-        return {
-            'seqs': self.seqs,
-            'parent_pool': self.parent_pools[0] if self.parent_pools else None,
-            'region': self._region,
-            'style': self._style,
-            'seq_names': self.seq_names if self._seq_names_explicit else None,
-            'prefix': self.name_prefix,
-            'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
-            'name': None,
-            'iter_order': self.iter_order,
-        }
+        params = super()._get_copy_params()
+        # Only include seq_names if explicitly set by user
+        params['seq_names'] = self.seq_names if self._seq_names_explicit else None
+        return params

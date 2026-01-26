@@ -200,14 +200,14 @@ class TestMutagenizeSequentialMode:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential')
             # 4 positions * 3 mutations = 12
-            assert pool.operation.num_values == 12
+            assert pool.operation.num_states == 12
     
     def test_num_states_k2(self):
         """Test num_states for num_mutations=2."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=2, mode='sequential')
             # C(4,2) * 3^2 = 6 * 9 = 54
-            assert pool.operation.num_values == 54
+            assert pool.operation.num_states == 54
 
 
 class TestMutagenizeRandomModeWithNum:
@@ -242,7 +242,7 @@ class TestMutagenizeRandomModeWithNum:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='random')
             # Syncs to from_seq parent which has 1 state
-            assert pool.operation.num_values == 1
+            assert pool.operation.num_states == 1
 
 
 # =============================================================================
@@ -257,7 +257,7 @@ class TestMutagenizeRandomModeWithRate:
         with pp.Party() as party:
             pool = mutagenize('ACGT', mutation_rate=0.1, mode='random')
             # Syncs to from_seq parent which has 1 state
-            assert pool.operation.num_values == 1
+            assert pool.operation.num_states == 1
     
     def test_random_mode_produces_valid_output(self):
         """Random mode generates valid mutated sequences."""
@@ -328,7 +328,7 @@ class TestMutagenizeHybridModeWithRate:
         """Random mode with num_states sets num_states correctly."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', mutation_rate=0.1, mode='random', num_states=100)
-            assert pool.operation.num_values == 100
+            assert pool.operation.num_states == 100
     
     def test_random_generates_correct_count(self):
         """Random mode with num_states generates num_states sequences per iteration."""
@@ -642,7 +642,7 @@ class TestMutagenizeHybridModeWithNum:
         """Random mode with num_states sets num_states correctly."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=100)
-            assert pool.operation.num_values == 100
+            assert pool.operation.num_states == 100
 
 
 class TestMutagenizeAllowedChars:

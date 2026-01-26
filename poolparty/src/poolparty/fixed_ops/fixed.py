@@ -108,7 +108,7 @@ class FixedOp(Operation):
             self.factory_name = _factory_name
         super().__init__(
             parent_pools=list(parent_pools),
-            num_values=1,
+            num_states=1,
             mode='fixed',
             seq_length=seq_length,
             name=name,
@@ -138,15 +138,3 @@ class FixedOp(Operation):
             output_style = SeqStyle.empty(len(result))
         return {'seq': result, 'style': output_style}
 
-    def _get_copy_params(self) -> dict:
-        """Return parameters needed to create a copy of this operation."""
-        return {
-            'parent_pools': self.parent_pools,
-            'seq_from_seqs_fn': self.seq_from_seqs_fn,
-            'seq_length_from_pool_lengths_fn': self._seq_length_from_pool_lengths_fn,
-            'region': self._region,
-            'remove_tags': self._remove_tags,
-            'name': None,
-            'iter_order': self.iter_order,
-            '_pass_through_styles': self._pass_through_styles,
-        }

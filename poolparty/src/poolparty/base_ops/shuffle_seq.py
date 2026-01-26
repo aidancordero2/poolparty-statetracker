@@ -128,7 +128,7 @@ class SeqShuffleOp(Operation):
             num_states = 1
         super().__init__(
             parent_pools=[parent_pool],
-            num_values=num_states,
+            num_states=num_states,
             mode=mode,
             seq_length=parent_pool.seq_length,
             name=name,
@@ -227,22 +227,4 @@ class SeqShuffleOp(Operation):
         
         return '.'.join(name_parts) if name_parts else None
     
-    def _get_copy_params(self) -> dict:
-        """Return parameters needed to create a copy of this operation."""
-        return {
-            'parent_pool': self.parent_pools[0],
-            'region': self._region,
-            'prefix': self.name_prefix,
-            'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
-            'name': None,
-            'iter_order': self.iter_order,
-            '_remove_tags': self._remove_tags,
-            'style': self._style,
-            '_seq_name_prefix': self._seq_name_prefix,
-            '_seq_name_pos_prefix': self._seq_name_pos_prefix,
-            '_seq_name_shuffle_prefix': self._seq_name_shuffle_prefix,
-            '_pos_state': self._pos_state,
-            '_num_shuffles': self._num_shuffles,
-        }
 
