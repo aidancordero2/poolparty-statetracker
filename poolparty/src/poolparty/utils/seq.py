@@ -1,19 +1,65 @@
 """Seq class for bundling sequence string, style, and name."""
-from dataclasses import dataclass
-from ..types import SeqStyle, Optional, Sequence, beartype
+from dataclasses import dataclass, field
+from ..types import SeqStyle, Optional, Sequence, beartype, Literal
+import numpy as np
+
+
+CoordSystem = Literal['literal', 'nontag', 'molecular']
 
 
 @beartype
 @dataclass(frozen=True)
 class Seq:
-    """Immutable container bundling DNA sequence string, style, and name.
+    """Immutable container bundling DNA sequence string, style, name, and region metadata.
     
-    This class provides atomic operations for slicing, joining, and manipulating
-    sequences while maintaining their associated styling and naming information.
+    Coordinate Systems
+    ------------------
+    Seq provides three coordinate systems for indexing positions:
+    
+    **literal** - Raw string indices (0 to len(string)-1)
+        Includes all characters: DNA bases, gaps, AND region tag characters.
+        Use for direct string indexing: `seq.string[literal_pos]`
+    
+    **nontag** - Indices excluding region tag characters `<...>`
+        Includes DNA bases AND gap/annotation characters, but NOT tag markup.
+        Length: `seq.nontag_length`
+        Use when working with sequence content ignoring tag syntax.
+    
+    **molecular** - Only valid DNA characters (A, C, G, T and lowercase)
+        Excludes tags, gaps, punctuation, and all non-DNA characters.
+        Length: `seq.molecular_length`
+        Use for biological position references (e.g., "mutate position 5").
+    
+    Example
+    -------
+    For sequence: 'AC<region>T-G</region>A'
+    
+    - literal positions:   0  1  2-11      12 13 14-22       23
+                           A  C  <region>  T  -  G  </region> A
+    - nontag positions:    0  1            2  3  4            5
+                           A  C            T  -  G            A  
+    - molecular positions: 0  1            2     3            4
+                           A  C            T     G            A
+    
+    Conversion Methods
+    ------------------
+    Use `convert_pos()` to convert between any two coordinate systems:
+        literal_pos = seq.convert_pos(2, 'molecular', 'literal')  # -> 12
+        mol_pos = seq.convert_pos(12, 'literal', 'molecular')     # -> 2
+    
+    Returns None if the position doesn't exist in the target system
+    (e.g., a gap character has no molecular position).
     """
-    string: str                    # DNA sequence string
+    string: str                    # Literal string WITH tags
     style: SeqStyle                # Per-position styling
     name: Optional[str] = None     # Sequence name
+    # Computed on construction (not lazy, for immutability)
+    _clean: str = field(default='', repr=False)
+    _regions: tuple = field(default=(), repr=False)
+    _nontag_to_literal: tuple = field(default=(), repr=False)
+    _molecular_to_literal: tuple = field(default=(), repr=False)
+    _literal_to_nontag: tuple = field(default=(), repr=False)
+    _literal_to_molecular: tuple = field(default=(), repr=False)
     
     def __len__(self) -> int:
         """Return length of sequence string."""
@@ -23,6 +69,212 @@ class Seq:
         """String representation."""
         name_str = f", name={self.name!r}" if self.name else ""
         return f"Seq(len={len(self.string)}, styles={len(self.style.style_list)}{name_str})"
+    
+    # Coordinate system properties
+    @property
+    def literal_length(self) -> int:
+        """Length in literal coordinates (same as len(self.string))."""
+        return len(self.string)
+    
+    @property
+    def nontag_length(self) -> int:
+        """Length in nontag coordinates (excludes tag markup)."""
+        return len(self._nontag_to_literal)
+    
+    @property
+    def molecular_length(self) -> int:
+        """Length in molecular coordinates (DNA characters only)."""
+        return len(self._molecular_to_literal)
+    
+    @property
+    def clean(self) -> str:
+        """Sequence with all tags removed (nontag content as string)."""
+        return self._clean
+    
+    # Coordinate conversion methods
+    def convert_pos(
+        self, 
+        pos: int, 
+        from_coord: CoordSystem, 
+        to_coord: CoordSystem
+    ) -> int | None:
+        """Convert a position between coordinate systems.
+        
+        Parameters
+        ----------
+        pos : int
+            Position in the source coordinate system.
+        from_coord : {'literal', 'nontag', 'molecular'}
+            Source coordinate system.
+        to_coord : {'literal', 'nontag', 'molecular'}
+            Target coordinate system.
+        
+        Returns
+        -------
+        int | None
+            Position in target coordinate system, or None if the position
+            doesn't exist in the target system (e.g., a gap has no molecular pos).
+        
+        Raises
+        ------
+        IndexError
+            If pos is out of range for the source coordinate system.
+        
+        Examples
+        --------
+        >>> seq = Seq.from_string('AC<region>T-G</region>A')
+        >>> seq.convert_pos(2, 'molecular', 'literal')  # T is at literal 12
+        12
+        >>> seq.convert_pos(13, 'literal', 'molecular')  # '-' has no molecular pos
+        None
+        >>> seq.convert_pos(3, 'nontag', 'molecular')   # '-' at nontag 3
+        None
+        """
+        # Same coordinate system
+        if from_coord == to_coord:
+            return pos
+        
+        # Convert to literal first if needed
+        if from_coord == 'nontag':
+            if pos < 0 or pos >= len(self._nontag_to_literal):
+                raise IndexError(f"nontag position {pos} out of range [0, {len(self._nontag_to_literal)})")
+            literal_pos = self._nontag_to_literal[pos]
+        elif from_coord == 'molecular':
+            if pos < 0 or pos >= len(self._molecular_to_literal):
+                raise IndexError(f"molecular position {pos} out of range [0, {len(self._molecular_to_literal)})")
+            literal_pos = self._molecular_to_literal[pos]
+        else:  # from_coord == 'literal'
+            if pos < 0 or pos >= len(self.string):
+                raise IndexError(f"literal position {pos} out of range [0, {len(self.string)})")
+            literal_pos = pos
+        
+        # Convert from literal to target
+        if to_coord == 'literal':
+            return literal_pos
+        elif to_coord == 'nontag':
+            return self._literal_to_nontag[literal_pos]
+        else:  # to_coord == 'molecular'
+            return self._literal_to_molecular[literal_pos]
+    
+    def molecular_to_literal(self, pos: int) -> int:
+        """Convert molecular position to literal position."""
+        if pos < 0 or pos >= len(self._molecular_to_literal):
+            raise IndexError(f"molecular position {pos} out of range [0, {len(self._molecular_to_literal)})")
+        return self._molecular_to_literal[pos]
+    
+    def nontag_to_literal(self, pos: int) -> int:
+        """Convert nontag position to literal position."""
+        if pos < 0 or pos >= len(self._nontag_to_literal):
+            raise IndexError(f"nontag position {pos} out of range [0, {len(self._nontag_to_literal)})")
+        return self._nontag_to_literal[pos]
+    
+    def literal_to_molecular(self, pos: int) -> int | None:
+        """Convert literal position to molecular position (None if not DNA)."""
+        if pos < 0 or pos >= len(self._literal_to_molecular):
+            raise IndexError(f"literal position {pos} out of range [0, {len(self._literal_to_molecular)})")
+        return self._literal_to_molecular[pos]
+    
+    def literal_to_nontag(self, pos: int) -> int | None:
+        """Convert literal position to nontag position (None if inside tag)."""
+        if pos < 0 or pos >= len(self._literal_to_nontag):
+            raise IndexError(f"literal position {pos} out of range [0, {len(self._literal_to_nontag)})")
+        return self._literal_to_nontag[pos]
+    
+    def convert_positions(
+        self,
+        positions: Sequence[int],
+        from_coord: CoordSystem,
+        to_coord: CoordSystem,
+    ) -> np.ndarray:
+        """Convert multiple positions, returning numpy array.
+        
+        Parameters
+        ----------
+        positions : Sequence[int]
+            Positions to convert.
+        from_coord : {'literal', 'nontag', 'molecular'}
+            Source coordinate system.
+        to_coord : {'literal', 'nontag', 'molecular'}
+            Target coordinate system.
+        
+        Returns
+        -------
+        np.ndarray
+            Array of converted positions (None values remain as None).
+        """
+        return np.array([self.convert_pos(p, from_coord, to_coord) for p in positions])
+    
+    # Region operations
+    def has_region(self, name: str) -> bool:
+        """Check if a region with the given name exists."""
+        return any(r.name == name for r in self._regions)
+    
+    def get_region(self, name: str):
+        """Get a region by name.
+        
+        Returns
+        -------
+        ParsedRegion
+            The region with the given name.
+        
+        Raises
+        ------
+        ValueError
+            If region not found.
+        """
+        for r in self._regions:
+            if r.name == name:
+                return r
+        raise ValueError(f"Region '{name}' not found")
+    
+    def split_at_region(self, name: str) -> tuple['Seq', 'Seq', 'Seq']:
+        """Split sequence at a named region.
+        
+        Returns (prefix, content, suffix) where:
+        - prefix: Seq before the region (tags removed)
+        - content: Seq of region content (tags removed)
+        - suffix: Seq after the region (tags removed)
+        
+        Raises
+        ------
+        ValueError
+            If region not found or appears multiple times.
+        """
+        from . import parsing_utils
+        
+        region = parsing_utils.validate_single_region(self.string, name)
+        
+        prefix_str = self.string[:region.start]
+        content_str = region.content
+        suffix_str = self.string[region.end:]
+        
+        # Create Seq objects with empty coordinate maps (will be computed on construction)
+        prefix = Seq.from_string(prefix_str, style=None, name=None)
+        content = Seq.from_string(content_str, style=None, name=None)
+        suffix = Seq.from_string(suffix_str, style=None, name=None)
+        
+        return prefix, content, suffix
+    
+    def extract_region(self, name: str) -> 'Seq':
+        """Extract region content as a new Seq.
+        
+        Parameters
+        ----------
+        name : str
+            Region name to extract.
+        
+        Returns
+        -------
+        Seq
+            New Seq containing just the region content (tags removed).
+        
+        Raises
+        ------
+        ValueError
+            If region not found.
+        """
+        _, content, _ = self.split_at_region(name)
+        return content
     
     def __getitem__(self, key: slice) -> 'Seq':
         """Atomic slicing of string + style.
@@ -35,28 +287,41 @@ class Seq:
         Returns
         -------
         Seq
-            New Seq with sliced string and style.
+            New Seq with sliced string and style (coordinate maps cleared).
         
         Examples
         --------
         >>> seq = Seq.from_string('ACGTACGT')
         >>> seq[2:6]
         Seq(len=4, styles=0)
+        
+        Notes
+        -----
+        Slicing may create partial/invalid tags. Coordinate maps are cleared
+        and will need to be rebuilt if needed via from_string().
         """
         if not isinstance(key, slice):
             raise TypeError("Seq only supports slice indexing")
-        return Seq(
-            string=self.string[key],
-            style=self.style[key],
-            name=self.name,
-        )
+        # Don't parse tags on sliced strings (may create partial tags)
+        # Return Seq with empty coordinate maps
+        seq = Seq.__new__(Seq)
+        object.__setattr__(seq, 'string', self.string[key])
+        object.__setattr__(seq, 'style', self.style[key])
+        object.__setattr__(seq, 'name', self.name)
+        object.__setattr__(seq, '_clean', '')
+        object.__setattr__(seq, '_regions', ())
+        object.__setattr__(seq, '_nontag_to_literal', ())
+        object.__setattr__(seq, '_molecular_to_literal', ())
+        object.__setattr__(seq, '_literal_to_nontag', ())
+        object.__setattr__(seq, '_literal_to_molecular', ())
+        return seq
     
     @classmethod
     def join(cls, input_seqs: Sequence['Seq'], sep: str = '') -> 'Seq':
         """Join multiple Seq with optional separator.
         
         Handles string join, SeqStyle.join with automatic offset handling,
-        and name merging (dot-separated).
+        and name merging (dot-separated). Coordinate maps are rebuilt.
         
         Parameters
         ----------
@@ -93,7 +358,8 @@ class Seq:
             if s.name:
                 names.append(s.name)
         
-        return cls(
+        # Use from_string to rebuild coordinate maps
+        return cls.from_string(
             string=''.join(strings),
             style=SeqStyle.join(styles),
             name='.'.join(names) if names else None,
@@ -108,16 +374,16 @@ class Seq:
         Seq
             Empty Seq with no string, style, or name.
         """
-        return cls('', SeqStyle.empty(0), None)
+        return cls.from_string('', SeqStyle.empty(0), None)
     
     @classmethod
     def from_string(cls, string: str, style: SeqStyle | None = None, name: str | None = None) -> 'Seq':
-        """Create Seq from string with optional style/name.
+        """Create Seq from string, parsing tags and building coordinate maps.
         
         Parameters
         ----------
         string : str
-            DNA sequence string.
+            DNA sequence string (may contain region tags).
         style : SeqStyle | None, default=None
             Optional style. If None, creates empty style.
         name : str | None, default=None
@@ -126,11 +392,57 @@ class Seq:
         Returns
         -------
         Seq
-            New Seq with given string, style, and name.
+            New Seq with parsed regions and coordinate maps.
         """
+        from . import parsing_utils, dna_utils
+        
         if style is None:
             style = SeqStyle.empty(len(string))
-        return cls(string, style, name)
+        
+        # Parse regions
+        regions = tuple(parsing_utils.find_all_regions(string))
+        
+        # Strip tags to get clean content
+        clean = parsing_utils.strip_all_tags(string)
+        
+        # Build coordinate maps
+        # 1. nontag_to_literal: map nontag positions to literal positions
+        nontag_positions = parsing_utils.get_nontag_positions(string)
+        nontag_to_literal = tuple(nontag_positions)
+        
+        # 2. molecular_to_literal: map molecular (DNA only) positions to literal positions
+        molecular_positions = []
+        for lit_pos in nontag_positions:
+            char = string[lit_pos]
+            if char in dna_utils.VALID_CHARS:  # VALID_CHARS contains both upper and lowercase
+                molecular_positions.append(lit_pos)
+        molecular_to_literal = tuple(molecular_positions)
+        
+        # 3. literal_to_nontag: map literal positions to nontag (None for tag chars)
+        literal_to_nontag_list = [None] * len(string)
+        for nontag_idx, lit_pos in enumerate(nontag_to_literal):
+            literal_to_nontag_list[lit_pos] = nontag_idx
+        literal_to_nontag = tuple(literal_to_nontag_list)
+        
+        # 4. literal_to_molecular: map literal positions to molecular (None for non-DNA)
+        literal_to_molecular_list = [None] * len(string)
+        for mol_idx, lit_pos in enumerate(molecular_to_literal):
+            literal_to_molecular_list[lit_pos] = mol_idx
+        literal_to_molecular = tuple(literal_to_molecular_list)
+        
+        # Use object.__setattr__ for frozen dataclass
+        seq = cls.__new__(cls)
+        object.__setattr__(seq, 'string', string)
+        object.__setattr__(seq, 'style', style)
+        object.__setattr__(seq, 'name', name)
+        object.__setattr__(seq, '_clean', clean)
+        object.__setattr__(seq, '_regions', regions)
+        object.__setattr__(seq, '_nontag_to_literal', nontag_to_literal)
+        object.__setattr__(seq, '_molecular_to_literal', molecular_to_literal)
+        object.__setattr__(seq, '_literal_to_nontag', literal_to_nontag)
+        object.__setattr__(seq, '_literal_to_molecular', literal_to_molecular)
+        
+        return seq
     
     def insert(self, pos: int, content: 'Seq') -> 'Seq':
         """Insert content at position.
@@ -169,10 +481,10 @@ class Seq:
         reversed_string = dna_utils.reverse_complement(self.string)
         reversed_style = self.style.reversed(do_reverse=True)
         
-        return Seq(reversed_string, reversed_style, self.name)
+        return Seq.from_string(reversed_string, reversed_style, self.name)
     
     def with_name(self, name: str | None) -> 'Seq':
-        """Return copy with updated name.
+        """Return copy with updated name (preserves coordinate maps).
         
         Parameters
         ----------
@@ -184,10 +496,21 @@ class Seq:
         Seq
             New Seq with updated name.
         """
-        return Seq(self.string, self.style, name)
+        # Preserve coordinate maps without rebuilding
+        seq = Seq.__new__(Seq)
+        object.__setattr__(seq, 'string', self.string)
+        object.__setattr__(seq, 'style', self.style)
+        object.__setattr__(seq, 'name', name)
+        object.__setattr__(seq, '_clean', self._clean)
+        object.__setattr__(seq, '_regions', self._regions)
+        object.__setattr__(seq, '_nontag_to_literal', self._nontag_to_literal)
+        object.__setattr__(seq, '_molecular_to_literal', self._molecular_to_literal)
+        object.__setattr__(seq, '_literal_to_nontag', self._literal_to_nontag)
+        object.__setattr__(seq, '_literal_to_molecular', self._literal_to_molecular)
+        return seq
     
     def with_style(self, style: SeqStyle) -> 'Seq':
-        """Return copy with updated style.
+        """Return copy with updated style (preserves coordinate maps).
         
         Parameters
         ----------
@@ -199,10 +522,21 @@ class Seq:
         Seq
             New Seq with updated style.
         """
-        return Seq(self.string, style, self.name)
+        # Preserve coordinate maps without rebuilding
+        seq = Seq.__new__(Seq)
+        object.__setattr__(seq, 'string', self.string)
+        object.__setattr__(seq, 'style', style)
+        object.__setattr__(seq, 'name', self.name)
+        object.__setattr__(seq, '_clean', self._clean)
+        object.__setattr__(seq, '_regions', self._regions)
+        object.__setattr__(seq, '_nontag_to_literal', self._nontag_to_literal)
+        object.__setattr__(seq, '_molecular_to_literal', self._molecular_to_literal)
+        object.__setattr__(seq, '_literal_to_nontag', self._literal_to_nontag)
+        object.__setattr__(seq, '_literal_to_molecular', self._literal_to_molecular)
+        return seq
     
     def add_style(self, style_spec: str, positions) -> 'Seq':
-        """Return copy with additional style added.
+        """Return copy with additional style added (preserves coordinate maps).
         
         Parameters
         ----------
@@ -217,7 +551,7 @@ class Seq:
             New Seq with added style.
         """
         new_style = self.style.add_style(style_spec, positions)
-        return Seq(self.string, new_style, self.name)
+        return self.with_style(new_style)
     
     @classmethod
     def combine_names(cls, seqs: Sequence['Seq']) -> str | None:

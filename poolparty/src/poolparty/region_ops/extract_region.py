@@ -9,14 +9,13 @@ from ..utils import dna_utils
 def extract_region(
     pool,
     region_name: str,
+    rc: bool = False,
     iter_order: Optional[Real] = None,
 ):
     """
     Extract content from a named region as a new Pool.
 
     Creates a Pool that yields the content inside the specified region.
-    If the region has strand='-', the content is reverse-complemented
-    so operations always see + strand orientation.
 
     Parameters
     ----------
@@ -24,6 +23,8 @@ def extract_region(
         Input Pool or sequence string containing the region.
     region_name : str
         Name of the region to extract content from.
+    rc : bool, default=False
+        If True, reverse-complement the extracted content.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
 
@@ -31,7 +32,6 @@ def extract_region(
     -------
     Pool
         A Pool yielding the content inside the region.
-        If region has strand='-', content is reverse-complemented.
 
     Examples
     --------
@@ -40,10 +40,9 @@ def extract_region(
     ...     content = pp.extract_region(bg, 'region')
     ...     # content yields: 'TTAA'
     ...
-    ...     # With strand='-', content is reverse-complemented
-    ...     bg = pp.from_seq("ACGT<region strand='-'>TTAA</region>GCGC")
-    ...     content = pp.extract_region(bg, 'region')
-    ...     # content yields: 'TTAA' (reverse complement of TTAA)
+    ...     # With rc=True, content is reverse-complemented
+    ...     content_rc = pp.extract_region(bg, 'region', rc=True)
+    ...     # content_rc yields: 'TTAA' (reverse complement of TTAA)
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.fixed import fixed_operation
@@ -57,8 +56,8 @@ def extract_region(
         region = validate_single_region(seq, region_name)
         content = region.content
         
-        # If strand='-', reverse complement the content
-        if region.strand == '-':
+        # If rc=True, reverse complement the content
+        if rc:
             content = dna_utils.reverse_complement(content)
         
         return content

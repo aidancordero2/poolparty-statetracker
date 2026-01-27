@@ -299,32 +299,6 @@ class TestPositionAdjustmentWithMarkers:
             # With marker removed, position 0 in region = position 2 in final seq
             assert all(2 <= pos < 6 for pos in positions)
     
-    def test_mutagenize_region_marker_with_minus_strand(self):
-        """Minus strand marker handled correctly with position offset."""
-        with pp.Party() as party:
-            # Marker with minus strand
-            bg = pp.from_seq('AA<test strand="-">CCCC</test>GG').named('bg')
-            mutated = bg.mutagenize(
-                region='test', num_mutations=1, style='red',
-                mode='sequential'
-            ).named('mutated')
-        
-        df = mutated.generate_library(num_seqs=1, report_design_cards=True)
-        seq = df['seq'].iloc[0]
-        seq_style = df['_inline_styles'].iloc[0]
-        
-        # Marker is removed by default
-        assert '<test' not in seq
-        assert seq.startswith('AA')
-        assert seq.endswith('GG')
-        
-        if seq_style:
-            spec, positions = seq_style.style_list[0]
-            # Style positions should point to correct characters in clean sequence
-            # The first mutation is at position 0 within the region
-            # With marker removed, position 0 in region = position 2 in final seq
-            assert all(2 <= pos < 6 for pos in positions)
-    
     def test_mutagenize_interval_region(self):
         """Positions correct for [start, stop] interval region."""
         with pp.Party() as party:
@@ -644,27 +618,6 @@ class TestInsertionScanStylePropagation:
             for spec, positions in seq_style.style_list:
                 assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions in row {i}"
     
-    def test_insert_pool_styles_with_minus_strand(self):
-        """Insert pool styles are correctly flipped for minus strand markers."""
-        with pp.Party() as party:
-            # Minus strand marker - content will be reverse-complemented
-            bg = pp.from_seq("AA<ins strand='-'>XX</ins>TT").named('bg')
-            # Style the insert - positions should be flipped after reverse complement
-            inserts = pp.from_seqs(['AC'], mode='sequential')\
-                .stylize(style='yellow')\
-                .named('inserts')
-            inserted = bg.insertion_scan(region='ins', ins_pool=inserts, positions=[0], 
-                                          replace=True, mode='sequential').named('inserted')
-        
-        df = inserted.generate_library(num_seqs=1, report_design_cards=True)
-        seq = df['seq'].iloc[0]
-        seq_style = df['_inline_styles'].iloc[0]
-        
-        # Styles should propagate (positions flipped due to reverse complement)
-        assert len(seq_style.style_list) > 0
-        assert any(spec == 'yellow' for spec, _ in seq_style.style_list)
-        for spec, positions in seq_style.style_list:
-            assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions for {spec}"
 
 
 class TestInsertionScanStyleInsertion:

@@ -95,69 +95,6 @@ class TestSubseqScanPositions:
         assert len(df) == 3
 
 
-class TestSubseqScanStrand:
-    """Test strand parameter."""
-    
-    def test_plus_strand_default(self):
-        """Test that default strand is '+'."""
-        with pp.Party() as party:
-            result = subseq_scan(
-                'AAAATTTT',
-                seq_length=4,
-                positions=[0],
-                mode='sequential'
-            ).named('result')
-        
-        df = result.generate_library(num_cycles=1)
-        assert df['seq'].iloc[0] == 'AAAA'
-    
-    def test_minus_strand_reverse_complements(self):
-        """Test that minus strand returns reverse complement."""
-        with pp.Party() as party:
-            # AAAA reverse complement is TTTT
-            result = subseq_scan(
-                'AAAATTTT',
-                seq_length=4,
-                positions=[0],
-                strand='-',
-                mode='sequential'
-            ).named('result')
-        
-        df = result.generate_library(num_cycles=1)
-        assert df['seq'].iloc[0] == 'TTTT'
-    
-    def test_both_strands_doubles_states(self):
-        """Test that strand='both' creates 2x states."""
-        with pp.Party() as party:
-            result = subseq_scan(
-                'AAAATTTT',
-                seq_length=4,
-                positions=[0],
-                strand='both',
-                mode='sequential'
-            ).named('result')
-        
-        df = result.generate_library(num_cycles=1)
-        assert len(df) == 2
-        # One is AAAA (+ strand), one is TTTT (- strand reverse complement)
-        assert set(df['seq']) == {'AAAA', 'TTTT'}
-    
-    def test_both_strands_multiple_positions(self):
-        """Test strand='both' with multiple positions."""
-        with pp.Party() as party:
-            result = subseq_scan(
-                'ACGTACGTACGT',
-                seq_length=4,
-                positions=[0, 4],
-                strand='both',
-                mode='sequential'
-            ).named('result')
-        
-        df = result.generate_library(num_cycles=1)
-        # 2 positions * 2 strands = 4 states
-        assert len(df) == 4
-
-
 class TestSubseqScanModes:
     """Test different modes."""
     

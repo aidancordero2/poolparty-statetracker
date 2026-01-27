@@ -187,22 +187,6 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
         self.operation._block_seq_names = True
         return self
     
-    @property
-    def iter_order(self) -> Real:
-        """Iteration order for this pool's state.
-        
-        Lower values iterate faster (come first in product states).
-        """
-        if self.state is None:
-            return 0
-        return self.state.iter_order
-    
-    @iter_order.setter
-    def iter_order(self, value: Real) -> None:
-        """Set iteration order on this pool's state."""
-        if self.state is not None:
-            self.state.iter_order = value
-    
     def copy(self, name: Optional[str] = None) -> Pool_type:
         """Create a copy of this pool with a copied operation.
         

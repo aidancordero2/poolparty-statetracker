@@ -25,14 +25,10 @@ class TestRegionParsing:
     def test_build_region_tags_zero_length(self):
         """Test building zero-length region tags."""
         assert build_region_tags('ins', '') == '<ins/>'
-        assert build_region_tags('ins', '', '+') == '<ins/>'
-        assert build_region_tags('ins', '', '-') == "<ins strand='-'/>"
     
     def test_build_region_tags_with_content(self):
         """Test building region tags with content."""
         assert build_region_tags('region', 'ACGT') == '<region>ACGT</region>'
-        assert build_region_tags('region', 'ACGT', '+') == '<region>ACGT</region>'
-        assert build_region_tags('region', 'ACGT', '-') == "<region strand='-'>ACGT</region>"
     
     def test_find_all_regions_zero_length(self):
         """Test finding zero-length regions."""
@@ -41,7 +37,6 @@ class TestRegionParsing:
         assert len(regions) == 1
         assert regions[0].name == 'ins'
         assert regions[0].content == ''
-        assert regions[0].strand == '+'
     
     def test_find_all_regions_with_content(self):
         """Test finding regions with content."""
@@ -50,14 +45,6 @@ class TestRegionParsing:
         assert len(regions) == 1
         assert regions[0].name == 'region'
         assert regions[0].content == 'TG'
-        assert regions[0].strand == '+'
-    
-    def test_find_all_regions_with_strand(self):
-        """Test finding regions with strand attribute."""
-        seq = "AC<region strand='-'>TG</region>AA"
-        regions = find_all_regions(seq)
-        assert len(regions) == 1
-        assert regions[0].strand == '-'
     
     def test_find_all_regions_multiple(self):
         """Test finding multiple regions."""
@@ -95,11 +82,10 @@ class TestRegionParsing:
     def test_parse_region(self):
         """Test parse_region function."""
         seq = 'AC<region>TG</region>AA'
-        prefix, content, suffix, strand = parse_region(seq, 'region')
+        prefix, content, suffix = parse_region(seq, 'region')
         assert prefix == 'AC'
         assert content == 'TG'
         assert suffix == 'AA'
-        assert strand == '+'
     
     def test_strip_all_tags(self):
         """Test strip_all_tags function."""
@@ -161,12 +147,10 @@ class TestMarkerPattern:
         """Test pattern matches self-closing regions."""
         assert TAG_PATTERN.search('<m/>') is not None
         assert TAG_PATTERN.search('<region_name/>') is not None
-        assert TAG_PATTERN.search("<m strand='-'/>") is not None
     
     def test_matches_opening_tag(self):
         """Test pattern matches opening tags."""
         assert TAG_PATTERN.search('<region>') is not None
-        assert TAG_PATTERN.search("<region strand='-'>") is not None
     
     def test_matches_closing_tag(self):
         """Test pattern matches closing tags."""
@@ -189,13 +173,6 @@ class TestInsertMarker:
             result = pp.insert_tags('ACGTACGT', 'region', start=2, stop=5)
         df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AC<region>GTA</region>CGT'
-    
-    def test_insert_tags_with_strand(self):
-        """Test inserting region with strand attribute."""
-        with pp.Party():
-            result = pp.insert_tags('ACGT', 'region', start=1, stop=3, strand='-')
-        df = result.generate_library(num_seqs=1)
-        assert df['seq'].iloc[0] == "A<region strand='-'>CG</region>T"
     
     def test_insert_tags_into_sequence_with_existing_region(self):
         """Test inserting region into sequence that already has regions.
@@ -260,17 +237,6 @@ class TestMarkerScan:
         for seq in df['seq']:
             assert '<m/>' in seq
     
-    def test_strand_both(self):
-        """Test strand='both' doubles the states and shows explicit strand."""
-        with pp.Party():
-            result = pp.region_scan('ACGT', region='m', mode='sequential', strand='both')
-        df = result.generate_library(num_cycles=1)
-        # 5 positions x 2 strands = 10 states
-        assert len(df) == 10
-        # Both strands should be explicit when strand='both'
-        plus_count = sum("strand='+'" in s for s in df['seq'])
-        minus_count = sum("strand='-'" in s for s in df['seq'])
-        assert plus_count == 5 and minus_count == 5
 
 
 class TestExtractMarkerContent:
@@ -284,18 +250,11 @@ class TestExtractMarkerContent:
         df = content.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'TTAA'
     
-    def test_extract_with_minus_strand(self):
-        """Test extracting content with strand='-' reverse complements."""
+    def test_extract_with_rc(self):
+        """Test extracting content with rc=True reverse complements."""
         with pp.Party():
-            bg = pp.from_seq("ACGT<region strand='-'>TTAA</region>GCGC")
-            content = pp.extract_region(bg, 'region')
-        df = content.generate_library(num_seqs=1)
-        # TTAA reverse complement = TTAA (palindrome)
-        # Let's use a non-palindrome
-        
-        with pp.Party():
-            bg = pp.from_seq("ACGT<region strand='-'>AACG</region>GCGC")
-            content = pp.extract_region(bg, 'region')
+            bg = pp.from_seq("ACGT<region>AACG</region>GCGC")
+            content = pp.extract_region(bg, 'region', rc=True)
         df = content.generate_library(num_seqs=1)
         # AACG reverse complement = CGTT
         assert df['seq'].iloc[0] == 'CGTT'
@@ -326,12 +285,12 @@ class TestReplaceMarkerContent:
         assert 'PREFIXNEW1SUFFIX' in seqs
         assert 'PREFIXNEW2SUFFIX' in seqs
     
-    def test_replace_with_minus_strand(self):
-        """Test replacing with minus strand reverse complements content."""
+    def test_replace_with_rc(self):
+        """Test replacing with rc=True reverse complements content."""
         with pp.Party():
-            bg = pp.from_seq("ACGT<region strand='-'>XX</region>TTTT")
+            bg = pp.from_seq("ACGT<region>XX</region>TTTT")
             content = pp.from_seq('AAA')
-            result = pp.replace_region(bg, content, 'region')
+            result = pp.replace_region(bg, content, 'region', rc=True)
         df = result.generate_library(num_seqs=1)
         # AAA reverse complement = TTT
         assert df['seq'].iloc[0] == 'ACGTTTTTTTT'
@@ -623,48 +582,6 @@ class TestMarkerClass:
             # All variants should be 12 chars (4+4+4)
             for seq in df['seq']:
                 assert len(seq) == 12
-
-
-class TestSeqLengthAttribute:
-    """Test the seq_length attribute in XML regions."""
-    
-    def test_parse_seq_length_integer(self):
-        """Test parsing seq_length as integer."""
-        regions = find_all_regions("<orf seq_length='6'>ATGCCC</orf>")
-        assert len(regions) == 1
-        assert regions[0].declared_seq_length_str == '6'
-    
-    def test_parse_seq_length_none(self):
-        """Test parsing seq_length='None' for variable length."""
-        regions = find_all_regions("<var seq_length='None'>ACGT</var>")
-        assert len(regions) == 1
-        assert regions[0].declared_seq_length_str == 'None'
-        assert regions[0].is_variable_length
-    
-    def test_seq_length_validation(self):
-        """Test that seq_length validates against content length."""
-        # Correct length
-        regions = find_all_regions("<orf seq_length='4'>ACGT</orf>")
-        assert len(regions) == 1
-        
-        # Wrong length should raise error
-        with pytest.raises(ValueError, match="seq_length='6'.*content has length 4"):
-            find_all_regions("<orf seq_length='6'>ACGT</orf>")
-    
-    def test_self_closing_seq_length_zero(self):
-        """Test self-closing regions with seq_length."""
-        regions = find_all_regions("<ins seq_length='0'/>")
-        assert len(regions) == 1
-        assert regions[0].declared_seq_length_str == '0'
-    
-    def test_build_region_with_seq_length(self):
-        """Test building region tags with seq_length."""
-        tag = build_region_tags('orf', 'ACGT', '+', seq_length=4)
-        assert tag == "<orf seq_length='4'>ACGT</orf>"
-        
-        # Variable length
-        tag = build_region_tags('var', 'ACGT', '+', seq_length=-1)
-        assert tag == "<var seq_length='None'>ACGT</var>"
 
 
 class TestIntegration:

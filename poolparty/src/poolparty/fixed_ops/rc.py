@@ -2,7 +2,6 @@
 from numbers import Real
 from ..types import Pool_type, Union, Optional, RegionType, beartype
 from ..pool import Pool
-from ..utils.parsing_utils import reverse_complement_with_tags
 from ..utils import dna_utils
 
 
@@ -17,8 +16,8 @@ def rc(
     """
     Create a Pool containing the reverse complement of sequences from the input pool.
 
-    Preserves XML marker tags, repositioning them based on reversed content
-    coordinates.
+    Note: Region tags are not preserved in the output. If you need to preserve
+    regions, use extract_region with rc=True instead.
 
     Parameters
     ----------
@@ -41,8 +40,11 @@ def rc(
     from .fixed import fixed_operation
 
     def seq_from_seqs_fn(seqs: list[str]) -> str:
+        from ..utils.parsing_utils import strip_all_tags
         seq = seqs[0]
-        return reverse_complement_with_tags(seq, dna_utils.complement)
+        # Strip tags before reverse complementing
+        clean_seq = strip_all_tags(seq)
+        return dna_utils.reverse_complement(clean_seq)
 
     result_pool = fixed_operation(
         parent_pools=[pool],

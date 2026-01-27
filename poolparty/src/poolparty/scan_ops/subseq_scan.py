@@ -13,7 +13,6 @@ def subseq_scan(
     seq_length: Integral,
     positions: PositionsType = None,
     region: RegionType = None,
-    strand: Literal['+', '-', 'both'] = '+',
     prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
@@ -37,10 +36,6 @@ def subseq_scan(
     region : RegionType, default=None
         Region to constrain the scan to. Can be a region name (str) or [start, stop].
         If specified, positions are relative to the region start.
-    strand : Literal['+', '-', 'both'], default='+'
-        Strand for extraction: '+', '-', or 'both'.
-        If '-', content is reverse-complemented.
-        If 'both', creates 2x states scanning both strands.
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
@@ -71,7 +66,6 @@ def subseq_scan(
                 pool=region_content,
                 seq_length=seq_length,
                 positions=positions,
-                strand=strand,
                 prefix=prefix,
                 mode=mode,
                 num_states=num_states,
@@ -91,7 +85,6 @@ def subseq_scan(
                 pool=region_content,
                 seq_length=seq_length,
                 positions=positions,
-                strand=strand,
                 prefix=prefix,
                 mode=mode,
                 num_states=num_states,
@@ -103,7 +96,6 @@ def subseq_scan(
         pool=pool,
         seq_length=seq_length,
         positions=positions,
-        strand=strand,
         prefix=prefix,
         mode=mode,
         num_states=num_states,
@@ -115,7 +107,6 @@ def _subseq_scan_impl(
     pool: Pool,
     seq_length: Integral,
     positions: PositionsType,
-    strand: Literal['+', '-', 'both'],
     prefix: Optional[str],
     mode: ModeType,
     num_states: Optional[Integral],
@@ -151,7 +142,6 @@ def _subseq_scan_impl(
         region=region_name,
         region_length=region_length,
         positions=validated_positions,
-        strand=strand,
         prefix=prefix,
         mode=mode,
         num_states=num_states,

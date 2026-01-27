@@ -26,7 +26,6 @@ class RegionOpsMixin:
         region_name: str,
         start: int,
         stop: Optional[int] = None,
-        strand: str = '+',
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..region_ops.insert_tags import insert_tags
@@ -35,7 +34,6 @@ class RegionOpsMixin:
             region_name,
             start,
             stop,
-            strand,
             iter_order=iter_order,
         )
     

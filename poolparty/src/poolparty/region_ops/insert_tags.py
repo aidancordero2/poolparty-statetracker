@@ -10,7 +10,6 @@ def insert_tags(
     region_name: str,
     start: int,
     stop: Optional[int] = None,
-    strand: str = '+',
     iter_order: Optional[Real] = None,
 ):
     """
@@ -26,8 +25,6 @@ def insert_tags(
         Start position (0-based) for the region.
     stop : Optional[int], default=None
         End position (exclusive). If None, creates a zero-length region at start.
-    strand : str, default='+'
-        Strand annotation ('+' or '-').
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
 
@@ -54,10 +51,6 @@ def insert_tags(
     
     # Convert string to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
-    
-    # Validate strand
-    if strand not in ('+', '-'):
-        raise ValueError(f"strand must be '+' or '-', got {strand!r}")
     
     # Validate positions
     if start < 0:
@@ -86,7 +79,7 @@ def insert_tags(
         literal_start = nontag_pos_to_literal_pos(seq, start)
         literal_stop = nontag_pos_to_literal_pos(seq, actual_stop)
         content = seq[literal_start:literal_stop] if region_length > 0 else ''
-        region_tag = build_region_tags(region_name, content, strand)
+        region_tag = build_region_tags(region_name, content)
         return seq[:literal_start] + region_tag + seq[literal_stop:]
     
     result_pool = fixed_operation(

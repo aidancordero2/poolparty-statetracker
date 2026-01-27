@@ -35,7 +35,6 @@ def region_multiscan(
     regions,
     num_insertions: int,
     positions: PositionsType = None,
-    strand: str = '+',
     region_length: int = 0,
     insertion_mode: Literal['ordered', 'unordered'] = 'ordered',
     prefix: Optional[str] = None,
@@ -56,8 +55,6 @@ def region_multiscan(
         Number of region tags to insert.
     positions : PositionsType, default=None
         Valid insertion positions (0-based). If None, all positions are valid.
-    strand : StrandType, default='+'
-        Strand for regions: '+', '-', or 'both'.
     region_length : Integral, default=0
         Length of sequence to encompass per region. 0 for zero-length regions.
     insertion_mode : str, default='ordered'
@@ -97,7 +94,6 @@ def region_multiscan(
         regions=regions,
         num_insertions=int(num_insertions),
         positions=positions,
-        strand=strand,
         region_length=int(region_length),
         insertion_mode=insertion_mode,
         prefix=prefix,
@@ -119,7 +115,7 @@ class RegionMultiScanOp(Operation):
     """Insert multiple XML region tags at selected positions."""
 
     factory_name = "region_multiscan"
-    design_card_keys = ['indices', 'strands', 'region_tags']
+    design_card_keys = ['indices', 'region_tags']
 
     def __init__(
         self,
@@ -127,7 +123,6 @@ class RegionMultiScanOp(Operation):
         regions,
         num_insertions: int,
         positions: PositionsType = None,
-        strand: str = '+',
         region_length: int = 0,
         insertion_mode: str = 'ordered',
         prefix: Optional[str] = None,
@@ -145,7 +140,6 @@ class RegionMultiScanOp(Operation):
 
         self._positions = positions
         self._mode = mode
-        self._strand = strand
         self._region_length = region_length
         self._seq_length = parent_pool.seq_length
         self.num_insertions = num_insertions
@@ -269,22 +263,14 @@ class RegionMultiScanOp(Operation):
             )
             return sorted(int(x) for x in chosen)
 
-    def _select_strands(self, rng: np.random.Generator) -> list[str]:
-        """Select strands for each insertion."""
-        if self._strand == 'both':
-            return ['+' if rng.random() < 0.5 else '-' for _ in range(self.num_insertions)]
-        else:
-            return [self._strand] * self.num_insertions
-
     def _select_region_tags(
-        self, seq: str, indices: list[int], strands: list[str], rng: np.random.Generator
+        self, seq: str, indices: list[int], rng: np.random.Generator
     ) -> list[str]:
         """Build region tags for each nontag index.
         
         Args:
             seq: The original sequence string.
             indices: Nontag indices (logical positions, not literal).
-            strands: Strand for each region.
             rng: Random number generator.
         
         Returns:
@@ -298,7 +284,7 @@ class RegionMultiScanOp(Operation):
             names = [self._region_names[int(i)] for i in idxs]
         
         tags = []
-        for idx, strand, name in zip(indices, strands, names):
+        for idx, name in zip(indices, names):
             if self._region_length > 0:
                 # Convert nontag index to literal positions for content extraction
                 literal_start = nontag_pos_to_literal_pos(seq, idx)
@@ -309,7 +295,7 @@ class RegionMultiScanOp(Operation):
                 content = strip_all_tags(content)
             else:
                 content = ''
-            tags.append(build_region_tags(name, content, strand))
+            tags.append(build_region_tags(name, content))
         return tags
 
     def _compute_core(
@@ -324,8 +310,7 @@ class RegionMultiScanOp(Operation):
 
         valid_indices = self._get_valid_region_indices(seq)
         indices = self._select_indices(valid_indices, rng)
-        strands = self._select_strands(rng)
-        region_tags = self._select_region_tags(seq, indices, strands, rng)
+        region_tags = self._select_region_tags(seq, indices, rng)
         
         # Build result sequence with tags inserted at nontag indices
         # Uses single-pass construction to avoid position corruption issues
@@ -376,7 +361,6 @@ class RegionMultiScanOp(Operation):
         # Return empty SeqStyle for consistency
         card = {
             'indices': indices_list,  # nontag indices, not literal positions
-            'strands': strands,
             'region_tags': region_tags_list,
         }
         

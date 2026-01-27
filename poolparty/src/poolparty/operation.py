@@ -187,19 +187,6 @@ class Operation:
         if old_name:
             self._party._update_op_name(self, old_name, value)
     
-    @property
-    def iter_order(self) -> Real:
-        """Iteration order for this operation's state."""
-        if self.state is None:
-            return 0
-        return self.state.iter_order
-    
-    @iter_order.setter
-    def iter_order(self, value: Real) -> None:
-        """Set iteration order on this operation's state."""
-        if self.state is not None:
-            self.state.iter_order = value
-    
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool_type],

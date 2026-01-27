@@ -12,6 +12,7 @@ def replace_region(
     pool,
     content_pool,
     region_name: str,
+    rc: bool = False,
     iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
     # Internal parameters for insertion_scan composite naming
@@ -27,8 +28,7 @@ def replace_region(
     Replace a region with content from another Pool.
 
     The region (including its tags and any content) is replaced with
-    sequences from content_pool. If the region has strand='-', the
-    content is reverse-complemented before insertion.
+    sequences from content_pool.
 
     Parameters
     ----------
@@ -38,6 +38,8 @@ def replace_region(
         Pool or sequence string to insert at the region position.
     region_name : str
         Name of the region to replace.
+    rc : bool, default=False
+        If True, reverse-complement the content before insertion.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
     _factory_name: Optional[str], default=None
@@ -58,10 +60,10 @@ def replace_region(
     ...     result = pp.replace_region(bg, inserts, 'insert')
     ...     # Result yields: 'ACGTAAATTTT', 'ACGTGGGTTTT'
     ...
-    ...     # With strand='-', content is reverse-complemented
-    ...     bg = pp.from_seq("ACGT<region strand='-'>XX</region>TTTT")
+    ...     # With rc=True, content is reverse-complemented
+    ...     bg = pp.from_seq("ACGT<region>XX</region>TTTT")
     ...     content = pp.from_seq('AAA')
-    ...     result = pp.replace_region(bg, content, 'region')
+    ...     result = pp.replace_region(bg, content, 'region', rc=True)
     ...     # Result: 'ACGTTTTTTTT' (TTT is reverse complement of AAA)
     """
     from ..fixed_ops.from_seq import from_seq
@@ -75,6 +77,7 @@ def replace_region(
         parent_pool=pool_obj,
         content_pool=content_pool,
         region_name=region_name,
+        rc=rc,
         name=None,
         iter_order=iter_order,
         _factory_name=_factory_name,
@@ -105,6 +108,7 @@ class ReplaceRegionOp(Operation):
         parent_pool,
         content_pool,
         region_name: str,
+        rc: bool = False,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
@@ -118,6 +122,7 @@ class ReplaceRegionOp(Operation):
         _style: Optional[str] = None,
     ) -> None:
         self.region_name = region_name
+        self.rc = rc
         
         # Set factory name if provided
         if _factory_name is not None:
@@ -159,15 +164,15 @@ class ReplaceRegionOp(Operation):
         # Find and validate the region
         region = validate_single_region(bg_seq_string, self.region_name)
         
-        # If strand='-', reverse complement the content before insertion
-        if region.strand == '-':
+        # If rc=True, reverse complement the content before insertion
+        if self.rc:
             content_seq_obj = content_seq_obj.reversed()
         
-        # Use Seq slicing for assembly
+        # Use Seq slicing for assembly (slices may have partial tags, but join works)
         prefix_seq = parents[0][:region.start]
         suffix_seq = parents[0][region.end:]
         
-        # Join with content
+        # Join with content (from_string in join will parse the final result)
         output_seq = Seq.join([prefix_seq, content_seq_obj, suffix_seq])
         
         # Apply style to all inserted content positions

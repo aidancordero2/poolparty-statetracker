@@ -8,6 +8,7 @@ def apply_at_region(
     pool,
     region_name: str,
     transform_fn: Callable,
+    rc: bool = False,
     remove_tags: bool = True,
     iter_order: Optional[Real] = None,
 ):
@@ -15,9 +16,9 @@ def apply_at_region(
     Apply a transformation to the content of a region.
 
     This is a high-level convenience function that:
-    1. Extracts content from the named region (reverse-complementing if strand='-')
+    1. Extracts content from the named region (reverse-complementing if rc=True)
     2. Applies transform_fn to create a transformed content Pool
-    3. Replaces the region with the transformed content (reverse-complementing back if strand='-')
+    3. Replaces the region with the transformed content (reverse-complementing back if rc=True)
 
     Parameters
     ----------
@@ -28,6 +29,9 @@ def apply_at_region(
     transform_fn : Callable[[Pool], Pool]
         Function that takes a Pool and returns a transformed Pool.
         Examples: pp.rc, pp.shuffle_seq, lambda p: pp.mutagenize(p, ...)
+    rc : bool, default=False
+        If True, reverse-complement content before transform and
+        reverse-complement result back before insertion.
     remove_tags : bool, default=True
         If True, region tags are removed from the result.
         If False, region tags are preserved around the transformed content.
@@ -58,9 +62,8 @@ def apply_at_region(
 
     Notes
     -----
-    The transform_fn receives content in + strand orientation (strand='-' regions
-    have their content reverse-complemented before extraction). The transformed
-    content is reverse-complemented back before insertion if strand='-'.
+    If rc=True, the transform_fn receives reverse-complemented content,
+    and the result is reverse-complemented back before insertion.
     """
     from ..fixed_ops.from_seq import from_seq
     from .extract_region import extract_region
@@ -70,8 +73,7 @@ def apply_at_region(
     pool = from_seq(pool) if isinstance(pool, str) else pool
     
     # Step 1: Extract content from the region
-    # (automatically reverse-complements if strand='-')
-    content_pool = extract_region(pool, region_name)
+    content_pool = extract_region(pool, region_name, rc=rc)
     
     # Step 2: Apply the transformation
     transformed_pool = transform_fn(content_pool)
@@ -82,6 +84,7 @@ def apply_at_region(
             pool,
             transformed_pool,
             region_name,
+            rc=rc,
             iter_order=iter_order,
         )
     else:
@@ -90,6 +93,7 @@ def apply_at_region(
             pool,
             transformed_pool,
             region_name,
+            rc=rc,
             iter_order=iter_order,
         )
     
@@ -100,6 +104,7 @@ def _replace_keeping_tags(
     pool,
     content_pool,
     region_name: str,
+    rc: bool = False,
     iter_order: Optional[Real] = None,
 ):
     """Replace region content while preserving region tags."""
@@ -113,16 +118,12 @@ def _replace_keeping_tags(
         # Find the region in the background sequence
         region = validate_single_region(bg_seq, region_name)
         
-        # If strand='-', reverse complement the content before insertion
-        if region.strand == '-':
+        # If rc=True, reverse complement the content before insertion
+        if rc:
             content_seq = dna_utils.reverse_complement(content_seq)
         
         # Build wrapped content with region tags
-        wrapped = build_region_tags(
-            region_name,
-            content_seq,
-            strand=region.strand,
-        )
+        wrapped = build_region_tags(region_name, content_seq)
         
         # Build result: prefix + wrapped + suffix
         prefix = bg_seq[:region.start]

@@ -4,21 +4,13 @@ from dataclasses import dataclass
 from xml.etree import ElementTree as ET
 from poolparty.types import Optional, Literal, Callable
 
-# Regex pattern for XML-style region tags
+# Regex pattern for XML-style region tags (simplified, no attributes)
 # 
-# Example: <item id="5" type='main'/>
-#          │ │   │                  │
-#          │ │   │                  └─ Group 4: "/" (self-closing slash, or empty)
-#          │ │   └─ Group 3: " id=\"5\" type='main'" (all attributes, or empty)
-#          │ └─ Group 2: "item" (tag name)
-#          └─ Group 1: "" (closing slash, or empty if opening tag)
-#
-# Other examples:
-#   <div>       -> ("", "div", "", "")
-#   </div>      -> ("/", "div", "", "")
-#   <br/>       -> ("", "br", "", "/")
-#   <a href="x"> -> ("", "a", " href=\"x\"", "")
-TAG_PATTERN = re.compile(r'<(/?)(\w+)((?:\s+\w+=[\'"][^\'"]*[\'"])*)\s*(/?)>')
+# Examples:
+#   <div>       -> ("", "div", "")
+#   </div>      -> ("/", "div", "")
+#   <br/>       -> ("", "br", "/")
+TAG_PATTERN = re.compile(r'<(/?)(\w+)\s*(/?)>')
 
 
 @dataclass
@@ -29,9 +21,7 @@ class ParsedRegion:
     end: int            # Position after closing tag '>' or '/>'
     content_start: int  # Position of first content character
     content_end: int    # Position after last content character
-    strand: str         # '+' or '-'
     content: str        # The sequence content inside the region
-    declared_seq_length_str: Optional[str]  # None if not declared, 'None' if variable, '4' if declared as 4
     
     @property
     def is_zero_length(self) -> bool:
@@ -42,49 +32,6 @@ class ParsedRegion:
     def inferred_seq_length(self) -> int:
         """The actual length of the content (inferred from content)."""
         return len(self.content)
-    
-    @property
-    def is_variable_length(self) -> bool:
-        """True if seq_length was explicitly declared as 'None' (variable length region)."""
-        return self.declared_seq_length_str == 'None'
-
-
-def _parse_attributes(attrs_str: str) -> tuple[str, Optional[str]]:
-    """Parse strand and seq_length from an attributes string.
-    
-    Returns:
-        (strand, declared_seq_length_str) where:
-        - strand is '+' or '-' (defaults to '+')
-        - declared_seq_length_str is None (not declared), 'None' (variable length),
-          or the string representation of the declared int (e.g., '4')
-    """
-    strand = '+'
-    declared_seq_length_str: Optional[str] = None
-    
-    if not attrs_str:
-        return strand, declared_seq_length_str
-    
-    # Parse strand attribute
-    strand_match = re.search(r"strand=['\"]([+-])['\"]", attrs_str)
-    if strand_match:
-        strand = strand_match.group(1)
-    
-    # Parse seq_length attribute
-    seq_len_match = re.search(r"seq_length=['\"](\w+)['\"]", attrs_str)
-    if seq_len_match:
-        value = seq_len_match.group(1)
-        if value == 'None':
-            declared_seq_length_str = 'None'
-        else:
-            try:
-                parsed_int = int(value)
-                if parsed_int < 0:
-                    raise ValueError(f"seq_length must be non-negative, got {parsed_int}")
-                declared_seq_length_str = value  # Store the string representation
-            except ValueError:
-                raise ValueError(f"Invalid seq_length value: '{value}'. Must be an integer in quotes or 'None'.")
-    
-    return strand, declared_seq_length_str
 
 
 def find_all_regions(seq: str) -> list[ParsedRegion]:
@@ -101,61 +48,41 @@ def find_all_regions(seq: str) -> list[ParsedRegion]:
         raise ValueError(f"Invalid region syntax: {e}")
     
     regions = []
-    open_stack = []  # [(name, strand, declared_seq_length_str, tag_start, content_start)]
+    open_stack = []  # [(name, tag_start, content_start)]
     
     for match in TAG_PATTERN.finditer(seq):
         is_close = match.group(1) == '/'
         name = match.group(2)
-        attrs = match.group(3) or ''
-        is_self_close = match.group(4) == '/'
+        is_self_close = match.group(3) == '/'
         
         if is_self_close:
             # Self-closing tag: <name/>
-            strand, declared_seq_length_str = _parse_attributes(attrs)
-            # Validate seq_length for self-closing
-            if declared_seq_length_str is not None and declared_seq_length_str not in ('0', 'None'):
-                raise ValueError(
-                    f"Self-closing region '<{name}/>' has seq_length='{declared_seq_length_str}' "
-                    f"but contains no content. Use seq_length='0' or omit the attribute."
-                )
             regions.append(ParsedRegion(
                 name=name,
                 start=match.start(),
                 end=match.end(),
                 content_start=match.end(),
                 content_end=match.end(),
-                strand=strand,
                 content='',
-                declared_seq_length_str=declared_seq_length_str,
             ))
         elif is_close:
             # Closing tag: </name> - pop innermost matching open tag
             for i in reversed(range(len(open_stack))):
                 if open_stack[i][0] == name:
-                    oname, strand, declared_seq_length_str, ostart, cstart = open_stack.pop(i)
+                    oname, ostart, cstart = open_stack.pop(i)
                     content = seq[cstart:match.start()]
-                    # Validate seq_length if declared as an integer
-                    if declared_seq_length_str is not None and declared_seq_length_str != 'None':
-                        if len(content) != int(declared_seq_length_str):
-                            raise ValueError(
-                                f"Region '<{oname}>' has seq_length='{declared_seq_length_str}' "
-                                f"but content has length {len(content)}: '{content}'"
-                            )
                     regions.append(ParsedRegion(
                         name=oname,
                         start=ostart,
                         end=match.end(),
                         content_start=cstart,
                         content_end=match.start(),
-                        strand=strand,
                         content=content,
-                        declared_seq_length_str=declared_seq_length_str,
                     ))
                     break
         else:
             # Opening tag: <name>
-            strand, declared_seq_length_str = _parse_attributes(attrs)
-            open_stack.append((name, strand, declared_seq_length_str, match.start(), match.end()))
+            open_stack.append((name, match.start(), match.end()))
     
     return sorted(regions, key=lambda r: r.start)
 
@@ -195,21 +122,20 @@ def validate_single_region(seq: str, name: str) -> ParsedRegion:
     return matching[0]
 
 
-def parse_region(seq: str, name: str) -> tuple[str, str, str, str]:
+def parse_region(seq: str, name: str) -> tuple[str, str, str]:
     """Parse a named region from a sequence.
     
-    Returns (prefix, content, suffix, strand) where:
+    Returns (prefix, content, suffix) where:
     - prefix: sequence before the region (excluding the opening tag)
     - content: sequence inside the region
     - suffix: sequence after the region (excluding the closing tag)
-    - strand: '+' or '-'
     
     Raises ValueError if region not found or appears multiple times.
     """
     region = validate_single_region(seq, name)
     prefix = seq[:region.start]
     suffix = seq[region.end:]
-    return prefix, region.content, suffix, region.strand
+    return prefix, region.content, suffix
 
 
 def strip_all_tags(seq: str) -> str:
@@ -242,174 +168,6 @@ def transform_nontag_chars(seq: str, transform_fn: Callable[[str], str]) -> str:
         last_end = match.end()
     # Transform remaining text after last tag
     result.append(transform_fn(seq[last_end:]))
-    return ''.join(result)
-
-
-def reverse_complement_with_tags(
-    seq: str, 
-    complement_fn: Callable[[str], str]
-) -> str:
-    """Reverse complement a sequence while preserving XML region tag structure.
-    
-    Regions are repositioned based on their content coordinates:
-    - Region tags [start, end) map to [n-end, n-start) in reversed sequence
-    - Self-closing tags at position i map to position n-i
-    
-    Example:
-        # complement_fn maps A<->T, C<->G
-        reverse_complement_with_tags('ACG<region>TT</region>AA', complement_fn)
-        -> 'TT<region>AA</region>CGT'
-    """
-    # Parse regions
-    regions = find_all_regions(seq)
-    
-    # If no regions, just reverse complement the content
-    if not regions:
-        return ''.join(complement_fn(c) for c in reversed(seq))
-    
-    # Get content without tags
-    content = strip_all_tags(seq)
-    n = len(content)
-    
-    # Build mapping from literal positions to content positions
-    nontag_positions = get_nontag_positions(seq)
-    literal_to_content = {lit: i for i, lit in enumerate(nontag_positions)}
-    
-    # Calculate content ranges for each region and their new positions
-    region_info = []
-    for r in regions:
-        if r.is_zero_length:
-            # Self-closing tag: find its content position
-            # It's positioned "before" the character at the next content position
-            # Find the content position after this tag
-            content_pos = None
-            for lit_pos in range(r.end, len(seq) + 1):
-                if lit_pos in literal_to_content:
-                    content_pos = literal_to_content[lit_pos]
-                    break
-            if content_pos is None:
-                content_pos = n  # At the end
-            
-            # New position: n - content_pos
-            new_pos = n - content_pos
-            
-            # Determine seq_length for build_region_tags
-            if r.declared_seq_length_str == 'None':
-                seq_length_arg = -1  # Will produce seq_length='None'
-            elif r.declared_seq_length_str is not None:
-                seq_length_arg = int(r.declared_seq_length_str)
-            else:
-                seq_length_arg = None
-            
-            region_info.append({
-                'name': r.name,
-                'strand': r.strand,
-                'seq_length_arg': seq_length_arg,
-                'is_zero_length': True,
-                'new_start': new_pos,
-                'new_end': new_pos,
-            })
-        else:
-            # Region tag: find content start and end
-            content_start = literal_to_content[r.content_start]
-            # content_end is one past the last character inside the region
-            # r.content_end is the literal position of the closing tag '<'
-            # We need to find the content index after the last content char
-            if r.content_end == r.content_start:
-                # Empty region content
-                content_end = content_start
-            else:
-                # Find the last content character before r.content_end
-                last_content_literal = r.content_end - 1
-                while last_content_literal >= r.content_start and last_content_literal not in literal_to_content:
-                    last_content_literal -= 1
-                if last_content_literal >= r.content_start:
-                    content_end = literal_to_content[last_content_literal] + 1
-                else:
-                    content_end = content_start
-            
-            # New positions: [n - end, n - start)
-            new_start = n - content_end
-            new_end = n - content_start
-            
-            # Determine seq_length for build_region_tags
-            if r.declared_seq_length_str == 'None':
-                seq_length_arg = -1
-            elif r.declared_seq_length_str is not None:
-                seq_length_arg = int(r.declared_seq_length_str)
-            else:
-                seq_length_arg = None
-            
-            region_info.append({
-                'name': r.name,
-                'strand': r.strand,
-                'seq_length_arg': seq_length_arg,
-                'is_zero_length': False,
-                'new_start': new_start,
-                'new_end': new_end,
-            })
-    
-    # Reverse complement the content
-    rc_content = ''.join(complement_fn(c) for c in reversed(content))
-    
-    # Build result by inserting tags at their new positions
-    # We need to handle overlapping/nested regions properly
-    # Strategy: collect all "events" (tag starts and ends) and process in order
-    
-    events = []  # (position, priority, event_type, region_idx)
-    # Priority: lower = processed first at same position
-    # For opening tags: use region length as priority (longer regions open first)
-    # For closing tags: use negative region length (shorter regions close first)
-    # For self-closing: use 0
-    
-    for idx, ri in enumerate(region_info):
-        if ri['is_zero_length']:
-            events.append((ri['new_start'], 0, 'self_close', idx))
-        else:
-            region_len = ri['new_end'] - ri['new_start']
-            events.append((ri['new_start'], -region_len, 'open', idx))
-            events.append((ri['new_end'], region_len, 'close', idx))
-    
-    # Sort events by position, then by priority
-    events.sort(key=lambda e: (e[0], e[1]))
-    
-    # Build result
-    result = []
-    last_pos = 0
-    
-    for pos, priority, event_type, idx in events:
-        # Add content up to this position
-        if pos > last_pos:
-            result.append(rc_content[last_pos:pos])
-            last_pos = pos
-        
-        ri = region_info[idx]
-        if event_type == 'self_close':
-            result.append(build_region_tags(
-                ri['name'],
-                content='',
-                strand=ri['strand'],
-                seq_length=ri['seq_length_arg'],
-            ))
-        elif event_type == 'open':
-            # Build opening tag
-            attrs = []
-            if ri['strand'] == '-':
-                attrs.append("strand='-'")
-            if ri['seq_length_arg'] is not None:
-                if ri['seq_length_arg'] == -1:
-                    attrs.append("seq_length='None'")
-                else:
-                    attrs.append(f"seq_length='{ri['seq_length_arg']}'")
-            attrs_str = ' ' + ' '.join(attrs) if attrs else ''
-            result.append(f"<{ri['name']}{attrs_str}>")
-        elif event_type == 'close':
-            result.append(f"</{ri['name']}>")
-    
-    # Add remaining content
-    if last_pos < n:
-        result.append(rc_content[last_pos:])
-    
     return ''.join(result)
 
 
@@ -470,52 +228,27 @@ def nontag_pos_to_literal_pos(seq: str, nontag_pos: int) -> int:
     return nontag_positions[nontag_pos]
 
 
-def build_region_tags(
-    name: str, 
-    content: str = '', 
-    strand: str = '+',
-    seq_length: Optional[int] = None,
-    explicit_strand: bool = False,
-) -> str:
+def build_region_tags(name: str, content: str = '') -> str:
     """Build an XML region tag string.
     
     Args:
         name: Region name
         content: Content to wrap (empty string for zero-length region)
-        strand: '+' or '-' ('+' is omitted from output by default)
-        seq_length: Optional declared seq_length (None to omit, -1 for 'None')
-        explicit_strand: If True, include strand='+' explicitly (useful for strand='both')
     
     Returns:
         XML region string like '<name>content</name>' or '<name/>'
     """
-    attrs = []
-    if strand == '-':
-        attrs.append("strand='-'")
-    elif explicit_strand:
-        attrs.append("strand='+'")
-    if seq_length is not None:
-        if seq_length == -1:
-            attrs.append("seq_length='None'")
-        else:
-            attrs.append(f"seq_length='{seq_length}'")
-    
-    attrs_str = ' ' + ' '.join(attrs) if attrs else ''
-    
     if content == '':
-        return f"<{name}{attrs_str}/>"
+        return f"<{name}/>"
     else:
-        return f"<{name}{attrs_str}>{content}</{name}>"
+        return f"<{name}>{content}</{name}>"
 
 
 def _validate_regions(seq: str) -> set:
     """
     Parse regions from a sequence string and register/validate with Party.
     
-    For each region found:
-    - If seq_length attribute is declared and not 'None': validate content matches
-    - If seq_length='None': register as variable-length (seq_length=None)
-    - If no seq_length attribute: infer seq_length from content length
+    For each region found, infer seq_length from content length (excluding nested region tags).
     
     This function should be called by any function that takes a user sequence
     string and creates a Pool (like from_seq).
@@ -547,16 +280,8 @@ def _validate_regions(seq: str) -> set:
     parsed_regions = find_all_regions(seq)
     
     for pr in parsed_regions:
-        # Determine the seq_length to register
-        if pr.declared_seq_length_str == 'None':
-            # Explicitly declared as variable length
-            seq_length = None
-        elif pr.declared_seq_length_str is not None:
-            # Explicitly declared with a specific length (already validated in parsing)
-            seq_length = int(pr.declared_seq_length_str)
-        else:
-            # Not declared, infer from content (excluding nested region tags)
-            seq_length = get_length_without_tags(pr.content)
+        # Infer seq_length from content (excluding nested region tags)
+        seq_length = get_length_without_tags(pr.content)
         
         # Register with party (will raise if conflict)
         region = party.register_region(pr.name, seq_length)

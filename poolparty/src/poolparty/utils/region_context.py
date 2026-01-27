@@ -54,8 +54,8 @@ class RegionContext:
         seq = seq_obj.string if isinstance(seq_obj, Seq) else seq_obj
         
         if isinstance(region, str):
-            # Named region - parse to get clean parts and strand
-            clean_prefix, content, clean_suffix, strand = parse_region(seq, region)
+            # Named region - parse to get clean parts
+            clean_prefix, content, clean_suffix = parse_region(seq, region)
             
             # Get bounds for position tracking
             region_obj = validate_single_region(seq, region)
@@ -69,7 +69,7 @@ class RegionContext:
                 region_start=region_start,
                 region_end=region_end,
                 region_name=region,
-                strand=strand,
+                strand=None,  # Strand no longer stored in tags
                 remove_tags=remove_tags,
                 _original_seq=seq,
             )
@@ -144,18 +144,14 @@ class RegionContext:
         
         # Named region - get clean parts (prefix/suffix without tags)
         from .parsing_utils import parse_region
-        clean_prefix, _, clean_suffix, _ = parse_region(self._original_seq, self.region_name)
+        clean_prefix, _, clean_suffix = parse_region(self._original_seq, self.region_name)
         
         if self.remove_tags:
             # Remove tags
             return clean_prefix + output_string + clean_suffix
         else:
             # Keep tags - rebuild with new content
-            wrapped = build_region_tags(
-                self.region_name,
-                output_string,
-                strand=self.strand if self.strand else '+',
-            )
+            wrapped = build_region_tags(self.region_name, output_string)
             return clean_prefix + wrapped + clean_suffix
     
     def split_parent_styles(
@@ -217,7 +213,7 @@ class RegionContext:
         if self.remove_tags:
             # Remove tags - join clean parts
             # Get clean prefix/suffix (without tags)
-            clean_prefix, _, clean_suffix, _ = parse_region(self._original_seq, self.region_name)
+            clean_prefix, _, clean_suffix = parse_region(self._original_seq, self.region_name)
             region_obj = validate_single_region(self._original_seq, self.region_name)
             
             # Create clean prefix/suffix Seq objects by slicing to exclude tags
@@ -231,13 +227,10 @@ class RegionContext:
             wrapped_string = build_region_tags(
                 self.region_name,
                 output.string,
-                strand=self.strand if self.strand else '+',
             )
             
             # Calculate tag lengths
-            test_tag = build_region_tags(
-                self.region_name, 'X', strand=self.strand if self.strand else '+'
-            )
+            test_tag = build_region_tags(self.region_name, 'X')
             opening_tag_len = test_tag.index('>') + 1
             closing_tag_len = len(wrapped_string) - opening_tag_len - len(output.string)
             
@@ -251,7 +244,7 @@ class RegionContext:
             wrapped_seq = Seq(wrapped_string, wrapped_style, output.name)
             
             # Get clean parts
-            clean_prefix, _, clean_suffix, _ = parse_region(self._original_seq, self.region_name)
+            clean_prefix, _, clean_suffix = parse_region(self._original_seq, self.region_name)
             region_obj = validate_single_region(self._original_seq, self.region_name)
             
             clean_prefix_seq = prefix[:region_obj.start]
@@ -293,7 +286,7 @@ class RegionContext:
         region_obj = validate_single_region(self._original_seq, self.region_name)
         
         # Calculate clean lengths
-        clean_prefix, _, clean_suffix, _ = parse_region(
+        clean_prefix, _, clean_suffix = parse_region(
             self._original_seq,
             self.region_name
         )
@@ -319,13 +312,9 @@ class RegionContext:
             return SeqStyle.join([prefix_seq_style, output_style, suffix_seq_style])
         else:
             # When tags kept: add empty styles for tag positions
-            test_tag = build_region_tags(
-                self.region_name, 'X', strand=self.strand if self.strand else '+'
-            )
+            test_tag = build_region_tags(self.region_name, 'X')
             opening_tag_len = test_tag.index('>') + 1
-            new_wrapped = build_region_tags(
-                self.region_name, output_seq, strand=self.strand if self.strand else '+'
-            )
+            new_wrapped = build_region_tags(self.region_name, output_seq)
             closing_tag_len = len(new_wrapped) - opening_tag_len - len(output_seq)
             
             # Rebuild prefix/suffix with clean lengths

@@ -19,7 +19,6 @@ def region_scan(
     positions: PositionsType = None,
     region_constraint: RegionType = None,
     remove_tags: Optional[bool] = None,
-    strand: str = '+',
     region_length: int = 0,
     prefix: Optional[str] = None,
     mode: str = 'random',
@@ -42,8 +41,6 @@ def region_scan(
         Region to constrain the scan to. Can be region name (str) or [start, stop].
     remove_tags : Optional[bool], default=None
         If True and region_constraint is a region name, remove tags from output.
-    strand : StrandType, default='+'
-        Strand for the region: '+', '-', or 'both'.
     region_length : Integral, default=0
         Length of sequence to encompass. 0 creates zero-length regions (<name/>),
         >0 creates region tags (<name>BASES</name>).
@@ -78,7 +75,6 @@ def region_scan(
         positions=positions,
         region=region_constraint,
         remove_tags=remove_tags,
-        strand=strand,
         region_length=int(region_length),
         prefix=prefix,
         mode=mode,
@@ -98,7 +94,7 @@ def region_scan(
 class RegionScanOp(Operation):
     """Insert XML region tags at scanning positions."""
     factory_name = "region_scan"
-    design_card_keys = ['position_index', 'start', 'stop', 'length', 'region_name', 'region_content', 'strand', 'region_seq']
+    design_card_keys = ['position_index', 'start', 'stop', 'length', 'region_name', 'region_content', 'region_seq']
     
     def __init__(
         self,
@@ -108,7 +104,6 @@ class RegionScanOp(Operation):
         region: RegionType = None,
         remove_tags: Optional[bool] = None,
         spacer_str: str = '',
-        strand: str = '+',
         region_length: int = 0,
         prefix: Optional[str] = None,
         mode: str = 'random',
@@ -124,7 +119,6 @@ class RegionScanOp(Operation):
         self.region_name = region_name
         self._positions = positions
         self._mode = mode
-        self._strand = strand
         self._region_length = region_length
         self._region = region  # Store early for logging
         self._valid_positions = None
@@ -159,10 +153,6 @@ class RegionScanOp(Operation):
             pass
         else:
             num_states = 1
-        
-        # If strand='both', double the number of states
-        if strand == 'both' and mode == 'sequential':
-            num_states *= 2
         
         # Initialize as Operation
         super().__init__(
@@ -233,42 +223,25 @@ class RegionScanOp(Operation):
         if len(valid_indices) == 0:
             raise ValueError("No valid positions for region tag insertion")
         
-        # Determine strand for this state
-        if self._strand == 'both':
-            # For sequential mode, alternate strands
-            if self.mode == 'sequential':
-                state = self.state.value
-                state = 0 if state is None else state
-                num_pos = len(valid_indices)
-                position_index = (state // 2) % num_pos
-                strand = '+' if (state % 2) == 0 else '-'
-            else:
-                # Random mode: randomly choose strand
-                if rng is None:
-                    raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
-                position_index = int(rng.integers(0, len(valid_indices)))
-                strand = '+' if rng.random() < 0.5 else '-'
+        # Select position
+        if self.mode in ('random', 'hybrid'):
+            if rng is None:
+                raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
+            position_index = int(rng.integers(0, len(valid_indices)))
         else:
-            strand = self._strand
-            if self.mode in ('random', 'hybrid'):
-                if rng is None:
-                    raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
-                position_index = int(rng.integers(0, len(valid_indices)))
-            else:
-                state = self.state.value
-                state = 0 if state is None else state
-                position_index = state % len(valid_indices)
+            state = self.state.value
+            state = 0 if state is None else state
+            position_index = state % len(valid_indices)
         
         # Build region tags - extract content using non-tag indices
         nontag_idx = valid_indices[position_index]
-        explicit_strand = (self._strand == 'both')
         if self._region_length > 0:
             # Extract content from non-tag characters only
             content = ''.join(
                 seq[nontag_positions[i]]
                 for i in range(nontag_idx, nontag_idx + self._region_length)
             )
-            region_tag = build_region_tags(self.region_name, content, strand, explicit_strand=explicit_strand)
+            region_tag = build_region_tags(self.region_name, content)
             start = nontag_idx
             stop = nontag_idx + self._region_length
             # Get raw sequence from literal start to end (including tags/gaps, excluding new region_tag)
@@ -280,7 +253,7 @@ class RegionScanOp(Operation):
                 end_literal = nontag_positions[-1] + 1 if nontag_positions else len(seq)
             marked_seq = seq[start_literal:end_literal]
         else:
-            region_tag = build_region_tags(self.region_name, '', strand, explicit_strand=explicit_strand)
+            region_tag = build_region_tags(self.region_name, '')
             start = nontag_idx
             stop = nontag_idx
             marked_seq = ''
@@ -347,7 +320,6 @@ class RegionScanOp(Operation):
             'length': self._region_length,
             'region_name': self.region_name,
             'region_content': marked_seq,
-            'strand': strand,
             'region_seq': region_tag,
         }
     

@@ -16,21 +16,11 @@ class TestRegionContextFromSequence:
         
         assert ctx.region_content == 'CCCC'
         assert ctx.region_name == 'test'
-        assert ctx.strand == '+'
+        assert ctx.strand is None  # Strand no longer stored in tags
         assert ctx.remove_tags is True
         # Bounds should point to content positions
         assert ctx.region_start == 9  # After <test>
         assert ctx.region_end == 13   # Before </test>
-    
-    def test_from_named_region_minus_strand(self):
-        """Create RegionContext from named region with minus strand."""
-        seq = "AAA<test strand='-'>CCCC</test>GGG"
-        ctx = RegionContext.from_sequence(seq, 'test', remove_tags=False)
-        
-        assert ctx.region_content == 'CCCC'
-        assert ctx.region_name == 'test'
-        assert ctx.strand == '-'
-        assert ctx.remove_tags is False
     
     def test_from_interval_region(self):
         """Create RegionContext from interval region."""
@@ -137,16 +127,6 @@ class TestRegionContextReassembleSeq:
         
         assert result == 'AAATTGGG'
     
-    def test_reassemble_minus_strand_keep_tags(self):
-        """Reassemble minus strand region keeping tags."""
-        seq = "AAA<test strand='-'>CCCC</test>GGG"
-        ctx = RegionContext.from_sequence(seq, 'test', remove_tags=False)
-        
-        result = ctx.reassemble_seq_string('TTTT')
-        
-        assert result == "AAA<test strand='-'>TTTT</test>GGG"
-
-
 class TestRegionContextReassembleStyle:
     """Test RegionContext.reassemble_style()."""
     
