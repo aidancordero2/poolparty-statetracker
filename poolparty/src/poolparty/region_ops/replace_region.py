@@ -15,13 +15,6 @@ def replace_region(
     rc: bool = False,
     iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
-    # Internal parameters for insertion_scan composite naming
-    _seq_name_prefix: Optional[str] = None,
-    _seq_name_pos_prefix: Optional[str] = None,
-    _seq_name_site_prefix: Optional[str] = None,
-    _pos_state=None,  # State object for position naming
-    _site_state=None,  # State object for site naming
-    _num_sites: Optional[int] = None,
     _style: Optional[str] = None,
 ):
     """
@@ -81,12 +74,6 @@ def replace_region(
         name=None,
         iter_order=iter_order,
         _factory_name=_factory_name,
-        _seq_name_prefix=_seq_name_prefix,
-        _seq_name_pos_prefix=_seq_name_pos_prefix,
-        _seq_name_site_prefix=_seq_name_site_prefix,
-        _pos_state=_pos_state,
-        _site_state=_site_state,
-        _num_sites=_num_sites,
         _style=_style,
     )
     result_pool = Pool(operation=op)
@@ -112,13 +99,6 @@ class ReplaceRegionOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
-        # Internal parameters for insertion_scan composite naming
-        _seq_name_prefix: Optional[str] = None,
-        _seq_name_pos_prefix: Optional[str] = None,
-        _seq_name_site_prefix: Optional[str] = None,
-        _pos_state=None,  # State object for position naming
-        _site_state=None,  # State object for site naming
-        _num_sites: Optional[int] = None,
         _style: Optional[str] = None,
     ) -> None:
         self.region_name = region_name
@@ -128,14 +108,6 @@ class ReplaceRegionOp(Operation):
         if _factory_name is not None:
             self.factory_name = _factory_name
         
-        # Store naming parameters for insertion_scan composite naming
-        self._seq_name_prefix = _seq_name_prefix
-        self._seq_name_pos_prefix = _seq_name_pos_prefix
-        self._seq_name_site_prefix = _seq_name_site_prefix
-        self._pos_state = _pos_state
-        self._site_state = _site_state
-        self._num_sites = _num_sites
-        self._insertion_naming = any([_seq_name_prefix, _seq_name_pos_prefix, _seq_name_site_prefix])
         self._style = _style
         
         # The operation itself has num_values=1 because it doesn't add its own states.
@@ -182,29 +154,5 @@ class ReplaceRegionOp(Operation):
             ins_positions = np.arange(ins_start, ins_end, dtype=np.int64)
             output_seq = output_seq.add_style(self._style, ins_positions)
         
-        # Compute name
-        output_seq = output_seq.with_name(self._compute_replace_name(parents))
-        
         return output_seq, {}
-    
-    def _compute_replace_name(self, parents: list[Seq]) -> Optional[str]:
-        """Compute name with optional insertion_scan composite naming."""
-        if not self._insertion_naming:
-            return self._default_name(parents)
-        
-        # Get position and site indices from the state objects
-        pos_idx = self._pos_state.value if self._pos_state is not None and self._pos_state.value is not None else 0
-        site_idx = self._site_state.value if self._site_state is not None and self._site_state.value is not None else 0
-        
-        # Build name parts in order: product index, position index, site index
-        name_parts = []
-        if self._seq_name_prefix:
-            w = pos_idx * self._num_sites + site_idx
-            name_parts.append(f'{self._seq_name_prefix}_{w}')
-        if self._seq_name_pos_prefix:
-            name_parts.append(f'{self._seq_name_pos_prefix}_{pos_idx}')
-        if self._seq_name_site_prefix:
-            name_parts.append(f'{self._seq_name_site_prefix}_{site_idx}')
-        
-        return '.'.join(name_parts) if name_parts else None
     

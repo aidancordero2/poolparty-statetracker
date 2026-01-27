@@ -440,10 +440,7 @@ class MutagenizeOp(Operation):
             raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
             output_style = output_style.add_style(self._style, raw_positions)
         
-        # Compute name
-        name = self._default_name(parents)
-        
-        output_seq = Seq(result_seq, output_style, name)
+        output_seq = Seq(result_seq, output_style)
         
         return output_seq, {
             'positions': positions,

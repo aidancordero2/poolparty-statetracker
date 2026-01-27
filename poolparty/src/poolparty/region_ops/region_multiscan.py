@@ -364,10 +364,9 @@ class RegionMultiScanOp(Operation):
             'region_tags': region_tags_list,
         }
         
-        # Compute name and create output Seq
+        # Create output Seq
         from ..utils.style_utils import SeqStyle
-        name = self._default_name(parents)
-        output_seq = Seq(result_seq, SeqStyle.empty(len(result_seq)), name)
+        output_seq = Seq(result_seq, SeqStyle.empty(len(result_seq)))
         
         return output_seq, card
 

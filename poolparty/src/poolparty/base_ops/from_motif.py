@@ -156,10 +156,7 @@ class FromMotifOp(Operation):
         from ..utils.style_utils import SeqStyle
         output_style = SeqStyle.full(len(seq_string), self._style)
         
-        # Compute name
-        name = self._default_name(parents)
-        
-        output_seq = Seq(seq_string, output_style, name)
+        output_seq = Seq(seq_string, output_style)
         
         return output_seq, {
             'prob_state': indices_list,

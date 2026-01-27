@@ -217,9 +217,6 @@ class StylizeOp(Operation):
         else:
             output_seq = parent_seq
         
-        # Update name
-        output_seq = output_seq.with_name(self._default_name(parents))
-        
         return output_seq, {}
     
     def _get_copy_params(self) -> dict:

@@ -196,10 +196,7 @@ class GetKmersOp(Operation):
         from ..utils.style_utils import SeqStyle
         output_style = SeqStyle.full(len(kmer), self._style)
         
-        # Compute name
-        name = self._default_name(parents)
-        
-        output_seq = Seq(kmer, output_style, name)
+        output_seq = Seq(kmer, output_style)
         
         return output_seq, {
             'kmer_index': kmer_index,

@@ -139,9 +139,6 @@ class FixedOp(Operation):
         else:
             output_style = Seq.from_string(result_string).style
         
-        # Compute name
-        name = self._default_name(parents)
-        
-        output_seq = Seq(result_string, output_style, name)
+        output_seq = Seq(result_string, output_style)
         return output_seq, {}
 

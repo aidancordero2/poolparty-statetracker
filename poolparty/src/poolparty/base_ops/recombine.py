@@ -390,7 +390,7 @@ class RecombineOp(Operation):
         # Build segments as Seq objects
         seq_segments = []
         for seg, seg_style in zip(segments, segment_styles):
-            seq_segments.append(Seq(seg, seg_style, None))
+            seq_segments.append(Seq(seg, seg_style))
         
         # Join segments
         output_seq = Seq.join(seq_segments)
@@ -414,9 +414,6 @@ class RecombineOp(Operation):
                     positions = np.arange(offset, offset + seg_len, dtype=np.int64)
                     output_seq = output_seq.add_style(style_spec, positions)
                 offset += len(seq_segments[seg_idx])
-        
-        # Compute name
-        output_seq = output_seq.with_name(self._default_name(parents))
         
         return output_seq, {
             'breakpoints': breakpoints,

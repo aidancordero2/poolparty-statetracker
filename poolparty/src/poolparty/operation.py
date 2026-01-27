@@ -92,8 +92,6 @@ class Operation:
         self.num_states = validated_num_states
         # Sequence naming attributes
         self.prefix: Optional[str] = prefix
-        self.clear_parent_names: bool = False
-        self._block_seq_names: bool = False
         
         # Region handling
         self._region = region
@@ -245,7 +243,7 @@ class Operation:
         Returns
         -------
         tuple[Seq, dict]
-            Output Seq (with string, style, and name) and design card dict.
+            Output Seq (with string and style) and design card dict.
         
         If region is specified:
         1. Extracts region from parents[0] as a Seq
@@ -297,52 +295,26 @@ class Operation:
         Returns
         -------
         tuple[Seq, dict]
-            Output Seq (with string, style, and name) and design card dict.
+            Output Seq (with string and style) and design card dict.
         """
         raise NotImplementedError("Subclasses must implement _compute_core()")
     
-    def _default_name(self, parents: list[Seq]) -> Optional[str]:
-        """Compute default output name from parent Seq objects.
+    def compute_name_contributions(self) -> list[str]:
+        """Compute this operation's contributions to the final sequence name.
         
-        This helper combines parent names with optional prefix based on
-        operation state and configuration.
-        
-        Parameters
-        ----------
-        parents : list[Seq]
-            Parent Seq objects.
+        Returns list of name elements in the order they should appear.
+        Default: [prefix_state.value] when active, [] otherwise.
         
         Returns
         -------
-        str | None
-            Combined name or None.
+        list[str]
+            List of name elements, or empty list if no contribution.
         """
-        # Block name if _block_seq_names is set
-        if self._block_seq_names:
-            return None
-        
-        # Get parent names
-        if self.clear_parent_names:
-            parent_name = None
-        else:
-            parent_name = Seq.combine_names(parents)
-        
-        # If no prefix, pass through parent name
         if self.prefix is None:
-            return parent_name
-        
-        # Build name with prefix
-        if self.state is None:
-            # Stateless operation - return None
-            return None
-        value = self.state.value
-        if value is None:
-            # Inactive state - return None
-            return None
-        
-        op_name = f'{self.prefix}_{value}'
-        full_name = f'{parent_name}.{op_name}' if parent_name else op_name
-        return full_name
+            return []
+        if self.state is None or self.state.value is None:
+            return []
+        return [f'{self.prefix}_{self.state.value}']
     
     def __repr__(self) -> str:
         num_states_str = "None" if self.num_states is None else str(self.num_states)

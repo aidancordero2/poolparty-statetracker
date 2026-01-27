@@ -100,41 +100,10 @@ class StackOp(Operation):
                 self.state.value = i
                 active = i
                 output_seq = parents[active]
-                
-                # Compute name from active parent
-                name = self._compute_stack_name(parents, active)
-                output_seq = output_seq.with_name(name)
-                
                 return output_seq, {'active_parent': active}
         
         # No active parent
         self.state.value = None
         active = None
         output_seq = parents[0] if parents else Seq.empty()
-        
-        # Compute name (from first parent)
-        name = self._compute_stack_name(parents, 0 if parents else None)
-        output_seq = output_seq.with_name(name)
-        
         return output_seq, {'active_parent': active}
-    
-    def _compute_stack_name(self, parents: list[Seq], active: int | None) -> Optional[str]:
-        """Compute name from active parent with optional prefix."""
-        # Block name if _block_seq_names is set
-        if self._block_seq_names:
-            return None
-        
-        # Get name from active parent
-        if self.clear_parent_names or active is None:
-            name = None
-        else:
-            name = parents[active].name if active < len(parents) else None
-        
-        # Append prefix if set
-        if self.prefix is not None:
-            state = self.state.value
-            if state is not None:
-                op_name = f'{self.prefix}{state}'
-                name = f'{name}.{op_name}' if name else op_name
-        
-        return name

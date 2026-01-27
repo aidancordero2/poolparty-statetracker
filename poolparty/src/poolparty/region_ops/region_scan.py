@@ -308,10 +308,7 @@ class RegionScanOp(Operation):
                 input_style[raw_position:],              # After tag
             ])
         
-        # Compute name
-        name = self._default_name(parents)
-        
-        output_seq = Seq(result_seq, output_style, name)
+        output_seq = Seq(result_seq, output_style)
         
         return output_seq, {
             'position_index': position_index,

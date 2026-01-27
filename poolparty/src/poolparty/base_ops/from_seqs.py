@@ -117,9 +117,11 @@ class FromSeqsOp(Operation):
         if seq_names is not None and prefix is not None:
             raise ValueError("Cannot specify both seq_names and prefix")
         self.seqs = list(seqs)
-        # Track whether explicit seq_names were provided (for compute_seq_names)
+        # Track whether explicit seq_names were provided (for compute_name_contributions)
         self._seq_names_explicit = seq_names is not None
         self.seq_names = list(seq_names) if seq_names else [f"seq_{i}" for i in range(len(seqs))]
+        # Store current index for name computation
+        self._current_idx: int = 0
         if len(self.seq_names) != len(self.seqs):
             raise ValueError("seq_names must have same length as seqs")
         match mode:
@@ -164,37 +166,32 @@ class FromSeqsOp(Operation):
             state = self.state.value
             idx = (0 if state is None else state) % len(self.seqs)
         
+        # Store index for name computation
+        self._current_idx = idx
+        
         seq_string = self.seqs[idx]
         
         # Apply style to all positions if specified
         from ..utils.style_utils import SeqStyle
         output_style = SeqStyle.full(len(seq_string), self._style)
         
-        # Compute name
-        name = self._compute_from_seqs_name(idx)
-        
-        output_seq = Seq(seq_string, output_style, name)
+        output_seq = Seq(seq_string, output_style)
         
         return output_seq, {
             'seq_name': self.seq_names[int(idx)],
             'seq_index': int(idx),
         }
     
-    def _compute_from_seqs_name(self, idx: int) -> Optional[str]:
-        """Compute name based on explicit seq_names or name_prefix."""
-        # Block name if _block_seq_names is set
-        if self._block_seq_names:
-            return None
-        # If explicit seq_names were provided, use them directly
+    def compute_name_contributions(self) -> list[str]:
+        """Compute name contributions - explicit seq_names or prefix pattern."""
+        # Check if state is inactive (for branch selection)
+        if self.state is not None and self.state.value is None:
+            return []
         if self._seq_names_explicit:
-            return self.seq_names[idx]
-        # Otherwise fall back to prefix logic
-        if self.prefix is None:
-            return None
-        state = self.state.value
-        if state is None:
-            return None
-        return f'{self.prefix}{state}'
+            # Use explicit seq_name for current index
+            return [self.seq_names[self._current_idx]]
+        # Otherwise use default prefix logic from base class
+        return super().compute_name_contributions()
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

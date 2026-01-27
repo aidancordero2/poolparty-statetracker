@@ -59,7 +59,7 @@ def insertion_scan(
         A Pool yielding sequences with the insert placed at selected position(s).
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..fixed_ops.swapcase import swapcase
+    from ..fixed_ops.passthrough import passthrough
     from ..region_ops import region_scan, replace_region
 
     # Convert string inputs to pools
@@ -76,10 +76,9 @@ def insertion_scan(
     if bg_length is None and region is None:
         raise ValueError("pool must have a defined seq_length")
 
-    # Capture site pool state
-    # (Pool.state is valid even when wrapped with stylize/swapcase, unlike operation.state)
-    original_ins_pool_state = ins_pool.state
-    original_ins_pool_num_states = ins_pool.num_states
+    # Capture state references for naming
+    ins_pool_state = ins_pool.state
+    ins_pool_num_states = ins_pool.num_states
 
     # Determine marker configuration based on replace mode
     # replace=False: marker_length=0 (insert without removing background)
@@ -88,11 +87,7 @@ def insertion_scan(
     marker_name = '_rep' if replace else '_ins'
     marker_length = ins_length if replace else 0
 
-    # Check if any naming prefix is provided
-    has_naming = any([prefix, prefix_position, prefix_insert])
-
     # 1. Insert tags at scanning positions
-    # Don't pass prefix to region_scan - naming is handled by replace_region
     marked = region_scan(
         pool,
         region=marker_name,
@@ -106,38 +101,51 @@ def insertion_scan(
         _factory_name=f'{_factory_name}(region_scan)',
     )
     marked = marked.named(f'{marked.name}:{_factory_name}(intermediate)')
-
-    # If naming is enabled, block naming on both parent operations
-    # and capture state references for composite naming in replace_region
-    pos_state = None
-    site_state = None
-    num_sites = None
-    if has_naming:
-        # Block naming on marker_scan operation
-        marked.operation._block_seq_names = True
-        # Block naming on original ins_pool operation
-        ins_pool.operation._block_seq_names = True
-        # Capture state references for naming
-        # Use operation.state to get the actual position state, not the product state
-        pos_state = marked.operation.state
-        site_state = original_ins_pool_state
-        num_sites = original_ins_pool_num_states
+    
+    # Capture position state
+    pos_state = marked.operation.state
 
     # 2. Replace marker with content
-    return replace_region(
+    result = replace_region(
         marked,
         ins_pool,
         marker_name,
         iter_order=iter_order,
         _factory_name=f'{_factory_name}(replace_region)',
-        _seq_name_prefix=prefix,
-        _seq_name_pos_prefix=prefix_position,
-        _seq_name_site_prefix=prefix_insert,
-        _pos_state=pos_state,
-        _site_state=site_state,
-        _num_sites=num_sites,
         _style=style,
     )
+    
+    # 3. Add PassthroughOp for custom naming if any prefix is set
+    if any([prefix, prefix_position, prefix_insert]):
+        num_sites = ins_pool_num_states or 1
+        
+        def compute_names():
+            # Check if this branch is active - if states are None, return empty list
+            if pos_state is None or pos_state.value is None:
+                return []
+            if ins_pool_state is not None and ins_pool_state.value is None:
+                return []
+            
+            pos_idx = pos_state.value
+            site_idx = ins_pool_state.value if ins_pool_state else 0
+            
+            contributions = []
+            if prefix:  # Cartesian product index
+                W = pos_idx * num_sites + site_idx
+                contributions.append(f'{prefix}_{W}')
+            if prefix_position:
+                contributions.append(f'{prefix_position}_{pos_idx}')
+            if prefix_insert:
+                contributions.append(f'{prefix_insert}_{site_idx}')
+            return contributions
+        
+        result = passthrough(
+            result, _name_fn=compute_names,
+            iter_order=iter_order,
+            _factory_name=f'{_factory_name}(naming)',
+        )
+    
+    return result
 
 
 @beartype

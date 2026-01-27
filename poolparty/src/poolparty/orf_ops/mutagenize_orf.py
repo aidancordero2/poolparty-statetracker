@@ -341,10 +341,7 @@ class MutagenizeOrfOp(Operation):
         # Pass through parent styles (mutagenize_orf preserves sequence length)
         output_style = parents[0].style
         
-        # Compute name
-        name = self._default_name(parents)
-        
-        output_seq = Seq(result_seq, output_style, name)
+        output_seq = Seq(result_seq, output_style)
         
         return output_seq, {
             'codon_positions': positions,

@@ -225,7 +225,10 @@ def _compute_one(
     if pool.state is not None:
         pool.state.value = global_state % pool.state.num_values
     
-    # Iterates over the operations in topological order.
+    # Collect all name contributions from operations in topological order
+    all_contributions: list[str] = []
+    
+    # Iterates over the operations in topological order (sources to final).
     # This is the code that effectively implements the DAG.
     for op in sorted_ops:
         # Get parent Seq objects (already cached because of topological sort)
@@ -247,6 +250,9 @@ def _compute_one(
         # Store in caches for downstream operations
         seq_cache[op.id] = output_seq
         card_cache[op.id] = card
+        
+        # Collect name contributions from this operation
+        all_contributions.extend(op.compute_name_contributions())
         
         if report_op_keys and (ops_to_report is None or op.id in ops_to_report):
             for key in op.design_card_keys:
@@ -273,9 +279,12 @@ def _compute_one(
             seq_obj = seq_cache[output_pool.operation.id]
             row[output_name] = seq_obj.string
     
-    # Get final name and inline styles from Seq object
+    # Compute final name from contributions (already in topological order)
+    final_name = '.'.join(all_contributions) if all_contributions else None
+    row['name'] = final_name
+    
+    # Get inline styles from final Seq object
     final_seq = seq_cache[pool.operation.id]
-    row['name'] = final_seq.name
     row['_inline_styles'] = final_seq.style
     
     return row

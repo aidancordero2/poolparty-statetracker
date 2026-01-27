@@ -75,7 +75,5 @@ class RepeatOp(Operation):
         state = self.state.value
         repeat_index = 0 if state is None else state
         
-        # Pass through parent Seq with updated name
-        output_seq = parents[0].with_name(self._default_name(parents))
-        
-        return output_seq, {'repeat_index': repeat_index}
+        # Pass through parent Seq
+        return parents[0], {'repeat_index': repeat_index}

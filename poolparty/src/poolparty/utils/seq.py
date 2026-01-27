@@ -1,4 +1,4 @@
-"""Seq class for bundling sequence string, style, and name."""
+"""Seq class for bundling sequence string and style."""
 from dataclasses import dataclass, field
 from ..types import SeqStyle, Optional, Sequence, beartype, Literal
 import numpy as np
@@ -10,7 +10,7 @@ CoordSystem = Literal['literal', 'nontag', 'molecular']
 @beartype
 @dataclass(frozen=True)
 class Seq:
-    """Immutable container bundling DNA sequence string, style, name, and region metadata.
+    """Immutable container bundling DNA sequence string, style, and region metadata.
     
     Coordinate Systems
     ------------------
@@ -52,7 +52,6 @@ class Seq:
     """
     string: str                    # Literal string WITH tags
     style: SeqStyle                # Per-position styling
-    name: Optional[str] = None     # Sequence name
     # Computed on construction (not lazy, for immutability)
     _clean: str = field(default='', repr=False)
     _regions: tuple = field(default=(), repr=False)
@@ -67,8 +66,7 @@ class Seq:
     
     def __repr__(self) -> str:
         """String representation."""
-        name_str = f", name={self.name!r}" if self.name else ""
-        return f"Seq(len={len(self.string)}, styles={len(self.style.style_list)}{name_str})"
+        return f"Seq(len={len(self.string)}, styles={len(self.style.style_list)})"
     
     # Coordinate system properties
     @property
@@ -249,9 +247,9 @@ class Seq:
         suffix_str = self.string[region.end:]
         
         # Create Seq objects with empty coordinate maps (will be computed on construction)
-        prefix = Seq.from_string(prefix_str, style=None, name=None)
-        content = Seq.from_string(content_str, style=None, name=None)
-        suffix = Seq.from_string(suffix_str, style=None, name=None)
+        prefix = Seq.from_string(prefix_str, style=None)
+        content = Seq.from_string(content_str, style=None)
+        suffix = Seq.from_string(suffix_str, style=None)
         
         return prefix, content, suffix
     
@@ -307,7 +305,6 @@ class Seq:
         seq = Seq.__new__(Seq)
         object.__setattr__(seq, 'string', self.string[key])
         object.__setattr__(seq, 'style', self.style[key])
-        object.__setattr__(seq, 'name', self.name)
         object.__setattr__(seq, '_clean', '')
         object.__setattr__(seq, '_regions', ())
         object.__setattr__(seq, '_nontag_to_literal', ())
@@ -320,8 +317,8 @@ class Seq:
     def join(cls, input_seqs: Sequence['Seq'], sep: str = '') -> 'Seq':
         """Join multiple Seq with optional separator.
         
-        Handles string join, SeqStyle.join with automatic offset handling,
-        and name merging (dot-separated). Coordinate maps are rebuilt.
+        Handles string join and SeqStyle.join with automatic offset handling.
+        Coordinate maps are rebuilt.
         
         Parameters
         ----------
@@ -333,21 +330,20 @@ class Seq:
         Returns
         -------
         Seq
-            New Seq with joined strings, styles, and names.
+            New Seq with joined strings and styles.
         
         Examples
         --------
-        >>> a = Seq.from_string('ACG', name='a')
-        >>> b = Seq.from_string('TGC', name='b')
+        >>> a = Seq.from_string('ACG')
+        >>> b = Seq.from_string('TGC')
         >>> Seq.join([a, b], sep='N')
-        Seq(len=7, styles=0, name='a.b')
+        Seq(len=7, styles=0)
         """
         if not input_seqs:
             return cls.empty()
         
         strings = []
         styles = []
-        names = []
         
         for i, s in enumerate(input_seqs):
             if i > 0 and sep:
@@ -355,14 +351,11 @@ class Seq:
                 styles.append(SeqStyle.empty(len(sep)))
             strings.append(s.string)
             styles.append(s.style)
-            if s.name:
-                names.append(s.name)
         
         # Use from_string to rebuild coordinate maps
         return cls.from_string(
             string=''.join(strings),
             style=SeqStyle.join(styles),
-            name='.'.join(names) if names else None,
         )
     
     @classmethod
@@ -372,12 +365,12 @@ class Seq:
         Returns
         -------
         Seq
-            Empty Seq with no string, style, or name.
+            Empty Seq with no string or style.
         """
-        return cls.from_string('', SeqStyle.empty(0), None)
+        return cls.from_string('', SeqStyle.empty(0))
     
     @classmethod
-    def from_string(cls, string: str, style: SeqStyle | None = None, name: str | None = None) -> 'Seq':
+    def from_string(cls, string: str, style: SeqStyle | None = None) -> 'Seq':
         """Create Seq from string, parsing tags and building coordinate maps.
         
         Parameters
@@ -386,8 +379,6 @@ class Seq:
             DNA sequence string (may contain region tags).
         style : SeqStyle | None, default=None
             Optional style. If None, creates empty style.
-        name : str | None, default=None
-            Optional sequence name.
         
         Returns
         -------
@@ -434,7 +425,6 @@ class Seq:
         seq = cls.__new__(cls)
         object.__setattr__(seq, 'string', string)
         object.__setattr__(seq, 'style', style)
-        object.__setattr__(seq, 'name', name)
         object.__setattr__(seq, '_clean', clean)
         object.__setattr__(seq, '_regions', regions)
         object.__setattr__(seq, '_nontag_to_literal', nontag_to_literal)
@@ -481,33 +471,7 @@ class Seq:
         reversed_string = dna_utils.reverse_complement(self.string)
         reversed_style = self.style.reversed(do_reverse=True)
         
-        return Seq.from_string(reversed_string, reversed_style, self.name)
-    
-    def with_name(self, name: str | None) -> 'Seq':
-        """Return copy with updated name (preserves coordinate maps).
-        
-        Parameters
-        ----------
-        name : str | None
-            New name for the sequence.
-        
-        Returns
-        -------
-        Seq
-            New Seq with updated name.
-        """
-        # Preserve coordinate maps without rebuilding
-        seq = Seq.__new__(Seq)
-        object.__setattr__(seq, 'string', self.string)
-        object.__setattr__(seq, 'style', self.style)
-        object.__setattr__(seq, 'name', name)
-        object.__setattr__(seq, '_clean', self._clean)
-        object.__setattr__(seq, '_regions', self._regions)
-        object.__setattr__(seq, '_nontag_to_literal', self._nontag_to_literal)
-        object.__setattr__(seq, '_molecular_to_literal', self._molecular_to_literal)
-        object.__setattr__(seq, '_literal_to_nontag', self._literal_to_nontag)
-        object.__setattr__(seq, '_literal_to_molecular', self._literal_to_molecular)
-        return seq
+        return Seq.from_string(reversed_string, reversed_style)
     
     def with_style(self, style: SeqStyle) -> 'Seq':
         """Return copy with updated style (preserves coordinate maps).
@@ -526,7 +490,6 @@ class Seq:
         seq = Seq.__new__(Seq)
         object.__setattr__(seq, 'string', self.string)
         object.__setattr__(seq, 'style', style)
-        object.__setattr__(seq, 'name', self.name)
         object.__setattr__(seq, '_clean', self._clean)
         object.__setattr__(seq, '_regions', self._regions)
         object.__setattr__(seq, '_nontag_to_literal', self._nontag_to_literal)
@@ -553,19 +516,3 @@ class Seq:
         new_style = self.style.add_style(style_spec, positions)
         return self.with_style(new_style)
     
-    @classmethod
-    def combine_names(cls, seqs: Sequence['Seq']) -> str | None:
-        """Combine names from multiple Seq objects (for parent name inheritance).
-        
-        Parameters
-        ----------
-        seqs : Sequence[Seq]
-            Sequence of Seq objects whose names to combine.
-        
-        Returns
-        -------
-        str | None
-            Dot-separated combined names, or None if no names present.
-        """
-        names = [s.name for s in seqs if s.name is not None]
-        return '.'.join(names) if names else None

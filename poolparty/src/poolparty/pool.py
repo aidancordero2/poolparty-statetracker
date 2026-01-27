@@ -182,11 +182,6 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
         #self.operation.name = op_name if op_name is not None else name + '.op'
         return self
     
-    def clear_seq_names(self) -> Pool_type:
-        """Clear sequence names for this pool, returning None for all names."""
-        self.operation._block_seq_names = True
-        return self
-    
     def copy(self, name: Optional[str] = None) -> Pool_type:
         """Create a copy of this pool with a copied operation.
         

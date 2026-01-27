@@ -55,6 +55,7 @@ def shuffle_scan(
         at each allowed position.
     """
     from ..fixed_ops.from_seq import from_seq
+    from ..fixed_ops.passthrough import passthrough
     from ..base_ops.shuffle_seq import shuffle_seq
     from ..region_ops import region_scan
 
@@ -77,11 +78,7 @@ def shuffle_scan(
     region_name = '_shuf'
     region_length = int(shuffle_length)
 
-    # Check if any naming prefix is provided
-    has_naming = any([prefix, prefix_position, prefix_shuffle])
-
     # 1. Insert tags at scanning positions
-    # Don't pass prefix to region_scan if we're doing composite naming
     marked = region_scan(
         pool,
         region=region_name,
@@ -89,25 +86,17 @@ def shuffle_scan(
         positions=positions,
         region_constraint=region,
         remove_tags=False,  # Keep outer tags for now
-        prefix=None if has_naming else prefix,  # Only pass prefix if not doing composite naming
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
         _factory_name=f'{_factory_name}(region_scan)',
     )
-
-    # If naming is enabled, block naming on region_scan operation
-    # and capture state reference for composite naming in shuffle_seq
-    pos_state = None
-    num_shuffles = int(shuffles_per_position) if shuffles_per_position else 1
-    if has_naming:
-        # Block naming on region_scan operation
-        marked.operation._block_seq_names = True
-        # Capture position state reference for naming
-        pos_state = marked.operation.state
+    
+    # Capture position state
+    pos_state = marked.operation.state
 
     # 2. Shuffle the marked region directly using shuffle_seq with region='_shuf'
-    return shuffle_seq(
+    result = shuffle_seq(
         marked,
         region=region_name,
         _remove_tags=True,  # Remove _shuf tags
@@ -116,9 +105,39 @@ def shuffle_scan(
         num_states=shuffles_per_position,
         iter_order=-1,
         _factory_name=f'{_factory_name}(shuffle_seq)',
-        _seq_name_prefix=prefix,
-        _seq_name_pos_prefix=prefix_position,
-        _seq_name_shuffle_prefix=prefix_shuffle,
-        _pos_state=pos_state,
-        _num_shuffles=num_shuffles,
     )
+    
+    # Capture shuffle state
+    shuffle_state = result.operation.state
+    
+    # 3. Add PassthroughOp for custom naming if any prefix is set
+    if any([prefix, prefix_position, prefix_shuffle]):
+        num_shuffles = int(shuffles_per_position) if shuffles_per_position else 1
+        
+        def compute_names():
+            # Check if this branch is active - if states are None, return empty list
+            if pos_state is None or pos_state.value is None:
+                return []
+            if shuffle_state is not None and shuffle_state.value is None:
+                return []
+            
+            pos_idx = pos_state.value
+            shuffle_idx = shuffle_state.value if shuffle_state else 0
+            
+            contributions = []
+            if prefix:  # Cartesian product index
+                W = pos_idx * num_shuffles + shuffle_idx
+                contributions.append(f'{prefix}_{W}')
+            if prefix_position:
+                contributions.append(f'{prefix_position}_{pos_idx}')
+            if prefix_shuffle:
+                contributions.append(f'{prefix_shuffle}_{shuffle_idx}')
+            return contributions
+        
+        result = passthrough(
+            result, _name_fn=compute_names,
+            iter_order=iter_order,
+            _factory_name=f'{_factory_name}(naming)',
+        )
+    
+    return result

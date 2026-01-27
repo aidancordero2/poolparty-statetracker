@@ -109,5 +109,4 @@ class StateSliceOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return parent Seq (state mapping handled by counter)."""
-        output_seq = parents[0].with_name(self._default_name(parents))
-        return output_seq, {}
+        return parents[0], {}
