@@ -120,3 +120,29 @@ class BaseOpsMixin:
             num_states=num_states,
             iter_order=iter_order,
         )
+    
+    def recombine(
+        self,
+        region: RegionType = None,
+        source_pools: Sequence[Union[Pool_type, str]] = (),
+        num_breakpoints: Integral = 1,
+        positions: Optional[Sequence[Integral]] = None,
+        mode: ModeType = 'random',
+        num_states: Optional[int] = None,
+        prefix: Optional[str] = None,
+        styles: Optional[list[str]] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        from ..base_ops.recombine import recombine
+        return recombine(
+            pool=self,
+            region=region,
+            source_pools=source_pools,
+            num_breakpoints=num_breakpoints,
+            positions=positions,
+            mode=mode,
+            num_states=num_states,
+            prefix=prefix,
+            styles=styles,
+            iter_order=iter_order,
+        )

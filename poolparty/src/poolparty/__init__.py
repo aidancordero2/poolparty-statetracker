@@ -33,6 +33,7 @@ from .base_ops import (
     get_kmers, GetKmersOp,
     mutagenize, MutagenizeOp,
     shuffle_seq, SeqShuffleOp,
+    recombine, RecombineOp,
 )
 # Import ORF operations from orf_ops module
 from .orf_ops import (
@@ -92,6 +93,7 @@ __all__ = [
     'slice_seq',
     'mutagenize', 'MutagenizeOp',
     'mutagenize_orf', 'MutagenizeOrfOp',
+    'recombine', 'RecombineOp',
     'insertion_scan',
     'replacement_scan',
     'deletion_scan',
@@ -168,6 +170,7 @@ _POOL_FACTORY_MAP = {
     'insert_from_iupac': from_iupac,
     'insert_from_motif': from_motif,
     'insert_kmers': get_kmers,
+    'recombine': recombine,
     # Scan ops
     'mutagenize_scan': mutagenize_scan,
     'deletion_scan': deletion_scan,

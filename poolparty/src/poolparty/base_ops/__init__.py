@@ -5,6 +5,7 @@ from .from_motif import from_motif, FromMotifOp
 from .get_kmers import get_kmers, GetKmersOp
 from .mutagenize import mutagenize, MutagenizeOp
 from .shuffle_seq import shuffle_seq, SeqShuffleOp
+from .recombine import recombine, RecombineOp
 
 __all__ = [
     'from_seqs', 'FromSeqsOp',
@@ -13,4 +14,5 @@ __all__ = [
     'get_kmers', 'GetKmersOp',
     'mutagenize', 'MutagenizeOp',
     'shuffle_seq', 'SeqShuffleOp',
+    'recombine', 'RecombineOp',
 ]
