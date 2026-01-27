@@ -1,5 +1,5 @@
 """Base operation mixins for Pool class."""
-from ..types import Pool_type, RegionType, Optional, Real, Integral, ModeType, beartype, Sequence, Union
+from ..types import Pool_type, RegionType, Optional, Real, Integral, ModeType, StyleByForRecombineType, beartype, Sequence, Union
 from typing import Literal
 import pandas as pd
 
@@ -124,25 +124,27 @@ class BaseOpsMixin:
     def recombine(
         self,
         region: RegionType = None,
-        source_pools: Sequence[Union[Pool_type, str]] = (),
+        sources: Sequence[Union[Pool_type, str]] = (),
         num_breakpoints: Integral = 1,
         positions: Optional[Sequence[Integral]] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
         prefix: Optional[str] = None,
         styles: Optional[list[str]] = None,
+        style_by: StyleByForRecombineType = 'order',
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..base_ops.recombine import recombine
         return recombine(
             pool=self,
             region=region,
-            source_pools=source_pools,
+            sources=sources,
             num_breakpoints=num_breakpoints,
             positions=positions,
             mode=mode,
             num_states=num_states,
             prefix=prefix,
             styles=styles,
+            style_by=style_by,
             iter_order=iter_order,
         )

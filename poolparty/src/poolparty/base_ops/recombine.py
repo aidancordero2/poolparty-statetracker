@@ -1,7 +1,7 @@
 """Recombine operation - simulate evolutionary recombination across aligned sequences."""
 from itertools import combinations
 from math import comb
-from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, beartype, Seq
+from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, StyleByForRecombineType, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -11,13 +11,14 @@ import numpy as np
 def recombine(
     pool: Union[Pool, str, None] = None,
     region: RegionType = None,
-    source_pools: Sequence[Union[Pool, str]] = (),
+    sources: Sequence[Union[Pool, str]] = (),
     num_breakpoints: Integral = 1,
     positions: Optional[Sequence[Integral]] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
     prefix: Optional[str] = None,
     styles: Optional[list[str]] = None,
+    style_by: StyleByForRecombineType = 'order',
     iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = 'recombine',
 ) -> Pool:
@@ -32,7 +33,7 @@ def recombine(
     region : Union[str, Sequence[Integral], None], default=None
         Region in pool where recombined sequences will be inserted. Region content
         is discarded (not used as a source pool).
-    source_pools : Sequence[Union[Pool, str]], default=()
+    sources : Sequence[Union[Pool, str]], default=()
         Source pools for recombination. All must have the same seq_length.
     num_breakpoints : Integral, default=1
         Number of recombination breakpoints. Must be <= seq_length - 1.
@@ -47,9 +48,17 @@ def recombine(
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     styles : Optional[list[str]], default=None
-        List of styles to apply to each segment (length must equal num_breakpoints + 1).
+        List of styles to apply to segments. Both modes accept any non-empty list and cycle:
+        - If style_by='order': cycles through styles for segments by position
+          (e.g., with 2 styles and 5 segments: style[0], style[1], style[0], style[1], style[0])
+        - If style_by='source': cycles through styles based on source pool index
+          (e.g., with 2 styles and 3 sources: source[0]→style[0], source[1]→style[1], source[2]→style[0])
         Use empty string '' for segments that shouldn't have additional styling.
         Styles overlay on top of inherited source pool styles.
+    style_by : StyleByForRecombineType, default='order'
+        Determines how styles are assigned to segments:
+        - 'order': styles[i % len(styles)] applied to segment i (cycles through styles by position)
+        - 'source': styles[j % len(styles)] applied to segments from sources[j] (cycles by source index)
     iter_order : Optional[Real], default=None
         Iteration order for the Operation.
 
@@ -60,37 +69,38 @@ def recombine(
     """
     from ..fixed_ops.from_seq import from_seq
     
-    # Convert string source_pools to Pool objects
-    converted_source_pools = []
-    for i, sp in enumerate(source_pools):
+    # Convert string sources to Pool objects
+    converted_sources = []
+    for i, sp in enumerate(sources):
         if isinstance(sp, str):
-            converted_source_pools.append(from_seq(sp, _factory_name=f'{_factory_name}(from_seq_{i})'))
+            converted_sources.append(from_seq(sp, _factory_name=f'{_factory_name}(from_seq_{i})'))
         else:
-            converted_source_pools.append(sp)
-    source_pools = converted_source_pools
+            converted_sources.append(sp)
+    sources = converted_sources
     
-    # Validate source_pools has at least 2 pools
-    if len(source_pools) < 2:
-        raise ValueError("source_pools must contain at least 2 pools for recombination")
+    # Validate sources has at least 2 pools
+    if len(sources) < 2:
+        raise ValueError("sources must contain at least 2 pools for recombination")
     
     # Validate all source pools have the same fixed seq_length
-    seq_lengths = [sp.seq_length for sp in source_pools]
+    seq_lengths = [sp.seq_length for sp in sources]
     if any(sl is None for sl in seq_lengths):
-        raise ValueError("All source_pools must have a fixed seq_length (not None)")
+        raise ValueError("All sources must have a fixed seq_length (not None)")
     if len(set(seq_lengths)) > 1:
         raise ValueError(
-            f"All source_pools must have the same seq_length. "
+            f"All sources must have the same seq_length. "
             f"Found lengths: {seq_lengths}"
         )
     
     # Create the operation
     op = RecombineOp(
         parent_pool=pool,
-        source_pools=source_pools,
+        sources=sources,
         num_breakpoints=num_breakpoints,
         positions=positions,
         region=region,
         styles=styles,
+        style_by=style_by,
         prefix=prefix,
         mode=mode,
         num_states=num_states,
@@ -115,11 +125,12 @@ class RecombineOp(Operation):
     def __init__(
         self,
         parent_pool: Optional[Pool],
-        source_pools: Sequence[Pool],
+        sources: Sequence[Pool],
         num_breakpoints: Integral = 1,
         positions: Optional[Sequence[Integral]] = None,
         region: RegionType = None,
         styles: Optional[list[str]] = None,
+        style_by: StyleByForRecombineType = 'order',
         prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
@@ -132,21 +143,21 @@ class RecombineOp(Operation):
             self.factory_name = _factory_name
         
         # Store source pools and validate
-        self.source_pools = list(source_pools)
-        self.num_source_pools = len(self.source_pools)
+        self.sources = list(sources)
+        self.num_sources = len(self.sources)
         
-        if self.num_source_pools < 2:
-            raise ValueError("source_pools must contain at least 2 pools for recombination")
+        if self.num_sources < 2:
+            raise ValueError("sources must contain at least 2 pools for recombination")
         
         # Get and validate seq_length
-        seq_length = self.source_pools[0].seq_length
+        seq_length = self.sources[0].seq_length
         if seq_length is None:
-            raise ValueError("All source_pools must have a fixed seq_length (not None)")
+            raise ValueError("All sources must have a fixed seq_length (not None)")
         
-        for i, sp in enumerate(self.source_pools):
+        for i, sp in enumerate(self.sources):
             if sp.seq_length != seq_length:
                 raise ValueError(
-                    f"All source_pools must have the same seq_length. "
+                    f"All sources must have the same seq_length. "
                     f"Pool {i} has length {sp.seq_length}, expected {seq_length}"
                 )
         
@@ -181,12 +192,12 @@ class RecombineOp(Operation):
         
         # Validate and store styles
         self._styles = styles
+        self._style_by = style_by
         if styles is not None:
-            num_segments = self.num_breakpoints + 1
-            if len(styles) != num_segments:
+            # Both modes accept any non-empty list (will cycle through)
+            if len(styles) == 0:
                 raise ValueError(
-                    f"styles must have length {num_segments} (num_breakpoints + 1), "
-                    f"got {len(styles)}"
+                    f"styles must be non-empty, got empty list"
                 )
         
         self._mode = mode
@@ -194,20 +205,20 @@ class RecombineOp(Operation):
         
         # Determine parent_pools for Operation base class
         if parent_pool is not None:
-            # Region-based: parent_pool + source_pools
-            parent_pools = [parent_pool] + self.source_pools
+            # Region-based: parent_pool + sources
+            parent_pools = [parent_pool] + self.sources
         else:
-            # Direct recombination: only source_pools
-            parent_pools = self.source_pools
+            # Direct recombination: only sources
+            parent_pools = self.sources
         
         # Determine num_states based on mode
         if mode == 'sequential':
             # Total states = C(P, K) × N × (N-1)^K
-            # where P = number of valid positions, K = num_breakpoints, N = num_source_pools
+            # where P = number of valid positions, K = num_breakpoints, N = num_sources
             # First segment has N choices, each subsequent segment has N-1 choices
             # (can't use same pool as previous segment)
             num_breakpoint_combos = comb(len(self.positions), self.num_breakpoints)
-            num_pool_assignments = self.num_source_pools * ((self.num_source_pools - 1) ** self.num_breakpoints)
+            num_pool_assignments = self.num_sources * ((self.num_sources - 1) ** self.num_breakpoints)
             num_states = num_breakpoint_combos * num_pool_assignments
             
             # Build cache for sequential enumeration
@@ -257,7 +268,7 @@ class RecombineOp(Operation):
         Returns list of tuples, each tuple is a valid assignment.
         """
         num_segments = self.num_breakpoints + 1
-        N = self.num_source_pools
+        N = self.num_sources
         
         # Build assignments recursively
         def build(current: list[int]) -> list[tuple[int, ...]]:
@@ -328,11 +339,11 @@ class RecombineOp(Operation):
             for i in range(num_segments):
                 if i == 0:
                     # First segment: any pool
-                    pool_assignments.append(int(rng.integers(0, self.num_source_pools)))
+                    pool_assignments.append(int(rng.integers(0, self.num_sources)))
                 else:
                     # Subsequent segments: any pool except the previous one
                     prev_pool = pool_assignments[-1]
-                    choices = [p for p in range(self.num_source_pools) if p != prev_pool]
+                    choices = [p for p in range(self.num_sources) if p != prev_pool]
                     pool_assignments.append(choices[int(rng.integers(0, len(choices)))])
             pool_assignments = tuple(pool_assignments)
         else:
@@ -387,7 +398,16 @@ class RecombineOp(Operation):
         # Overlay additional styles if provided
         if self._styles is not None:
             offset = 0
-            for seg_idx, style_spec in enumerate(self._styles):
+            for seg_idx in range(len(seq_segments)):
+                # Determine which style to apply based on style_by mode
+                if self._style_by == 'order':
+                    # Apply style based on segment position (cycle through styles)
+                    style_spec = self._styles[seg_idx % len(self._styles)]
+                else:  # style_by == 'source'
+                    # Apply style based on source pool (cycle through styles)
+                    pool_idx = pool_assignments[seg_idx]
+                    style_spec = self._styles[pool_idx % len(self._styles)]
+                
                 if style_spec and style_spec != '':
                     # Apply style to this segment
                     seg_len = len(seq_segments[seg_idx])
