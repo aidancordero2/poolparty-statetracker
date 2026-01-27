@@ -241,8 +241,8 @@ def _compute_one(
         else:
             op_rng = op.rng
         
-        # Compute output Seq and design card (using wrapped method for region handling)
-        output_seq, card = op.wrapped_compute(parents, op_rng)
+        # Compute output Seq and design card (handles region wrapping automatically)
+        output_seq, card = op.compute(parents, op_rng)
         
         # Store in caches for downstream operations
         seq_cache[op.id] = output_seq

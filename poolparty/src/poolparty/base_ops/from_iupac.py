@@ -163,7 +163,7 @@ class FromIupacOp(Operation):
             region=region,
         )
 
-    def compute(
+    def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,

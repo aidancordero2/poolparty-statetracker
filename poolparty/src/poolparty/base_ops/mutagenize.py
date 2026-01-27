@@ -364,14 +364,14 @@ class MutagenizeOp(Operation):
         
         return positions, tuple(wt_chars), tuple(mut_chars)
     
-    def compute(
+    def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return mutated Seq and design card.
         
-        Note: Region handling is done by base class wrapper methods.
+        Note: Region handling is done by base class compute() method.
         parents[0] is the region content when region is specified.
         """
         seq = parents[0].string

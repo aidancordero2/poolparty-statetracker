@@ -220,7 +220,7 @@ class RegionScanOp(Operation):
         
         return all_valid_indices, nontag_positions
     
-    def compute(
+    def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,

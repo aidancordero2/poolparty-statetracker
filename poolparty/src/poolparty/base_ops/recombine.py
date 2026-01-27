@@ -290,7 +290,7 @@ class RecombineOp(Operation):
         
         return build([])
     
-    def compute(
+    def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,

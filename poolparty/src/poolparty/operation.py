@@ -243,7 +243,10 @@ class Operation:
         parents: list[Seq],
         rng: np.random.Generator | None = None,
     ) -> tuple[Seq, dict]:
-        """Compute output Seq and design card.
+        """Compute output Seq and design card with automatic region handling.
+        
+        This is the public entry point for operations. It handles region
+        extraction/reassembly automatically, then delegates to _compute_core().
         
         Parameters
         ----------
@@ -256,24 +259,15 @@ class Operation:
         -------
         tuple[Seq, dict]
             Output Seq (with string, style, and name) and design card dict.
-        """
-        raise NotImplementedError("Subclasses must implement compute()")
-    
-    def wrapped_compute(
-        self,
-        parents: list[Seq],
-        rng: np.random.Generator | None = None,
-    ) -> tuple[Seq, dict]:
-        """Compute with automatic region handling and tag removal.
         
         If region is specified:
         1. Extracts region from parents[0] as a Seq
-        2. Calls compute with modified parent list
+        2. Calls _compute_core with modified parent list
         3. Reassembles prefix + result + suffix using Seq.join
         4. Removes region tags if remove_tags=True and region is a region name
         """
         if self._region is None:
-            return self.compute(parents, rng)
+            return self._compute_core(parents, rng)
         
         # Create context from first parent sequence
         from .utils.region_context import RegionContext
@@ -287,13 +281,38 @@ class Operation:
         # Prepare modified parents list (region as first element)
         modified_parents = [region_seq] + parents[1:]
         
-        # Call subclass compute
-        output_seq, card = self.compute(modified_parents, rng)
+        # Call subclass _compute_core
+        output_seq, card = self._compute_core(modified_parents, rng)
         
         # Reassemble with prefix and suffix
         reassembled_seq = ctx.reassemble_seq(prefix_seq, output_seq, suffix_seq)
         
         return reassembled_seq, card
+    
+    def _compute_core(
+        self,
+        parents: list[Seq],
+        rng: np.random.Generator | None = None,
+    ) -> tuple[Seq, dict]:
+        """Compute output Seq and design card (core implementation).
+        
+        Subclasses must implement this method. It receives the actual sequences
+        to operate on (which may be region-extracted if region was specified).
+        
+        Parameters
+        ----------
+        parents : list[Seq]
+            Input Seq objects from parent pools. When region is specified,
+            parents[0] contains only the region content.
+        rng : np.random.Generator | None
+            Random number generator (for random mode operations).
+        
+        Returns
+        -------
+        tuple[Seq, dict]
+            Output Seq (with string, style, and name) and design card dict.
+        """
+        raise NotImplementedError("Subclasses must implement _compute_core()")
     
     def _default_name(self, parents: list[Seq]) -> Optional[str]:
         """Compute default output name from parent Seq objects.

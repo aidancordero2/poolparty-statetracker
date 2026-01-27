@@ -200,7 +200,7 @@ class StylizeOp(Operation):
 
         return np.array(positions, dtype=np.int64)
 
-    def compute(
+    def _compute_core(
         self,
         parents: list[Seq],
         rng=None,

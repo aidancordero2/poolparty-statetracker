@@ -87,7 +87,7 @@ class StackOp(Operation):
         parent_states = [p.state for p in parent_pools]
         return st.stack(parent_states)
     
-    def compute(
+    def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,

@@ -117,14 +117,14 @@ class FixedOp(Operation):
             remove_tags=remove_tags,
         )
 
-    def compute(
+    def _compute_core(
         self,
         parents: list[Seq],
         rng=None,
     ) -> tuple[Seq, dict]:
         """Compute output Seq using the user-defined function.
         
-        Note: Region handling is done by the base class wrapper methods.
+        Note: Region handling is done by the base class compute() method.
         parents[0] is the region content when region is specified.
         """
         # Extract strings for user function

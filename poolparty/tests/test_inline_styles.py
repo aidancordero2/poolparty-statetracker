@@ -165,7 +165,7 @@ class TestInlineStylesChain:
 
 
 class TestInlineStylesPositionAdjustment:
-    """Test position adjustment in wrapped_compute for regions."""
+    """Test position adjustment in compute() for regions."""
     
     def test_region_adjusts_positions(self):
         """Region-based operations adjust style positions."""

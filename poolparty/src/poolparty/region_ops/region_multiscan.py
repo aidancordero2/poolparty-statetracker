@@ -312,7 +312,7 @@ class RegionMultiScanOp(Operation):
             tags.append(build_region_tags(name, content, strand))
         return tags
 
-    def compute(
+    def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,

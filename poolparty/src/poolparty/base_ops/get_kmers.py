@@ -170,7 +170,7 @@ class GetKmersOp(Operation):
         indices = rng.integers(0, self.alpha_size, size=self.length)
         return ''.join(dna_utils.BASES[i] for i in indices)
     
-    def compute(
+    def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,

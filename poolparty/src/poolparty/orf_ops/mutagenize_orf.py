@@ -294,7 +294,7 @@ class MutagenizeOrfOp(Operation):
         
         return positions, tuple(wt_codons), tuple(mut_codons), tuple(wt_aas), tuple(mut_aas)
     
-    def compute(
+    def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
