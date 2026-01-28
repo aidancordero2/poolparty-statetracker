@@ -37,7 +37,9 @@ def from_iupac(
     mode : ModeType, default='random'
         Sequence selection mode: 'sequential' or 'random'.
     num_states : Optional[int], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
     style : Optional[str], default=None
@@ -138,16 +140,23 @@ class FromIupacOp(Operation):
         for options in position_options:
             total_states *= len(options)
 
+        self._total_states = total_states
+        
+        # Determine num_states based on mode
+        natural_num_states = None
         match mode:
             case 'sequential':
-                num_states = total_states
+                # Natural count is the total number of possible sequences
+                natural_num_states = total_states
+                # Use user-provided num_states if given, else natural count
+                if num_states is None:
+                    num_states = natural_num_states
             case 'random':
-                # num_states stays None for pure random mode
+                # num_states stays as provided (or None for pure random mode)
                 pass
             case _:
                 num_states = 1
 
-        self._total_states = total_states
         # Use length without markers for consistency
         seq_length = dna_utils.get_length_without_tags(iupac_seq)
         
@@ -161,6 +170,7 @@ class FromIupacOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
             region=region,
+            _natural_num_states=natural_num_states,
         )
 
     def _compute_core(

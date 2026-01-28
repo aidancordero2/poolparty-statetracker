@@ -48,7 +48,9 @@ def mutagenize(
     mode : ModeType, default='random'
         Selection mode: 'random' or 'sequential'. Sequential only available with num_mutations.
     num_states : Optional[int], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
         Iteration order for the Operation.
 
@@ -177,6 +179,10 @@ class MutagenizeOp(Operation):
         self._sequential_cache = None
         self._num_mutable_positions = None  # Actual mutable positions, set on first use
         
+        # Store user-provided num_states for potential override
+        user_num_states = num_states
+        natural_num_states = None
+        
         # Determine num_states based on mode
         if mode == 'sequential':
             # Sequential mode only available with num_mutations
@@ -200,18 +206,20 @@ class MutagenizeOp(Operation):
                         f"{num_mutations=} exceeds mutable positions={num_mutable}. "
                         f"Cannot apply {num_mutations} mutations."
                     )
-                num_states = self._build_caches(num_mutable, mutable_counts)
+                natural_num_states = self._build_caches(num_mutable, mutable_counts)
             elif effective_length is not None:
                 if effective_length < num_mutations:
                     raise ValueError(
                         f"{num_mutations=} exceeds sequence length={effective_length}. "
                         f"Cannot apply {num_mutations} mutations to a sequence of length {effective_length}."
                     )
-                num_states = self._build_caches(effective_length)
+                natural_num_states = self._build_caches(effective_length)
             else:
-                num_states = 1
+                natural_num_states = 1
+            # Use user-provided num_states if given, else natural count
+            num_states = user_num_states if user_num_states is not None else natural_num_states
         elif mode == 'random':
-            # num_states stays None for pure random mode
+            # num_states stays as provided (or None for pure random mode)
             pass
         else:
             num_states = 1
@@ -225,6 +233,7 @@ class MutagenizeOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
             region=region,
+            _natural_num_states=natural_num_states,
         )
     
     def _build_caches(self, num_positions: int, mutation_counts: Optional[list[int]] = None) -> int:

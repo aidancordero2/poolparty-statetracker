@@ -41,7 +41,9 @@ def from_seqs(
     mode : ModeType, default='random'
         Sequence selection mode: 'sequential' or 'random'.
     num_states : Optional[int], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
 
@@ -124,14 +126,22 @@ class FromSeqsOp(Operation):
         self._current_idx: int = 0
         if len(self.seq_names) != len(self.seqs):
             raise ValueError("seq_names must have same length as seqs")
+        
+        # Determine num_states based on mode
+        natural_num_states = None
         match mode:
             case 'sequential':
-                num_states = len(seqs)
+                # Natural count is the number of sequences
+                natural_num_states = len(seqs)
+                # Use user-provided num_states if given, else natural count
+                if num_states is None:
+                    num_states = natural_num_states
             case 'random':
-                # num_states stays None for pure random mode
+                # num_states stays as provided (or None for pure random mode)
                 pass
             case _:
                 num_states = 1
+        
         # Use lengths without markers (includes all chars except marker tags)
         lengths = [dna_utils.get_length_without_tags(s) for s in self.seqs]
         seq_length = lengths[0] if all(L == lengths[0] for L in lengths) else None
@@ -146,6 +156,7 @@ class FromSeqsOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
             region=region,
+            _natural_num_states=natural_num_states,
         )
     
     def _compute_core(

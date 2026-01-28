@@ -41,6 +41,7 @@ class Operation:
         prefix: Optional[str] = None,
         region: RegionType = None,
         remove_tags: Optional[bool] = None,
+        _natural_num_states: Optional[int] = None,
     ) -> None:
         """Initialize Operation."""
         from .party import get_active_party
@@ -58,6 +59,10 @@ class Operation:
         self._name = name if name is not None else f'op[{self._id}]:{self.factory_name}'
         self._seq_length = seq_length
         validated_num_states = self.validate_num_states(num_states, mode)
+        
+        # Store natural num_states for cycling in sequential mode
+        # If not provided, defaults to the effective num_states
+        self._natural_num_states = _natural_num_states
         
         # Track whether this operation's state is synced to parent states
         self._random_synced_to_parents = False
@@ -90,6 +95,9 @@ class Operation:
         
         self.rng: np.random.Generator | None = None
         self.num_states = validated_num_states
+        # Set natural_num_states: use provided value, else effective num_states
+        if self._natural_num_states is None:
+            self._natural_num_states = validated_num_states
         # Sequence naming attributes
         self.prefix: Optional[str] = prefix
         
@@ -129,6 +137,11 @@ class Operation:
     def seq_length(self) -> Optional[int]:
         """Sequence length produced by this operation (None if variable)."""
         return self._seq_length
+    
+    @property
+    def natural_num_states(self) -> Optional[int]:
+        """Natural number of states (computed from operation, before user override)."""
+        return self._natural_num_states
     
     def _get_effective_seq_length(self, seq: str) -> int:
         """Get effective sequence length (DNA characters only, excluding markers)."""

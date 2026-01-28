@@ -9,12 +9,10 @@ WORKLOAD_SIZES = {
     'large': {'seq_len': 500, 'num_seqs': 10000},
 }
 
-
 def make_sequence(length: int) -> str:
     """Generate a DNA sequence of specified length."""
     bases = 'ACGT'
     return (bases * (length // 4 + 1))[:length]
-
 
 def workload_mutagenize(
     seq_len: int = 100,
@@ -134,6 +132,34 @@ def workload_get_kmers(
     pp.init()
     pool = pp.get_kmers(length=k, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
+
+#
+# JBK workload function
+#
+def workload_jbk_mutagenize(
+    num_seqs: int = 1000,
+    seq_len: int = 50,
+    use_styles: bool = True,
+    use_cards: bool = True
+):
+    pp.init()
+    pp.toggle_styles(on=use_styles)
+    pp.toggle_cards(on=use_cards)
+    wt_cre = make_sequence(length=seq_len)
+    wt_seq = f'TCCCGACT<cre>{wt_cre}</cre>ATTACGG<bc/>AGATCGGA'
+    
+    template_pool = pp.from_seq(wt_seq)\
+                    .named('template_pool')\
+                    .stylize(style='lower', which='contents')
+
+    mutated_pool = template_pool.stylize(region='cre', style='goldenrod')\
+                                .mutagenize(region='cre',
+                                            mutation_rate=0.2, 
+                                            style='yellow bold underline lower',
+                                            mode='random',
+                                            prefix='mutagenize').named('mutated_pool')\
+                                .repeat_states(2, prefix='v', iter_order=-2)
+    return mutated_pool.generate_library(num_seqs=num_seqs)
 
 
 # Collect all workloads for easy iteration

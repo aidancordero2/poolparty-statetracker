@@ -44,7 +44,9 @@ def recombine(
         Selection mode: 'random' (random breakpoints and pool assignments) or
         'sequential' (enumerate all combinations).
     num_states : Optional[int], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     styles : Optional[list[str]], default=None
@@ -212,6 +214,7 @@ class RecombineOp(Operation):
             parent_pools = self.sources
         
         # Determine num_states based on mode
+        natural_num_states = None
         if mode == 'sequential':
             # Total states = C(P, K) × N × (N-1)^K
             # where P = number of valid positions, K = num_breakpoints, N = num_sources
@@ -219,10 +222,14 @@ class RecombineOp(Operation):
             # (can't use same pool as previous segment)
             num_breakpoint_combos = comb(len(self.positions), self.num_breakpoints)
             num_pool_assignments = self.num_sources * ((self.num_sources - 1) ** self.num_breakpoints)
-            num_states = num_breakpoint_combos * num_pool_assignments
+            natural_num_states = num_breakpoint_combos * num_pool_assignments
             
             # Build cache for sequential enumeration
             self._build_cache()
+            
+            # Use user-provided num_states if given, else natural count
+            if num_states is None:
+                num_states = natural_num_states
         elif mode == 'random':
             # num_states stays as provided (or None for pure random)
             pass
@@ -239,6 +246,7 @@ class RecombineOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
             region=region,
+            _natural_num_states=natural_num_states,
         )
     
     def _build_cache(self) -> None:

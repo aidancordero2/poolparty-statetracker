@@ -41,7 +41,9 @@ def get_kmers(
     mode : ModeType, default='random'
         Sequence selection mode: 'sequential' or 'random'.
     num_states : Optional[int], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
 
@@ -111,15 +113,23 @@ class GetKmersOp(Operation):
         self.length = length
         self.case = case
         self.alpha_size = len(dna_utils.BASES)
-        total_kmers = self.alpha_size ** length
+        self._total_kmers = self.alpha_size ** length
+        
+        # Determine num_states based on mode
+        natural_num_states = None
         if mode == 'sequential':
-            num_states = self.validate_num_states(total_kmers, mode)
+            # Natural count is the total number of possible k-mers
+            natural_num_states = self.validate_num_states(self._total_kmers, mode)
+            # Use user-provided num_states if given, else natural count
+            if num_states is None:
+                num_states = natural_num_states
         elif mode == 'random':
-            # num_states stays None for pure random mode
+            # num_states stays as provided (or None for pure random mode)
             pass
         else:
             num_states = 1
         
+        self._natural_num_states_local = natural_num_states
         parent_pools = [pool] if pool is not None else []
         
         # Compute seq_length: kmer length when standalone, adjusted when replacing region
@@ -154,6 +164,7 @@ class GetKmersOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
             region=region,
+            _natural_num_states=natural_num_states,
         )
     
     def _value_to_kmer(self, value: int) -> str:
@@ -185,6 +196,8 @@ class GetKmersOp(Operation):
             # Use state 0 when inactive (state is None)
             idx = self.state.value
             idx = 0 if idx is None else idx
+            # Apply modulo with total k-mers for cycling
+            idx = idx % self._total_kmers
             kmer = self._value_to_kmer(idx)
             kmer_index = idx
         

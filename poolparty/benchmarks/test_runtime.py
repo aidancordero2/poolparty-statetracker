@@ -10,6 +10,7 @@ from .workloads import (
     workload_region_operations,
     workload_stack,
     workload_get_kmers,
+    workload_jbk_mutagenize,
     WORKLOAD_SIZES,
 )
 
@@ -155,3 +156,29 @@ class TestLargeWorkloads:
         result = benchmark(workload_mutagenize_sequential, seq_len=50, num_mut=2)
         # C(50, 2) × 3^2 = 1225 × 9 = 11025 states
         assert len(result) == 11025
+        
+# --- JBK workloads ---
+@pytest.mark.slow
+class TestJBKWorkloads:
+    """Custom workloads"""
+    
+    seq_len = 100
+    num_seqs = 1000
+    
+    def test_mutagenize_styles_and_cards(self, benchmark):
+        result = benchmark(
+            workload_jbk_mutagenize,
+            seq_len=self.seq_len,
+            num_seqs=self.num_seqs,
+            use_styles=True,
+            use_cards=True
+        )
+    
+    def test_mutagenize(self, benchmark):
+        result = benchmark(
+            workload_jbk_mutagenize,
+            seq_len=self.seq_len,
+            num_seqs=self.num_seqs,
+            use_styles=False,
+            use_cards=False
+        )
