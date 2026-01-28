@@ -13,8 +13,16 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipykernel>=7.1.0",
+    "jupyter>=1.1.1",
+    "nbconvert>=7.16.6",
     "pytest>=7.0",
     "pytest-cov>=4.0",
+]
+benchmark = [
+    "pytest-benchmark>=4.0",
+    "memray>=1.10",
+    "pyinstrument>=4.5",
+    "line-profiler>=4.0",
 ]
 
 [tool.uv.workspace]
