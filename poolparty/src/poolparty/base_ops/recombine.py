@@ -294,7 +294,6 @@ class RecombineOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Generate recombined Seq.
         
@@ -315,7 +314,7 @@ class RecombineOp(Operation):
         
         # Extract strings and styles for compatibility with segment logic
         source_seqs = [s.string for s in sources]
-        source_styles = [s.style for s in sources] if not suppress_styles else None
+        source_styles = [s.style for s in sources]
         
         # Get breakpoints and pool assignments
         if self.mode == 'sequential':
@@ -355,7 +354,6 @@ class RecombineOp(Operation):
             pool_assignments = tuple(i % 2 for i in range(num_segments))
         
         # Build recombined sequence from segments
-        from ..utils.style_utils import SeqStyle
         segments = []
         segment_styles = []
         
@@ -398,7 +396,7 @@ class RecombineOp(Operation):
         output_seq = Seq.join(seq_segments)
         
         # Overlay additional styles if provided
-        if not suppress_styles and self._styles is not None:
+        if self._styles is not None:
             offset = 0
             for seg_idx in range(len(seq_segments)):
                 # Determine which style to apply based on style_by mode

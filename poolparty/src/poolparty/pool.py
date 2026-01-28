@@ -240,16 +240,15 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
         seed: Optional[int] = None,
         init_state: Optional[int] = None,
         seqs_only: bool = False,
-        report_design_cards: bool = True,
+        report_design_cards: bool = False,
         aux_pools: Sequence[Pool_type] = (),
-        report_seq: bool = False,
-        report_pool_seqs: bool = False,
-        report_pool_states: bool = False,
-        report_op_states: bool = False,
+        report_seq: bool = True,
+        report_pool_seqs: bool = True,
+        report_pool_states: bool = True,
+        report_op_states: bool = True,
         report_op_keys: bool = True,
         pools_to_report: Union[str, Sequence[Pool_type]] = 'all',
         organize_columns_by: Literal['pool', 'type'] = 'type',
-        suppress_styles: bool = True,
     ) -> Union[pd.DataFrame, list[str]]:
         from .generate_library import generate_library
         return generate_library(
@@ -268,7 +267,6 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
             report_op_keys=report_op_keys,
             pools_to_report=pools_to_report,
             organize_columns_by=organize_columns_by,
-            suppress_styles=suppress_styles,
         )
     
     def print_library(
@@ -281,7 +279,6 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
         show_seq: bool = True,
         pad_names: bool = True,
         seed: Optional[Integral] = None,
-        suppress_styles: bool = False,
     ) -> Pool_type:
         """Print preview sequences from this pool; returns self for chaining.
         
@@ -294,7 +291,6 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
             show_seq: Whether to show the seq column.
             pad_names: Whether to pad names to align sequences.
             seed: Random seed for reproducibility.
-            suppress_styles: Whether to suppress style computation and rendering.
         """
         # Build kwargs for generate_library, only including num_cycles when needed
         gen_kwargs = {
@@ -302,9 +298,6 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
             'report_design_cards': True,
             'init_state': 0,
             'seed': seed,
-            'suppress_styles': suppress_styles,
-            'report_seq': True,
-            'report_pool_states': True,
         }
         if num_seqs is not None:
             gen_kwargs['num_seqs'] = num_seqs
@@ -341,12 +334,11 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
                     row_parts.append(f"{row['name']}")
             if show_seq:
                 seq = row['seq']
-                if not suppress_styles:
-                    from .utils.style_utils import SeqStyle
-                    # Get per-sequence inline styles (from operation style parameters)
-                    inline_styles = row.get('_inline_styles', SeqStyle.empty(0))
-                    # Apply inline styles
-                    seq = inline_styles.apply(seq)
+                from .utils.style_utils import SeqStyle
+                # Get per-sequence inline styles (from operation style parameters)
+                inline_styles = row.get('_inline_styles', SeqStyle.empty(0))
+                # Apply inline styles
+                seq = inline_styles.apply(seq)
                 row_parts.append(seq)
             print("  ".join(row_parts))
         print('')

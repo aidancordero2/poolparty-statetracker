@@ -15,16 +15,15 @@ def generate_library(
     seed: Optional[int] = None,
     init_state: Optional[int] = None,
     seqs_only: bool = False,
-    report_design_cards: bool = True,
+    report_design_cards: bool = False,
     aux_pools: Sequence[Pool_type] = (),
-    report_seq: bool = False,
-    report_pool_seqs: bool = False,
-    report_pool_states: bool = False,
-    report_op_states: bool = False,
+    report_seq: bool = True,
+    report_pool_seqs: bool = True,
+    report_pool_states: bool = True,
+    report_op_states: bool = True,
     report_op_keys: bool = True,
     pools_to_report: Union[str, Sequence[Pool_type]] = 'all',
     organize_columns_by: Literal['pool', 'type'] = 'type',
-    suppress_styles: bool = True,
 ) -> Union[pd.DataFrame, list[str]]:
     """Generate sequences from a pool.
     
@@ -101,7 +100,7 @@ def generate_library(
         row = _compute_one(
             pool, sorted_ops, outputs, global_state, 
             states, report_op_keys if report_design_cards else False, 
-            ops_to_report, pools_filter, suppress_styles
+            ops_to_report, pools_filter
         )
         rows.append(row)
     
@@ -109,11 +108,6 @@ def generate_library(
     
     # Build and format DataFrame
     df = pd.DataFrame(rows)
-    
-    # Drop _inline_styles col; used only for styling
-    if suppress_styles:
-        df = df.drop('_inline_styles', axis=1)
-    print(f'{suppress_styles=}')
     
     if not report_design_cards:
         # Minimal output: just "name" and "seq" columns
@@ -128,7 +122,6 @@ def generate_library(
     df = finalize_generate_df(df, pool.name, report_seq, report_pool_seqs, pools_filter)
     if seqs_only:
         return list(df['seq'])
-        
     return df
 
 ## THIS IS THE TOPOLOGICAL SORTING FUNCTION THAT IS USED TO DETERMINE THE ORDER OF OPERATIONS.
@@ -220,7 +213,6 @@ def _compute_one(
     report_op_keys: bool = True,
     ops_to_report: set = None,
     pools_filter: set = None,
-    suppress_styles: bool = False,
 ) -> dict:
     """Compute one row of output for the given global state."""
     seq_cache: dict[int, Seq] = {}
@@ -253,7 +245,7 @@ def _compute_one(
             op_rng = op.rng
         
         # Compute output Seq and design card (handles region wrapping automatically)
-        output_seq, card = op.compute(parents, op_rng, suppress_styles)
+        output_seq, card = op.compute(parents, op_rng)
         
         # Store in caches for downstream operations
         seq_cache[op.id] = output_seq

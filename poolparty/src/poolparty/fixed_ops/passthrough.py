@@ -57,7 +57,7 @@ class PassthroughOp(Operation):
             iter_order=iter_order,
         )
     
-    def _compute_core(self, parents, rng=None, suppress_styles=False):
+    def _compute_core(self, parents, rng=None):
         """Pass through the parent sequence unchanged."""
         return parents[0], {}
     

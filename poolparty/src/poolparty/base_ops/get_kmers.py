@@ -174,7 +174,6 @@ class GetKmersOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Return Seq and design card."""
         if self.mode == 'random':
@@ -195,10 +194,7 @@ class GetKmersOp(Operation):
         
         # Apply style to all positions if specified
         from ..utils.style_utils import SeqStyle
-        if suppress_styles:
-            output_style = SeqStyle.empty(len(kmer))
-        else:
-            output_style = SeqStyle.full(len(kmer), self._style)
+        output_style = SeqStyle.full(len(kmer), self._style)
         
         output_seq = Seq(kmer, output_style)
         

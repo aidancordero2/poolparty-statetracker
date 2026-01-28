@@ -70,7 +70,6 @@ class RepeatOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Return parent Seq and design card."""
         state = self.state.value
