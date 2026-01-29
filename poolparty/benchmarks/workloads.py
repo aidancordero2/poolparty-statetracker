@@ -2,175 +2,206 @@
 import poolparty as pp
 from typing import Literal
 
-# Workload size configurations
-WORKLOAD_SIZES = {
-    'small': {'seq_len': 20, 'num_seqs': 100},
-    'medium': {'seq_len': 100, 'num_seqs': 1000},
-    'large': {'seq_len': 500, 'num_seqs': 10000},
-}
-
 def make_sequence(length: int) -> str:
     """Generate a DNA sequence of specified length."""
     bases = 'ACGT'
     return (bases * (length // 4 + 1))[:length]
 
-def workload_mutagenize(
+def workload_mutagenize_num_mut(
     seq_len: int = 100,
     num_mut: int = 2,
-    num_seqs: int = 1000,
+    num_seqs: int = 100,
     mode: Literal['random', 'sequential'] = 'random',
+    use_styles: bool = False,
+    use_cards: bool = False
 ):
-    """Mutagenize benchmark workload."""
     pp.init()
+    pp.toggle_styles(on=use_styles)
+    pp.toggle_cards(on=use_cards)
     seq = make_sequence(seq_len)
     pool = pp.mutagenize(seq, num_mutations=num_mut, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
 
 
-def workload_mutagenize_sequential(seq_len: int = 20, num_mut: int = 1):
-    """Sequential mutagenize - generates all possible mutations."""
-    pp.init()
-    seq = make_sequence(seq_len)
-    pool = pp.mutagenize(seq, num_mutations=num_mut, mode='sequential')
-    return pool.generate_library(num_cycles=1)
-
-
-def workload_recombine(
+def workload_mutagenize_mut_rate(
     seq_len: int = 100,
-    num_sources: int = 3,
-    num_breakpoints: int = 2,
-    num_seqs: int = 1000,
+    mut_rate: float = 0.1,
+    num_seqs: int = 100,
     mode: Literal['random', 'sequential'] = 'random',
+    use_styles: bool = False,
+    use_cards: bool = False
 ):
-    """Recombine benchmark workload."""
     pp.init()
-    # First pool is the background, rest are sources
-    bg = pp.from_seq(make_sequence(seq_len))
-    sources = [pp.from_seq(make_sequence(seq_len)) for _ in range(num_sources - 1)]
-    pool = pp.recombine(bg, sources=sources, num_breakpoints=num_breakpoints, mode=mode)
+    pp.toggle_styles(on=use_styles)
+    pp.toggle_cards(on=use_cards)
+    seq = make_sequence(seq_len)
+    pool = pp.mutagenize(seq, mutation_rate=mut_rate, mode=mode)
+    return pool.generate_library(num_seqs=num_seqs)
+
+
+def workload_shuffle_seq(
+    seq_len: int = 100,
+    num_seqs: int = 100,
+    mode: Literal['random', 'sequential'] = 'random',
+    use_styles: bool = False,
+    use_cards: bool = False
+):
+    pp.init()
+    pp.toggle_styles(on=use_styles)
+    pp.toggle_cards(on=use_cards)
+    seq = make_sequence(seq_len)
+    pool = pp.shuffle_seq(seq, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
 
 
 def workload_deletion_scan(
     seq_len: int = 100,
-    deletion_len: int = 5,
-    num_seqs: int = 1000,
+    num_seqs: int = 100,
+    del_len: int=5,
+    positions = None,
     mode: Literal['random', 'sequential'] = 'random',
+    use_styles: bool = False,
+    use_cards: bool = False
 ):
-    """Deletion scan benchmark workload."""
     pp.init()
+    pp.toggle_styles(on=use_styles)
+    pp.toggle_cards(on=use_cards)
     seq = make_sequence(seq_len)
-    pool = pp.deletion_scan(seq, deletion_length=deletion_len, mode=mode)
+    pool = pp.deletion_scan(seq, deletion_length=del_len, positions=positions, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
 
 
 def workload_insertion_scan(
     seq_len: int = 100,
-    insert_seq: str = 'NNNN',
-    num_seqs: int = 1000,
+    num_seqs: int = 100,
+    num_ins: int = 10,
+    ins_len: int=5,
+    positions = None,
     mode: Literal['random', 'sequential'] = 'random',
-):
-    """Insertion scan benchmark workload."""
-    pp.init()
-    bg = pp.from_seq(make_sequence(seq_len))
-    insert = pp.from_seq(insert_seq)
-    pool = pp.insertion_scan(bg, insert, mode=mode)
-    return pool.generate_library(num_seqs=num_seqs)
-
-
-def workload_complex_dag(
-    seq_len: int = 100,
-    num_seqs: int = 1000,
-):
-    """Complex DAG with multiple chained operations."""
-    pp.init()
-    seq = make_sequence(seq_len)
-    
-    # Chain: mutagenize -> join with barcode
-    mutants = pp.mutagenize(seq, num_mutations=2, mode='random')
-    barcode = pp.get_kmers(length=8, mode='random')
-    pool = pp.join([mutants, '----', barcode])
-    
-    return pool.generate_library(num_seqs=num_seqs)
-
-
-def workload_region_operations(
-    seq_len: int = 100,
-    num_seqs: int = 1000,
-):
-    """Workload with region-based operations."""
-    pp.init()
-    # Create sequence with region tags
-    inner_len = seq_len - 20
-    seq = f"ACGTACGTAC<cre>{make_sequence(inner_len)}</cre>ACGTACGTAC"
-    
-    pool = pp.mutagenize(seq, num_mutations=2, region='cre', mode='random')
-    return pool.generate_library(num_seqs=num_seqs)
-
-
-def workload_stack(
-    seq_len: int = 50,
-    num_pools: int = 5,
-    num_seqs: int = 1000,
-):
-    """Stack multiple pools together."""
-    pp.init()
-    pools = [
-        pp.mutagenize(make_sequence(seq_len), num_mutations=1, mode='random')
-        for _ in range(num_pools)
-    ]
-    pool = pp.stack(pools)
-    return pool.generate_library(num_seqs=num_seqs)
-
-
-def workload_get_kmers(
-    k: int = 8,
-    num_seqs: int = 1000,
-    mode: Literal['random', 'sequential'] = 'random',
-):
-    """K-mer generation workload."""
-    pp.init()
-    pool = pp.get_kmers(length=k, mode=mode)
-    return pool.generate_library(num_seqs=num_seqs)
-
-#
-# JBK workload function
-#
-def workload_jbk_mutagenize(
-    num_seqs: int = 1000,
-    seq_len: int = 50,
-    use_styles: bool = True,
-    use_cards: bool = True
+    use_styles: bool = False,
+    use_cards: bool = False
 ):
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
-    wt_cre = make_sequence(length=seq_len)
-    wt_seq = f'TCCCGACT<cre>{wt_cre}</cre>ATTACGG<bc/>AGATCGGA'
-    
-    template_pool = pp.from_seq(wt_seq)\
-                    .named('template_pool')\
-                    .stylize(style='lower', which='contents')
+    seq = make_sequence(seq_len)
+    ins_seqs = ['A'*ins_len]*num_ins
+    ins_pool = pp.from_seqs(ins_seqs)
+    pool = pp.insertion_scan(seq, ins_pool = ins_pool, positions=positions, mode=mode)
+    return pool.generate_library(num_seqs=num_seqs)
+
+
+def workload_get_kmers(
+    kmer_len: int = 5,
+    num_seqs: int = 100,
+    mode: Literal['random', 'sequential'] = 'random',
+    use_styles: bool = False,
+    use_cards: bool = False
+):
+    pp.init()
+    pp.toggle_styles(on=use_styles)
+    pp.toggle_cards(on=use_cards)
+    pool = pp.get_kmers(length=kmer_len, mode=mode)
+    return pool.generate_library(num_seqs=num_seqs)
+
+
+def workload_from_iupac(
+    seq_len: int = 5,
+    num_seqs: int = 100,
+    mode: Literal['random', 'sequential'] = 'random',
+    use_styles: bool = False,
+    use_cards: bool = False
+):
+    pp.init()
+    pp.toggle_styles(on=use_styles)
+    pp.toggle_cards(on=use_cards)
+    seq = 'N'*seq_len
+    pool = pp.from_iupac(iupac_seq=seq, mode=mode)
+    return pool.generate_library(num_seqs=num_seqs)
+
+
+def workload_mpra_example(
+    num_seqs: int = 1000,
+    use_styles: bool = True,
+    use_cards: bool = True
+):
+    pp.init()
+    #pp.load_config('default_config.toml')
+
+    template_pool = pp.from_seq('TCCCGACT<cre>GGAAAGCGGGCAGTGAGCACACAGGA</cre>ATTACGG<bc/>AGATCGGA')\
+                    .named('template_pool').stylize(style='lower', which='contents')
 
     mutated_pool = template_pool.stylize(region='cre', style='goldenrod')\
                                 .mutagenize(region='cre',
-                                            mutation_rate=0.2, 
+                                            num_mutations=2, 
                                             style='yellow bold underline lower',
-                                            mode='random',
+                                            mode='sequential', 
+                                            num_states=5, 
                                             prefix='mutagenize').named('mutated_pool')\
                                 .repeat_states(2, prefix='v', iter_order=-2)
-    return mutated_pool.generate_library(num_seqs=num_seqs)
+
+    L = len('GGAAAGCGGGCAGTGAGCACACAGGA') 
+    recomb_pool = template_pool.recombine(region='cre', 
+                                        num_breakpoints=3,
+                                        sources=['A'*L, 'C'*L, 'G'*L, 'T'*L],
+                                        styles=['palegreen', 'springgreen', 'limegreen', 'forestgreen'],
+                                        style_by='order',
+                                        mode='random',
+                                        num_states=5,
+                                        prefix='recomb').named('recomb_pool')\
+                                .repeat_states(2, prefix='v', iter_order=-2)
+
+
+    deletion_pool = template_pool.stylize(region='cre', style='salmon')\
+                                .deletion_scan(region='cre', 
+                                                deletion_length=6, 
+                                                positions=slice(None, None, 5), 
+                                                mode='sequential', 
+                                                style='red bold',
+                                                prefix='delscan').named('deletion_pool')\
+                                .repeat_states(2, prefix='v', iter_order=-2)
+
+    sites_pool=pp.from_seqs(['AAAAAA','TTTTTT'], 
+                            mode='sequential', 
+                            iter_order=-1).named('sites_pool')
+
+    insertion_pool = template_pool.stylize(region='cre', style='blue')\
+                                .insertion_scan(region='cre', 
+                                                ins_pool=sites_pool, 
+                                                positions=slice(None,None,5), 
+                                                replace=True, 
+                                                mode='sequential',
+                                                prefix='insscan',
+                                                prefix_position='pos', 
+                                                prefix_insert='ins',
+                                                style='cyan bold').named('insertion_pool')
+                                
+    shuffle_pool = template_pool.stylize(region='cre', style='purple')\
+                                .shuffle_scan(region='cre', 
+                                            shuffle_length=6, 
+                                            shuffles_per_position=2,
+                                            positions=slice(None, None, 5), 
+                                            mode='sequential', 
+                                            style='magenta bold',
+                                            prefix='shufscan',
+                                            prefix_position='pos',
+                                            prefix_shuffle='shuf')
+                                
+
+    combo_pool = pp.stack([mutated_pool, recomb_pool, deletion_pool, insertion_pool, shuffle_pool])\
+        .named('stack_pool')\
+        .insert_kmers(region='bc', mode='random', length=5, prefix='bc', style='green bold')\
+        .named('combo_pool')\
+        .stylize(which='tags', style='gray')
+
+    pp.toggle_styles(on=use_styles)
+    pp.toggle_cards(on=use_cards)
+    return combo_pool.generate_library(num_seqs=num_seqs)
 
 
 # Collect all workloads for easy iteration
 ALL_WORKLOADS = {
-    'mutagenize': workload_mutagenize,
-    'mutagenize_sequential': workload_mutagenize_sequential,
-    'recombine': workload_recombine,
-    'deletion_scan': workload_deletion_scan,
-    'insertion_scan': workload_insertion_scan,
-    'complex_dag': workload_complex_dag,
-    'region_operations': workload_region_operations,
-    'stack': workload_stack,
-    'get_kmers': workload_get_kmers,
+    'mutagenize_num_mut': workload_mutagenize_num_mut,
+    'mutagenize_mut_rate': workload_mutagenize_mut_rate,
+    'mpra_example': workload_mpra_example,
 }

@@ -140,7 +140,8 @@ class FromIupacOp(Operation):
         for options in position_options:
             total_states *= len(options)
 
-        self._total_states = total_states
+        # Cap to int64 max to avoid overflow in rng.integers()
+        self._total_states = min(total_states, np.iinfo(np.int64).max)
         
         # Determine num_states based on mode
         natural_num_states = None

@@ -1,184 +1,98 @@
 """Runtime benchmarks using pytest-benchmark."""
 import pytest
 from .workloads import (
-    workload_mutagenize,
-    workload_mutagenize_sequential,
-    workload_recombine,
+    workload_mutagenize_num_mut,
+    workload_mutagenize_mut_rate,
+    workload_shuffle_seq,
     workload_deletion_scan,
     workload_insertion_scan,
-    workload_complex_dag,
-    workload_region_operations,
-    workload_stack,
     workload_get_kmers,
-    workload_jbk_mutagenize,
-    WORKLOAD_SIZES,
+    workload_from_iupac,
 )
 
+class TestMutagenize:
 
-# --- Small workloads (fast, for CI) ---
+    # Test num mutations: (seq_len = 100, num_seqs=100, mode='random'). Conclusion: roughly constant until ~100
+    if False:
+        def test_mutagenize_num_mut_1(self, benchmark): benchmark(workload_mutagenize_num_mut, num_mut=1) # 26 ms
+        def test_mutagenize_num_mut_3(self, benchmark): benchmark(workload_mutagenize_num_mut, num_mut=3) # 27 ms      
+        def test_mutagenize_num_mut_10(self, benchmark): benchmark(workload_mutagenize_num_mut, num_mut=10) # 28 ms
+        def test_mutagenize_num_mut_30(self, benchmark): benchmark(workload_mutagenize_num_mut, num_mut=30) # 30 ms
+        def test_mutagenize_num_mut_100(self, benchmark): benchmark(workload_mutagenize_num_mut, num_mut=100) # 39 ms
+            
+    # Test sequence length (mut_rate=0.10, num_seqs=100). Conclusion: roughly linear above 30 nt
+    if False:
+        def test_mutagenize_seq_len_10(self, benchmark): benchmark(workload_mutagenize_mut_rate, seq_len=10) # 9 ms
+        def test_mutagenize_seq_len_30(self, benchmark): benchmark(workload_mutagenize_mut_rate, seq_len=30) # 13 ms
+        def test_mutagenize_seq_len_100(self, benchmark): benchmark(workload_mutagenize_mut_rate, seq_len=100) # 27 ms 
+        def test_mutagenize_seq_len_300(self, benchmark): benchmark(workload_mutagenize_mut_rate, seq_len=300) # 68 ms 
+        def test_mutagenize_seq_len_1000(self, benchmark): benchmark(workload_mutagenize_mut_rate, seq_len=1_000) # 228 ms
+        def test_mutagenize_seq_len_3000(self, benchmark): benchmark(workload_mutagenize_mut_rate, seq_len=3_000) # 717 ms 
+        def test_mutagenize_seq_len_10000(self, benchmark): benchmark(workload_mutagenize_mut_rate, seq_len=10_000) # 2408 ms 
 
-class TestSmallWorkloads:
-    """Small workloads for quick benchmarking."""
-    
-    def test_mutagenize_small(self, benchmark):
-        result = benchmark(
-            workload_mutagenize,
-            seq_len=WORKLOAD_SIZES['small']['seq_len'],
-            num_seqs=WORKLOAD_SIZES['small']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['small']['num_seqs']
-    
-    def test_mutagenize_sequential_small(self, benchmark):
-        # 20bp with 1 mutation = 60 states (20 positions × 3 mutations each)
-        result = benchmark(workload_mutagenize_sequential, seq_len=20, num_mut=1)
-        assert len(result) == 60
-    
-    def test_recombine_small(self, benchmark):
-        result = benchmark(
-            workload_recombine,
-            seq_len=WORKLOAD_SIZES['small']['seq_len'],
-            num_seqs=WORKLOAD_SIZES['small']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['small']['num_seqs']
-    
-    def test_deletion_scan_small(self, benchmark):
-        result = benchmark(
-            workload_deletion_scan,
-            seq_len=WORKLOAD_SIZES['small']['seq_len'],
-            num_seqs=WORKLOAD_SIZES['small']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['small']['num_seqs']
-    
-    def test_insertion_scan_small(self, benchmark):
-        result = benchmark(
-            workload_insertion_scan,
-            seq_len=WORKLOAD_SIZES['small']['seq_len'],
-            num_seqs=WORKLOAD_SIZES['small']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['small']['num_seqs']
-    
-    def test_complex_dag_small(self, benchmark):
-        result = benchmark(
-            workload_complex_dag,
-            seq_len=WORKLOAD_SIZES['small']['seq_len'],
-            num_seqs=WORKLOAD_SIZES['small']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['small']['num_seqs']
-    
-    def test_region_operations_small(self, benchmark):
-        result = benchmark(
-            workload_region_operations,
-            seq_len=WORKLOAD_SIZES['small']['seq_len'] + 20,  # Account for flanks
-            num_seqs=WORKLOAD_SIZES['small']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['small']['num_seqs']
-    
-    def test_stack_small(self, benchmark):
-        result = benchmark(
-            workload_stack,
-            seq_len=WORKLOAD_SIZES['small']['seq_len'],
-            num_pools=3,
-            num_seqs=WORKLOAD_SIZES['small']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['small']['num_seqs']
-    
-    def test_get_kmers_small(self, benchmark):
-        result = benchmark(
-            workload_get_kmers,
-            k=6,
-            num_seqs=WORKLOAD_SIZES['small']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['small']['num_seqs']
-
-
-# --- Medium workloads ---
-
-class TestMediumWorkloads:
-    """Medium workloads for standard benchmarking."""
-    
-    def test_mutagenize_medium(self, benchmark):
-        result = benchmark(
-            workload_mutagenize,
-            seq_len=WORKLOAD_SIZES['medium']['seq_len'],
-            num_seqs=WORKLOAD_SIZES['medium']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['medium']['num_seqs']
-    
-    def test_recombine_medium(self, benchmark):
-        result = benchmark(
-            workload_recombine,
-            seq_len=WORKLOAD_SIZES['medium']['seq_len'],
-            num_seqs=WORKLOAD_SIZES['medium']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['medium']['num_seqs']
-    
-    def test_complex_dag_medium(self, benchmark):
-        result = benchmark(
-            workload_complex_dag,
-            seq_len=WORKLOAD_SIZES['medium']['seq_len'],
-            num_seqs=WORKLOAD_SIZES['medium']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['medium']['num_seqs']
-
-
-# --- Large workloads (slow, require --run-slow) ---
-
-@pytest.mark.slow
-class TestLargeWorkloads:
-    """Large workloads for thorough benchmarking."""
-    
-    def test_mutagenize_large(self, benchmark):
-        result = benchmark(
-            workload_mutagenize,
-            seq_len=WORKLOAD_SIZES['large']['seq_len'],
-            num_seqs=WORKLOAD_SIZES['large']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['large']['num_seqs']
-    
-    def test_recombine_large(self, benchmark):
-        result = benchmark(
-            workload_recombine,
-            seq_len=WORKLOAD_SIZES['large']['seq_len'],
-            num_seqs=WORKLOAD_SIZES['large']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['large']['num_seqs']
-    
-    def test_complex_dag_large(self, benchmark):
-        result = benchmark(
-            workload_complex_dag,
-            seq_len=WORKLOAD_SIZES['large']['seq_len'],
-            num_seqs=WORKLOAD_SIZES['large']['num_seqs'],
-        )
-        assert len(result) == WORKLOAD_SIZES['large']['num_seqs']
-    
-    def test_mutagenize_sequential_large(self, benchmark):
-        # 50bp with 2 mutations = large combinatorial space
-        result = benchmark(workload_mutagenize_sequential, seq_len=50, num_mut=2)
-        # C(50, 2) × 3^2 = 1225 × 9 = 11025 states
-        assert len(result) == 11025
+    # Test mutation rate (seq_length=100, num_seqs=100). Conclusion: roughly constant until ~100% 
+    if False:
+        def test_mutagenize_mut_rate_1(self, benchmark): benchmark(workload_mutagenize_mut_rate, mut_rate=0.01) # 26 ms
+        def test_mutagenize_mut_rate_3(self, benchmark): benchmark(workload_mutagenize_mut_rate, mut_rate=0.03) # 27 ms
+        def test_mutagenize_mut_rate_10(self, benchmark): benchmark(workload_mutagenize_mut_rate, mut_rate=0.10) # 28 ms
+        def test_mutagenize_mut_rate_30(self, benchmark): benchmark(workload_mutagenize_mut_rate, mut_rate=0.30) # 30 ms
+        def test_mutagenize_mut_rate_100(self, benchmark): benchmark(workload_mutagenize_mut_rate, mut_rate=1.00) # 37 ms
+      
         
-# --- JBK workloads ---
-@pytest.mark.slow
-class TestJBKWorkloads:
-    """Custom workloads"""
+class TestShuffle:
+    # Test sequence length (num_seqs=100)
+    if True:
+        def test_shuffle_seq_len_10(self, benchmark): benchmark(workload_shuffle_seq, seq_len=10) # 6 ms
+        def test_shuffle_seq_len_30(self, benchmark): benchmark(workload_shuffle_seq, seq_len=30) # 6 ms
+        def test_shuffle_seq_len_100(self, benchmark): benchmark(workload_shuffle_seq, seq_len=100) # 9 ms
+        def test_shuffle_seq_len_300(self, benchmark): benchmark(workload_shuffle_seq, seq_len=300) # 17 ms
+        def test_shuffle_seq_len_1000(self, benchmark): benchmark(workload_shuffle_seq, seq_len=1000) # 50 ms
+        
+        
+class TestDeletionScan:
+    # Test sequence length (num_seqs=100): roughly constant until ~300 nt
+    if True:
+        def test_deletion_scan_10(self, benchmark): benchmark(workload_deletion_scan, seq_len=10) # 11 ms
+        def test_deletion_scan_30(self, benchmark): benchmark(workload_deletion_scan, seq_len=30) # 11 ms
+        def test_deletion_scan_100(self, benchmark): benchmark(workload_deletion_scan, seq_len=100) # 14 ms
+        def test_deletion_scan_300(self, benchmark): benchmark(workload_deletion_scan, seq_len=300) # 20 ms
+        def test_deletion_scan_1000(self, benchmark): benchmark(workload_deletion_scan, seq_len=1000) # 45 ms
+        
+        
+class TestInsertionScan:
+    # Test sequence length (num_seqs=100, ins_len=5): roughly constant until ~300 nt
+    if False:
+        def test_insertion_scan_seq_len_10(self, benchmark): benchmark(workload_insertion_scan, seq_len=10) # 9 ms
+        def test_insertion_scan_seq_len_30(self, benchmark): benchmark(workload_insertion_scan, seq_len=30) # 10 ms
+        def test_insertion_scan_seq_len_100(self, benchmark): benchmark(workload_insertion_scan, seq_len=100) # 12 ms
+        def test_insertion_scan_seq_len_300(self, benchmark): benchmark(workload_insertion_scan, seq_len=300) # 19 ms
+        def test_insertion_scan_seq_len_1000(self, benchmark): benchmark(workload_insertion_scan, seq_len=1000) # 44 ms
+
+    # Test sequence length (num_seqs=100, seq_len=100): roughtly constant. 
+    if True:
+        def test_insertion_scan_ins_len_1(self, benchmark): benchmark(workload_insertion_scan, ins_len=1) # 13 ms
+        def test_insertion_scan_ins_len_3(self, benchmark): benchmark(workload_insertion_scan, ins_len=3) # 13 ms
+        def test_insertion_scan_ins_len_10(self, benchmark): benchmark(workload_insertion_scan, ins_len=10) # 13 ms
+        def test_insertion_scan_ins_len_30(self, benchmark): benchmark(workload_insertion_scan, ins_len=30) # 13 ms
+        def test_insertion_scan_ins_len_100(self, benchmark): benchmark(workload_insertion_scan, ins_len=100)  # 14 ms
+        
+        
+class TestGetKmers:
     
-    seq_len = 100
-    num_seqs = 1000
-    
-    def test_mutagenize_styles_and_cards(self, benchmark):
-        result = benchmark(
-            workload_jbk_mutagenize,
-            seq_len=self.seq_len,
-            num_seqs=self.num_seqs,
-            use_styles=True,
-            use_cards=True
-        )
-    
-    def test_mutagenize(self, benchmark):
-        result = benchmark(
-            workload_jbk_mutagenize,
-            seq_len=self.seq_len,
-            num_seqs=self.num_seqs,
-            use_styles=False,
-            use_cards=False
-        )
+    # Test kmer length (num_seqs=100): roughly constant and very fast. 
+    if True:
+        def test_get_kmers_kmer_len_1(self, benchmark): benchmark(workload_get_kmers, kmer_len=1) # 2.5 ms
+        def test_get_kmers_kmer_len_3(self, benchmark): benchmark(workload_get_kmers, kmer_len=3) # 2.5 ms
+        def test_get_kmers_kmer_len_10(self, benchmark): benchmark(workload_get_kmers, kmer_len=10) # 2.6 ms
+        def test_get_kmers_kmer_len_30(self, benchmark): benchmark(workload_get_kmers, kmer_len=30) # 2.8 ms
+        def test_get_kmers_kmer_len_100(self, benchmark): benchmark(workload_get_kmers, kmer_len=100) # 3.4 ms
+        
+
+class TestFromIupac:
+    # Test iupac sequence length (num_seqs=100): roughly constant and very fast. 
+    if True:
+        def test_from_iupac_seq_len_1(self, benchmark): benchmark(workload_from_iupac, seq_len=1) # 2.1 ms
+        def test_from_iupac_seq_len_3(self, benchmark): benchmark(workload_from_iupac, seq_len=3) # 2.1 ms
+        def test_from_iupac_seq_len_10(self, benchmark): benchmark(workload_from_iupac, seq_len=10) # 2.2 ms
+        def test_from_iupac_seq_len_30(self, benchmark): benchmark(workload_from_iupac, seq_len=30) # 2.5 ms
+        def test_from_iupac_seq_len_100(self, benchmark): benchmark(workload_from_iupac, seq_len=100) # 2.7 ms
