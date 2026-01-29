@@ -244,7 +244,9 @@ class MutagenizeOp(Operation):
         """Compute and return position data (cached via _cached_get_positions)."""
         valid_char_positions = self._get_molecular_positions(seq)
         mutable_positions, mutation_options = self._get_position_mutations(seq, valid_char_positions)
-        return (valid_char_positions, mutable_positions, mutation_options)
+        # Pre-convert to numpy for faster mutation application
+        seq_bytes = np.frombuffer(seq.encode('ascii'), dtype=np.uint8)
+        return (valid_char_positions, mutable_positions, mutation_options, seq_bytes)
     
     def _build_caches(self, num_positions: int, mutation_counts: Optional[list[int]] = None) -> int:
         """Build caches for sequential enumeration.
@@ -386,6 +388,30 @@ class MutagenizeOp(Operation):
         
         return positions, tuple(wt_chars), tuple(mut_chars)
     
+    def _apply_mutations_numpy(
+        self,
+        seq_bytes: np.ndarray,
+        positions: tuple,
+        mut_chars: tuple,
+        valid_char_positions: list[int],
+    ) -> str:
+        """Apply mutations using NumPy for better performance on long sequences."""
+        if len(positions) == 0:
+            return seq_bytes.tobytes().decode('ascii')
+        
+        # Copy the cached array (fast for numpy)
+        seq_arr = seq_bytes.copy()
+        
+        # Compute raw positions and mutation bytes
+        raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.intp)
+        mut_bytes = np.array([ord(m) for m in mut_chars], dtype=np.uint8)
+        
+        # Apply all mutations at once (vectorized)
+        seq_arr[raw_positions] = mut_bytes
+        
+        # Convert back to string
+        return seq_arr.tobytes().decode('ascii')
+    
     def _compute_core(
         self,
         parents: list[Seq],
@@ -398,8 +424,8 @@ class MutagenizeOp(Operation):
         """
         seq = parents[0].string
         
-        # Use cached position computation
-        valid_char_positions, mutable_positions, mutation_options = self._cached_get_positions(seq)
+        # Use cached position computation (includes pre-converted numpy bytes)
+        valid_char_positions, mutable_positions, mutation_options, seq_bytes = self._cached_get_positions(seq)
         num_mutable = len(mutable_positions)
         
         if self.num_mutations is not None and self.num_mutations > num_mutable:
@@ -447,12 +473,8 @@ class MutagenizeOp(Operation):
             wt_chars = tuple(wt_chars)
             mut_chars = tuple(mut_chars)
         
-        # Apply mutations to sequence
-        seq_list = list(seq)
-        for logical_pos, mut in zip(positions, mut_chars):
-            raw_pos = valid_char_positions[logical_pos]
-            seq_list[raw_pos] = mut
-        result_seq = ''.join(seq_list)
+        # Apply mutations to sequence using NumPy for performance
+        result_seq = self._apply_mutations_numpy(seq_bytes, positions, mut_chars, valid_char_positions)
         
         # Build output styles: pass through parent styles (mutagenize preserves length)
         # and add mutation style if _style is set

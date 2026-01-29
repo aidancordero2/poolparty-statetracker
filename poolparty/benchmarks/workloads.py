@@ -122,8 +122,8 @@ def workload_from_iupac(
 
 def workload_mpra_example(
     num_seqs: int = 1000,
-    use_styles: bool = True,
-    use_cards: bool = True
+    use_styles: bool = False,
+    use_cards: bool = False
 ):
     pp.init()
     #pp.load_config('default_config.toml')
