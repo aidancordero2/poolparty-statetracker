@@ -33,7 +33,7 @@ htmlcov/
 Thumbs.db
 
 # Sphinx documentation
-statecounter/docs/_build/
+**/docs/_build/
 
 # LaTeX auxiliary files
 *.aux
@@ -53,3 +53,7 @@ _minted-*/
 
 # Other
 *.tmp
+
+# Legacy code (archived, not part of release)
+**/legacy/
+notebooks/legacy/
