@@ -324,8 +324,9 @@ class Operation:
         if self.state is not None and self.state.value is not None:
             # Has state: use state value
             return [f'{self.prefix}_{self.state.value}']
-        elif self.mode == 'random' and global_state is not None:
-            # Stateless random: use global_state
+        elif self.mode == 'random' and self.state is None and global_state is not None:
+            # Truly stateless random (no state object): use global_state
+            # Note: ops with state but inactive (state.value=None) should return []
             return [f'{self.prefix}_{global_state}']
         else:
             return []

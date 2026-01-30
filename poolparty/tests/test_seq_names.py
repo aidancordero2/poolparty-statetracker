@@ -215,3 +215,118 @@ def test_shuffle_scan_naming():
         for i in range(len(segments) - 1):
             assert segments[i] != segments[i+1], \
                 f"Duplicate consecutive segments in: {name}"
+
+
+def test_stack_inactive_branch_prefixes_excluded():
+    """Test that stacked pools don't leak prefixes from inactive branches.
+    
+    This is a regression test for a bug where operations with mode='random' 
+    that had a state but were inactive (state.value=None) would incorrectly 
+    use global_state for naming instead of returning no contribution.
+    
+    For example, with pools A (prefix='alpha') and B (prefix='beta') stacked:
+    - States 0-N from pool A should have names like: alpha_0.bc_0, alpha_1.bc_1
+    - States N+1-M from pool B should have names like: beta_0.bc_N+1, beta_1.bc_N+2
+    
+    The bug caused names like: alpha_0.beta_0.bc_0 (beta leaking into alpha rows)
+    """
+    with pp.Party():
+        # Create two pools with distinct prefixes
+        pool_alpha = pp.from_seq('AAAA<bc/>TTTT').mutagenize(
+            num_mutations=1, mode='random', num_states=3, prefix='alpha'
+        )
+        pool_beta = pp.from_seq('CCCC<bc/>GGGG').mutagenize(
+            num_mutations=1, mode='random', num_states=3, prefix='beta'  
+        )
+        
+        # Stack and add barcodes
+        stacked = pp.stack([pool_alpha, pool_beta]).insert_kmers(
+            region='bc', length=2, mode='random', prefix='bc'
+        )
+    
+    df = stacked.generate_library(num_cycles=1, seed=42)
+    
+    # Total states = 3 (alpha) + 3 (beta) = 6
+    assert len(df) == 6, f"Expected 6 rows, got {len(df)}"
+    
+    # Check each row's name only contains prefixes from its branch
+    for idx, name in enumerate(df['name']):
+        if idx < 3:
+            # First 3 states are from pool_alpha
+            assert 'alpha_' in name, f"Row {idx} should contain 'alpha_': {name}"
+            assert 'beta_' not in name, f"Row {idx} should NOT contain 'beta_': {name}"
+        else:
+            # Last 3 states are from pool_beta
+            assert 'beta_' in name, f"Row {idx} should contain 'beta_': {name}"
+            assert 'alpha_' not in name, f"Row {idx} should NOT contain 'alpha_': {name}"
+        
+        # All rows should have barcode
+        assert 'bc_' in name, f"Row {idx} should contain 'bc_': {name}"
+
+
+def test_stack_multiple_branches_name_isolation():
+    """Test that names are isolated to their respective branches with 5 pools.
+    
+    Regression test ensuring inactive branch prefixes never contaminate names.
+    """
+    with pp.Party():
+        # Create 5 pools with distinct prefixes using mutagenize (mode='random')
+        # All using the same base sequence with bc region
+        pool_a = pp.from_seq('AA<bc/>TT').mutagenize(
+            num_mutations=1, mode='random', num_states=2, prefix='poolA'
+        )
+        pool_b = pp.from_seq('CC<bc/>GG').mutagenize(
+            num_mutations=1, mode='random', num_states=2, prefix='poolB'
+        )
+        pool_c = pp.from_seq('GG<bc/>CC').mutagenize(
+            num_mutations=1, mode='random', num_states=2, prefix='poolC'
+        )
+        pool_d = pp.from_seq('TT<bc/>AA').mutagenize(
+            num_mutations=1, mode='random', num_states=2, prefix='poolD'
+        )
+        pool_e = pp.from_seq('AC<bc/>GT').mutagenize(
+            num_mutations=1, mode='random', num_states=2, prefix='poolE'
+        )
+        
+        # Stack all and add barcodes
+        stacked = pp.stack([pool_a, pool_b, pool_c, pool_d, pool_e]).insert_kmers(
+            region='bc', length=2, mode='random', prefix='bc'
+        )
+    
+    df = stacked.generate_library(num_cycles=1, seed=42)
+    
+    # Should have 10 states total (2 per pool)
+    assert len(df) == 10, f"Expected 10 rows, got {len(df)}"
+    
+    # Define which prefixes belong to which rows
+    branch_prefixes = {
+        (0, 1): 'poolA',
+        (2, 3): 'poolB', 
+        (4, 5): 'poolC',
+        (6, 7): 'poolD',
+        (8, 9): 'poolE',
+    }
+    all_prefixes = ['poolA', 'poolB', 'poolC', 'poolD', 'poolE']
+    
+    for idx, name in enumerate(df['name']):
+        # Find which branch this row belongs to
+        expected_prefix = None
+        for (start, end), prefix in branch_prefixes.items():
+            if start <= idx <= end:
+                expected_prefix = prefix
+                break
+        
+        assert expected_prefix is not None, f"Row {idx} doesn't belong to any branch"
+        
+        # Check the expected prefix is present
+        assert expected_prefix in name, \
+            f"Row {idx} should contain '{expected_prefix}': {name}"
+        
+        # Check NO OTHER branch prefixes are present
+        for prefix in all_prefixes:
+            if prefix != expected_prefix:
+                assert prefix not in name, \
+                    f"Row {idx} should NOT contain '{prefix}' (belongs to {expected_prefix}): {name}"
+        
+        # Barcode should be present
+        assert 'bc_' in name, f"Row {idx} should contain 'bc_': {name}"
