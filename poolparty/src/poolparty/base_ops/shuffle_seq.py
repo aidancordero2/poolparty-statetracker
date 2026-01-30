@@ -130,13 +130,18 @@ class SeqShuffleOp(Operation):
         
         seq = parents[0].string
         
-        # Cache molecular positions for repeated sequences
+        # Cache molecular positions, position array, and sequence array for repeated sequences
         if not hasattr(self, '_mol_pos_cache'):
             self._mol_pos_cache = {}
+            self._pos_arr_cache = {}
+            self._seq_arr_cache = {}
         
         if seq not in self._mol_pos_cache:
             self._mol_pos_cache[seq] = self._get_molecular_positions(seq)
+            self._pos_arr_cache[seq] = np.array(self._mol_pos_cache[seq], dtype=np.intp)
+            self._seq_arr_cache[seq] = np.array(list(seq), dtype='U1')
         molecular_positions = self._mol_pos_cache[seq]
+        pos_arr = self._pos_arr_cache[seq]
         num_molecular = len(molecular_positions)
         
         if num_molecular == 0:
@@ -147,12 +152,10 @@ class SeqShuffleOp(Operation):
             # Use argsort to compute inverse permutation (vectorized)
             permutation = tuple(np.argsort(order).tolist())
             
-            # Vectorized character shuffling using numpy
-            pos_arr = np.array(molecular_positions, dtype=np.intp)
-            seq_arr = np.array(list(seq), dtype='U1')
+            # Vectorized character shuffling using cached numpy arrays
+            seq_arr = self._seq_arr_cache[seq].copy()
             molecular_chars = seq_arr[pos_arr]
-            shuffled_molecular = molecular_chars[order]
-            seq_arr[pos_arr] = shuffled_molecular
+            seq_arr[pos_arr] = molecular_chars[order]
             shuffled_seq = ''.join(seq_arr)
         
         # Pass through parent styles and add styling to shuffled characters if requested
