@@ -39,7 +39,7 @@ class Operation:
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
         region: RegionType = None,
-        remove_tags: Optional[bool] = None,
+        remove_tags: bool = False,
         _natural_num_states: Optional[int] = None,
     ) -> None:
         """Initialize Operation."""
@@ -83,16 +83,7 @@ class Operation:
         self._validate_region(region)
         if region is not None and len(self.parent_pools) == 0:
             raise ValueError("region requires at least one parent pool")
-        # Resolve remove_tags from party config if None
-        if remove_tags is None:
-            # Check legacy defaults first for backwards compatibility
-            legacy_default = party.get_default('remove_tags', None)
-            if legacy_default is not None:
-                self._remove_tags = legacy_default
-            else:
-                self._remove_tags = party._config.remove_tags
-        else:
-            self._remove_tags = remove_tags
+        self._remove_tags = remove_tags
         
         # Register operation with party after name is set
         party._register_operation(self)

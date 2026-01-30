@@ -2,7 +2,6 @@
 # All values default to true (show). Set to false to hide columns/keys.
 
 [general]
-remove_tags = true        # Remove region tags from sequences (default True)
 suppress_styles = false   # Suppress inline styling
 suppress_cards = false    # Suppress all design cards (overrides [design_cards])
 

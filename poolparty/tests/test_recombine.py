@@ -331,8 +331,8 @@ class TestRecombineRegionBased:
             ).named('recombined')
         
         df = result.generate_library()
-        # Should be: NN + AATT + NN = NNAATTNN
-        assert df['seq'].iloc[0] == 'NNAATTNN'
+        # Should be: NN + <middle>AATT</middle> + NN (tags preserved by default)
+        assert df['seq'].iloc[0] == 'NN<middle>AATT</middle>NN'
     
     def test_region_content_discarded(self):
         """Region content is replaced, not used as source."""
@@ -350,9 +350,9 @@ class TestRecombineRegionBased:
             ).named('recombined')
         
         df = result.generate_library()
-        # Should be: GG + AATT + GG = GGAATTGG
+        # Should be: GG + <middle>AATT</middle> + GG (tags preserved by default)
         # NOT using the original GGGG from the region
-        assert df['seq'].iloc[0] == 'GGAATTGG'
+        assert df['seq'].iloc[0] == 'GG<middle>AATT</middle>GG'
 
 
 class TestRecombineDesignCard:
@@ -411,7 +411,8 @@ class TestRecombineMixinMethod:
             ).named('recombined')
         
         df = result.generate_library()
-        assert df['seq'].iloc[0] == 'NNAATTNN'
+        # Tags preserved by default
+        assert df['seq'].iloc[0] == 'NN<middle>AATT</middle>NN'
 
 
 class TestRecombineStyleBy:

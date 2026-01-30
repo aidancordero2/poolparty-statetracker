@@ -10,7 +10,6 @@ def test_config_defaults():
     from poolparty.config import Config
     config = Config()
     
-    assert config.remove_tags is True  # Default True for backwards compatibility
     assert config.suppress_styles is False
     assert config.suppress_cards is False
     assert config.show_name is True
@@ -26,7 +25,6 @@ def test_config_from_toml():
     
     toml_content = """
 [general]
-remove_tags = true
 suppress_styles = true
 suppress_cards = false
 
@@ -52,7 +50,6 @@ mut_chars = false
         config = Config.from_toml(temp_path)
         
         # Check general settings
-        assert config.remove_tags is True
         assert config.suppress_styles is True
         assert config.suppress_cards is False
         

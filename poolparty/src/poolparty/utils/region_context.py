@@ -44,7 +44,7 @@ class RegionContext:
         cls,
         seq_obj: Union[Seq, str],
         region: RegionType,
-        remove_tags: bool = True,
+        remove_tags: bool = False,
     ) -> 'RegionContext':
         """Create RegionContext from a Seq/string and region specification.
         
@@ -54,7 +54,7 @@ class RegionContext:
             The Seq object or string containing the region.
         region : RegionType
             Region specification: region name (str) or [start, stop] interval.
-        remove_tags : bool, default=True
+        remove_tags : bool, default=False
             Whether to remove region tags during reassembly.
         
         Returns

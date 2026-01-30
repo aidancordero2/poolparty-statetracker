@@ -12,8 +12,7 @@ class Config:
     """Unified configuration for poolparty library output and behavior."""
     
     def __init__(self):
-        # General settings (migrated from Party._defaults)
-        self.remove_tags: bool = True  # Default True for backwards compatibility
+        # General settings
         self.suppress_styles: bool = False
         self.suppress_cards: bool = False
         
@@ -46,7 +45,6 @@ class Config:
         # Load general settings
         if 'general' in data:
             general = data['general']
-            config.remove_tags = general.get('remove_tags', False)
             config.suppress_styles = general.get('suppress_styles', False)
             config.suppress_cards = general.get('suppress_cards', False)
         
@@ -97,7 +95,6 @@ class Config:
     
     def __repr__(self) -> str:
         return (
-            f"Config(remove_tags={self.remove_tags}, "
-            f"suppress_styles={self.suppress_styles}, "
+            f"Config(suppress_styles={self.suppress_styles}, "
             f"suppress_cards={self.suppress_cards})"
         )

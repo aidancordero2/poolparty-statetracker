@@ -244,12 +244,12 @@ class TestPositionValidation:
 class TestPositionAdjustmentWithMarkers:
     """Test position adjustment edge cases with markers and regions."""
     
-    def test_mutagenize_region_remove_tags_true(self):
-        """Positions correct when marker is removed."""
+    def test_mutagenize_region_preserves_tags(self):
+        """Positions correct when marker tags are preserved (default behavior)."""
         with pp.Party() as party:
             # 'AA' prefix (2 chars), marker content 'CCCC' (4 chars), 'GG' suffix
             bg = pp.from_seq('AA<test>CCCC</test>GG').named('bg')
-            # Mutagenize first position of region, with remove_marker=True
+            # Mutagenize first position of region, tags preserved by default
             mutated = bg.mutagenize(
                 region='test', num_mutations=1, style='red',
                 mode='sequential'
@@ -259,21 +259,21 @@ class TestPositionAdjustmentWithMarkers:
         seq = df['seq'].iloc[0]
         seq_style = df['_inline_styles'].iloc[0]
         
-        # Sequence should be 'AA' + mutated_content + 'GG' (no marker tags)
-        assert '<test>' not in seq
-        assert '</test>' not in seq
+        # Sequence should preserve marker tags (default behavior)
+        assert '<test>' in seq
+        assert '</test>' in seq
         assert seq.startswith('AA')
         assert seq.endswith('GG')
         
-        # Style positions should point to correct characters in clean sequence
+        # Style positions should account for tag characters
         if seq_style:
             spec, positions = seq_style.style_list[0]
-            # The first mutation is at position 0 within the region
-            # With marker removed, position 0 in region = position 2 in final seq
-            assert all(2 <= pos < 6 for pos in positions)
+            # The mutation is within the region content
+            # With tags preserved: 'AA<test>' = 8 chars, then content starts
+            assert all(8 <= pos < 12 for pos in positions)
     
-    def test_mutagenize_region_remove_tags_false(self):
-        """Positions correct when marker is removed (default behavior)."""
+    def test_mutagenize_region_default_keeps_tags(self):
+        """Default behavior preserves region tags."""
         with pp.Party() as party:
             # 'AA' prefix, marker with content 'CCCC', 'GG' suffix
             bg = pp.from_seq('AA<test>CCCC</test>GG').named('bg')
@@ -286,18 +286,18 @@ class TestPositionAdjustmentWithMarkers:
         seq = df['seq'].iloc[0]
         seq_style = df['_inline_styles'].iloc[0]
         
-        # Sequence should not have marker tags (default behavior removes markers)
-        assert '<test>' not in seq
-        assert '</test>' not in seq
+        # Sequence should preserve marker tags (default behavior)
+        assert '<test>' in seq
+        assert '</test>' in seq
         assert seq.startswith('AA')
         assert seq.endswith('GG')
         
-        # Style positions should point to correct characters in clean sequence
+        # Style positions should account for tag characters
         if seq_style:
             spec, positions = seq_style.style_list[0]
-            # The first mutation is at position 0 within the region
-            # With marker removed, position 0 in region = position 2 in final seq
-            assert all(2 <= pos < 6 for pos in positions)
+            # The mutation is within the region content
+            # With tags preserved: 'AA<test>' = 8 chars, then content starts
+            assert all(8 <= pos < 12 for pos in positions)
     
     def test_mutagenize_interval_region(self):
         """Positions correct for [start, stop] interval region."""
@@ -1589,10 +1589,12 @@ class TestStyleSuppression:
             df = pool_with_kmers.generate_library(num_seqs=1, report_design_cards=True, _include_inline_styles=True)
             seq_style = df['_inline_styles'].iloc[0]
             assert seq_style is None
-            # Verify sequence was generated correctly (tags removed by default)
+            # Verify sequence was generated correctly (tags preserved by default)
             seq = df['seq'].iloc[0]
-            assert len(seq) == 7  # AA (2) + 3-char kmer (3) + TT (2) = 7 chars
+            # AA (2) + <bc> (4) + 3-char kmer (3) + </bc> (5) + TT (2) = 16 chars
+            assert len(seq) == 16
             assert seq.startswith('AA')
+            assert '<bc>' in seq
             assert seq.endswith('TT')
 
 
