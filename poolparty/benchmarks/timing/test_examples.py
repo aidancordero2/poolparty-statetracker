@@ -1,12 +1,13 @@
 """Example workloads for poolparty benchmarking."""
-import poolparty as pp
+from ._utils import DEFAULT_NUM_SEQS, DEFAULT_SEQ_LEN
 
 
 def workload_mpra_example(
-    num_seqs: int = 1000,
+    num_seqs: int = DEFAULT_NUM_SEQS,
     use_styles: bool = False,
-    use_cards: bool = False
+    use_cards: bool = False,
 ):
+    import poolparty as pp
     pp.init()
     #pp.load_config('default_config.toml')
 

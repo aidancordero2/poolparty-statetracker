@@ -1,5 +1,7 @@
 """Shared utilities for timing benchmarks."""
 
+DEFAULT_NUM_SEQS = 1000
+DEFAULT_SEQ_LEN = 100
 
 def make_sequence(length: int) -> str:
     """Generate a DNA sequence of specified length."""

@@ -1,18 +1,18 @@
 """Scan operation workloads for poolparty benchmarking."""
-import poolparty as pp
 from typing import Literal
-from ._utils import make_sequence
+from ._utils import make_sequence, DEFAULT_NUM_SEQS, DEFAULT_SEQ_LEN
 
 
 def workload_deletion_scan(
-    seq_len: int = 100,
-    num_seqs: int = 100,
+    seq_len: int = DEFAULT_SEQ_LEN,
+    num_seqs: int = DEFAULT_NUM_SEQS,
     del_len: int=5,
     positions = None,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
-    use_cards: bool = False
+    use_cards: bool = False,
 ):
+    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
@@ -26,15 +26,16 @@ workload_deletion_scan.benchmark_specs = [
 
 
 def workload_insertion_scan(
-    seq_len: int = 100,
-    num_seqs: int = 100,
+    seq_len: int = DEFAULT_SEQ_LEN,
+    num_seqs: int = DEFAULT_NUM_SEQS,
     num_ins: int = 10,
     ins_len: int=5,
     positions = None,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
-    use_cards: bool = False
+    use_cards: bool = False,
 ):
+    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)

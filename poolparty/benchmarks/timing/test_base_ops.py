@@ -1,24 +1,18 @@
 """Base operation workloads for poolparty benchmarking."""
 from typing import Literal
-from ._utils import make_sequence
+from ._utils import make_sequence, DEFAULT_NUM_SEQS, DEFAULT_SEQ_LEN
 
 # uv run python poolparty/benchmarks/run_benchmarks.py benchmark.py -c TestMutagenize -t    
 
 def workload_mutagenize(
-    seq_len: int = 100,
+    seq_len: int = DEFAULT_SEQ_LEN,
     mut_rate: float = None,
     num_mut: int = None,
-    num_seqs: int = 100,
+    num_seqs: int = DEFAULT_NUM_SEQS,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
     use_cards: bool = False,
-    use_beartype: bool = False,
 ):
-    if not use_beartype:
-        from beartype import BeartypeConf
-        from beartype.claw import beartype_package
-        beartype_package('poolparty', conf=BeartypeConf(is_debug=True))
-    
     import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
@@ -37,18 +31,12 @@ workload_mutagenize.benchmark_specs = [
 
 
 def workload_shuffle_seq(
-    seq_len: int = 100,
-    num_seqs: int = 100,
+    seq_len: int = DEFAULT_SEQ_LEN,
+    num_seqs: int = DEFAULT_NUM_SEQS,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
     use_cards: bool = False,
-    use_beartype: bool = False,
 ):
-    if not use_beartype:
-        from beartype import BeartypeConf
-        from beartype.claw import beartype_package
-        beartype_package('poolparty', conf=BeartypeConf(is_debug=True))
-    
     import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
@@ -64,17 +52,11 @@ workload_shuffle_seq.benchmark_specs = [
 
 def workload_get_kmers(
     kmer_len: int = 5,
-    num_seqs: int = 100,
+    num_seqs: int = DEFAULT_NUM_SEQS,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
     use_cards: bool = False,
-    use_beartype: bool = False,
 ):
-    if not use_beartype:
-        from beartype import BeartypeConf
-        from beartype.claw import beartype_package
-        beartype_package('poolparty', conf=BeartypeConf(is_debug=True))
-    
     import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
@@ -89,17 +71,11 @@ workload_get_kmers.benchmark_specs = [
 
 def workload_from_iupac(
     seq_len: int = 5,
-    num_seqs: int = 100,
+    num_seqs: int = DEFAULT_NUM_SEQS,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
     use_cards: bool = False,
-    use_beartype: bool = False,
 ):
-    if not use_beartype:
-        from beartype import BeartypeConf
-        from beartype.claw import beartype_package
-        beartype_package('poolparty', conf=BeartypeConf(is_debug=True))
-    
     import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
@@ -114,20 +90,14 @@ workload_from_iupac.benchmark_specs = [
 
 
 def workload_recombine(
-    seq_len: int = 100,
+    seq_len: int = DEFAULT_SEQ_LEN,
     num_breakpoints: int = 3,
     num_sources: int = 4,
-    num_seqs: int = 100,
+    num_seqs: int = DEFAULT_NUM_SEQS,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
     use_cards: bool = False,
-    use_beartype: bool = False,
 ):
-    if not use_beartype:
-        from beartype import BeartypeConf
-        from beartype.claw import beartype_package
-        beartype_package('poolparty', conf=BeartypeConf(is_debug=True))
-    
     import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
