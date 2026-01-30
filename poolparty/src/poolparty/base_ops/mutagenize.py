@@ -397,10 +397,13 @@ class MutagenizeOp(Operation):
         wt_bytes_arr: np.ndarray,
         mutation_options_arr: np.ndarray,
         mutation_counts_arr: np.ndarray,
-    ) -> tuple:
-        """Generate random mutation positions and characters (vectorized)."""
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Generate random mutation positions and characters (vectorized).
+        
+        Returns numpy arrays: (positions, wt_bytes, mut_bytes)
+        """
         if num_mutable == 0:
-            return (), (), ()
+            return np.array([], dtype=np.intp), np.array([], dtype=np.uint8), np.array([], dtype=np.uint8)
         
         # Determine number of mutations
         if self.num_mutations is not None:
@@ -408,7 +411,7 @@ class MutagenizeOp(Operation):
         else:
             num_mut = rng.binomial(num_mutable, self.mutation_rate)
             if num_mut == 0:
-                return (), (), ()
+                return np.array([], dtype=np.intp), np.array([], dtype=np.uint8), np.array([], dtype=np.uint8)
         
         # Choose random position indices
         chosen_indices = rng.choice(num_mutable, size=num_mut, replace=False)
@@ -425,21 +428,13 @@ class MutagenizeOp(Operation):
         
         # Sort by position for consistent output (needed for design cards)
         sort_order = np.argsort(positions)
-        positions = positions[sort_order]
-        wt_bytes = wt_bytes[sort_order]
-        mut_bytes = mut_bytes[sort_order]
-        
-        return (
-            tuple(positions.tolist()),
-            tuple(chr(b) for b in wt_bytes),
-            tuple(chr(b) for b in mut_bytes),
-        )
+        return positions[sort_order], wt_bytes[sort_order], mut_bytes[sort_order]
     
     def _apply_mutations_numpy(
         self,
         seq_bytes: np.ndarray,
-        positions: tuple,
-        mut_chars: tuple,
+        positions: np.ndarray,
+        mut_bytes: np.ndarray,
         valid_char_positions_arr: np.ndarray,
     ) -> str:
         """Apply mutations using NumPy for better performance on long sequences."""
@@ -449,10 +444,8 @@ class MutagenizeOp(Operation):
         # Copy the cached array (fast for numpy)
         seq_arr = seq_bytes.copy()
         
-        # Compute raw positions and mutation bytes (vectorized)
-        positions_arr = np.array(positions, dtype=np.intp)
-        raw_positions = valid_char_positions_arr[positions_arr]
-        mut_bytes = np.array([ord(m) for m in mut_chars], dtype=np.uint8)
+        # Compute raw positions (vectorized)
+        raw_positions = valid_char_positions_arr[positions]
         
         # Apply all mutations at once (vectorized)
         seq_arr[raw_positions] = mut_bytes
@@ -484,7 +477,7 @@ class MutagenizeOp(Operation):
         if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode} mode requires RNG - use Party.generate(seed=...)")
-            positions, wt_chars, mut_chars = self._random_mutation(
+            positions, wt_bytes, mut_bytes = self._random_mutation(
                 rng, num_mutable,
                 mutable_positions_arr, wt_bytes_arr,
                 mutation_options_arr, mutation_counts_arr
@@ -510,23 +503,14 @@ class MutagenizeOp(Operation):
             state = 0 if state is None else state
             rel_positions, mut_indices = self._sequential_cache[state % len(self._sequential_cache)]
             
-            # Map relative positions back to logical positions
-            positions = tuple(mutable_positions[p] for p in rel_positions)
-            wt_chars = []
-            mut_chars = []
-            for rel_pos, mut_idx in zip(rel_positions, mut_indices):
-                logical_pos = mutable_positions[rel_pos]
-                raw_pos = valid_char_positions[logical_pos]
-                wt = seq[raw_pos]
-                wt_chars.append(wt)
-                # Use position-specific mutation options
-                mut = mutation_options[rel_pos][mut_idx]
-                mut_chars.append(mut)
-            wt_chars = tuple(wt_chars)
-            mut_chars = tuple(mut_chars)
+            # Map relative positions back to logical positions (as numpy arrays)
+            positions = mutable_positions_arr[np.array(rel_positions, dtype=np.intp)]
+            wt_bytes = wt_bytes_arr[np.array(rel_positions, dtype=np.intp)]
+            mut_bytes = np.array([ord(mutation_options[rel_pos][mut_idx]) 
+                                  for rel_pos, mut_idx in zip(rel_positions, mut_indices)], dtype=np.uint8)
         
         # Apply mutations to sequence using NumPy for performance
-        result_seq = self._apply_mutations_numpy(seq_bytes, positions, mut_chars, valid_char_positions_arr)
+        result_seq = self._apply_mutations_numpy(seq_bytes, positions, mut_bytes, valid_char_positions_arr)
         
         # Build output styles: pass through parent styles (mutagenize preserves length)
         # and add mutation style if _style is set
@@ -534,19 +518,18 @@ class MutagenizeOp(Operation):
         
         if output_style is not None and self._style is not None and len(positions) > 0:
             # Convert logical positions to raw positions for styling (vectorized)
-            positions_arr = np.array(positions, dtype=np.intp)
-            raw_positions = valid_char_positions_arr[positions_arr].astype(np.int64)
+            raw_positions = valid_char_positions_arr[positions].astype(np.int64)
             output_style = output_style.add_style(self._style, raw_positions)
         
         output_seq = Seq(result_seq, output_style)
         
-        from ..party import cards_suppressed
-        if cards_suppressed():
+        # Only convert bytes to chars for design cards (if not suppressed)
+        if self._party.suppress_cards:
             return output_seq, {}
         
         return output_seq, {
-            'positions': positions,
-            'wt_chars': wt_chars,
-            'mut_chars': mut_chars,
+            'positions': tuple(positions.tolist()),
+            'wt_chars': tuple(chr(b) for b in wt_bytes),
+            'mut_chars': tuple(chr(b) for b in mut_bytes),
         }
     

@@ -137,9 +137,8 @@ class FixedOp(Operation):
         if self._pass_through_styles and parents:
             output_style = parents[0].style[:len(result_string)] if len(parents[0]) >= len(result_string) else parents[0].style
         else:
-            from ..utils.style_utils import styles_suppressed
             from ..types import SeqStyle
-            output_style = None if styles_suppressed() else SeqStyle.empty(len(result_string))
+            output_style = None if self._party.suppress_styles else SeqStyle.empty(len(result_string))
         
         output_seq = Seq(result_string, output_style)
         return output_seq, {}
