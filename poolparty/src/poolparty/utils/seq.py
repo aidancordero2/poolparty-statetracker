@@ -404,8 +404,38 @@ class Seq:
         if style is None:
             style = None if styles_suppressed() else SeqStyle.empty(len(string))
         
-        # Parse regions
-        regions = tuple(parsing_utils.find_all_regions(string))
+        # Fast path: no tags possible if no '<' character
+        if '<' not in string:
+            n = len(string)
+            # For tag-free strings: nontag coords == literal coords
+            identity_map = tuple(range(n))
+            
+            # molecular_to_literal: only DNA characters (ACGTacgt)
+            molecular_positions = []
+            for i, c in enumerate(string):
+                if c in dna_utils.VALID_CHARS:
+                    molecular_positions.append(i)
+            molecular_to_literal = tuple(molecular_positions)
+            
+            # literal_to_molecular: reverse mapping (None for non-DNA chars)
+            literal_to_molecular_list = [None] * n
+            for mol_idx, lit_pos in enumerate(molecular_to_literal):
+                literal_to_molecular_list[lit_pos] = mol_idx
+            literal_to_molecular = tuple(literal_to_molecular_list)
+            
+            seq = cls.__new__(cls)
+            object.__setattr__(seq, 'string', string)
+            object.__setattr__(seq, 'style', style)
+            object.__setattr__(seq, '_clean', string)  # No tags to strip
+            object.__setattr__(seq, '_regions', ())    # No regions
+            object.__setattr__(seq, '_nontag_to_literal', identity_map)
+            object.__setattr__(seq, '_molecular_to_literal', molecular_to_literal)
+            object.__setattr__(seq, '_literal_to_nontag', identity_map)
+            object.__setattr__(seq, '_literal_to_molecular', literal_to_molecular)
+            return seq
+        
+        # Parse regions (skip validation since fast path handles tag-free case)
+        regions = tuple(parsing_utils.find_all_regions(string, _skip_validation=True))
         
         # Strip tags to get clean content
         clean = parsing_utils.strip_all_tags(string)

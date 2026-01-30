@@ -34,18 +34,31 @@ class ParsedRegion:
         return len(self.content)
 
 
-def find_all_regions(seq: str) -> list[ParsedRegion]:
+def find_all_regions(seq: str, *, _skip_validation: bool = False) -> list[ParsedRegion]:
     """Find all regions in a sequence.
     
     Returns a list of ParsedRegion objects for each region found.
     Raises ValueError if regions are malformed (unmatched open/close tags).
     Supports nested regions.
+    
+    Parameters
+    ----------
+    seq : str
+        Sequence string to parse.
+    _skip_validation : bool, default=False
+        Internal flag to skip XML validation when input is known valid.
+        Do not use in user-facing code.
     """
-    # Validate structure with stdlib XML parser
-    try:
-        ET.fromstring(f"<_root_>{seq}</_root_>")
-    except ET.ParseError as e:
-        raise ValueError(f"Invalid region syntax: {e}")
+    # Fast path: no tags possible if no '<' character
+    if '<' not in seq:
+        return []
+    
+    # Validate structure with stdlib XML parser (unless skipped)
+    if not _skip_validation:
+        try:
+            ET.fromstring(f"<_root_>{seq}</_root_>")
+        except ET.ParseError as e:
+            raise ValueError(f"Invalid region syntax: {e}")
     
     regions = []
     open_stack = []  # [(name, tag_start, content_start)]
