@@ -46,7 +46,6 @@ workload_tree_of_joins.benchmark_specs = [
 
 
 # Generate test classes for running this file directly with pytest
-from ._utils import collect_local_specs
-from ..benchmark_utils import generate_benchmark_tests
+from ._utils import collect_local_specs, generate_benchmark_tests
 
 globals().update(generate_benchmark_tests(collect_local_specs(globals())))

@@ -9,7 +9,7 @@ Performance profiling suite for poolparty runtime and memory analysis.
 uv sync --group benchmark
 
 # Run all timing benchmarks
-uv run pytest benchmarks/timing/all.py -v
+uv run pytest benchmarks/timing/ -v
 
 # Run specific category
 uv run pytest benchmarks/timing/base_ops.py -v
@@ -21,14 +21,12 @@ uv run pytest benchmarks/timing/base_ops.py -v
 benchmarks/
 ├── timing/                    # Timing benchmarks (self-runnable)
 │   ├── __init__.py            # Auto-discovers modules, exports ALL_WORKLOADS
-│   ├── _utils.py              # Shared utilities
-│   ├── base_ops.py            # mutagenize, shuffle_seq, get_kmers, from_iupac, recombine
-│   ├── scan_ops.py            # deletion_scan, insertion_scan
-│   ├── dag_ops.py             # chain_of_joins, tree_of_joins
-│   ├── examples.py            # mpra_example
-│   └── all.py                 # Aggregates all benchmarks
-├── benchmark_utils.py         # Utilities for generating benchmark tests
-├── run_benchmarks.py          # Run benchmarks and export to CSV
+│   ├── _utils.py              # Shared utilities and test generation
+│   ├── test_base_ops.py       # mutagenize, shuffle_seq, get_kmers, from_iupac, recombine
+│   ├── test_scan_ops.py       # deletion_scan, insertion_scan
+│   ├── test_dag_ops.py        # chain_of_joins, tree_of_joins
+│   └── test_examples.py       # mpra_example
+├── conftest.py                # Pytest hooks for -T (table) and -O (CSV output)
 ├── run_profile.py             # CLI for ad-hoc profiling
 ├── test_memory.py             # Memory profiling using tracemalloc
 └── test_scalability.py        # Scalability tests for various parameters
@@ -40,29 +38,38 @@ Each file in `timing/` is self-runnable with pytest:
 
 ```bash
 # Run specific category
-uv run pytest benchmarks/timing/base_ops.py -v      # Base operations
-uv run pytest benchmarks/timing/scan_ops.py -v      # Scan operations
-uv run pytest benchmarks/timing/dag_ops.py -v       # DAG operations
-uv run pytest benchmarks/timing/examples.py -v      # Complex examples
+uv run pytest benchmarks/timing/test_base_ops.py -v      # Base operations
+uv run pytest benchmarks/timing/test_scan_ops.py -v      # Scan operations
+uv run pytest benchmarks/timing/test_dag_ops.py -v       # DAG operations
+uv run pytest benchmarks/timing/test_examples.py -v      # Complex examples
 
 # Run ALL timing benchmarks
-uv run pytest benchmarks/timing/all.py -v
+uv run pytest benchmarks/timing/ -v
 
 # Run specific test class
-uv run pytest benchmarks/timing/base_ops.py::TestMutagenize -v
+uv run pytest benchmarks/timing/test_base_ops.py::TestMutagenize -v
 
 # Disable actual benchmarking (just verify tests work)
-uv run pytest benchmarks/timing/all.py --benchmark-disable -v
+uv run pytest benchmarks/timing/ --benchmark-disable -v
+
+# Print results as formatted table
+uv run pytest benchmarks/timing/test_base_ops.py::TestShuffleSeq -v -T
+
+# Save results to CSV file
+uv run pytest benchmarks/timing/test_base_ops.py -v -O results.csv
+
+# Both table output and CSV file
+uv run pytest benchmarks/timing/test_base_ops.py -v -T -O results.csv
 ```
 
 ### Available Workloads
 
 | File | Workloads | Test Classes |
 |------|-----------|--------------|
-| `base_ops.py` | mutagenize, shuffle_seq, get_kmers, from_iupac, recombine | TestMutagenize, TestShuffleSeq, TestGetKmers, TestFromIupac, TestRecombine |
-| `scan_ops.py` | deletion_scan, insertion_scan | TestDeletionScan, TestInsertionScan |
-| `dag_ops.py` | chain_of_joins, tree_of_joins | TestDAGSize |
-| `examples.py` | mpra_example | TestMPRAExample |
+| `test_base_ops.py` | mutagenize, shuffle_seq, get_kmers, from_iupac, recombine | TestMutagenize, TestShuffleSeq, TestGetKmers, TestFromIupac, TestRecombine |
+| `test_scan_ops.py` | deletion_scan, insertion_scan | TestDeletionScan, TestInsertionScan |
+| `test_dag_ops.py` | chain_of_joins, tree_of_joins | TestDAGSize |
+| `test_examples.py` | mpra_example | TestMPRAExample |
 
 ### Adding New Benchmarks
 
@@ -86,20 +93,10 @@ The test classes are auto-generated when the module is imported.
 
 ## Export Benchmarks to CSV
 
-Use `run_benchmarks.py` to run benchmarks and export results:
+Use pytest with `-O` to export results:
 
 ```bash
-# Run and save to CSV
-uv run python benchmarks/run_benchmarks.py timing/base_ops.py
-
-# Print formatted table to stdout
-uv run python benchmarks/run_benchmarks.py timing/base_ops.py --table
-
-# Run specific test class
-uv run python benchmarks/run_benchmarks.py timing/base_ops.py -c TestMutagenize --table
-
-# Specify custom output path
-uv run python benchmarks/run_benchmarks.py timing/all.py -o results.csv
+uv run pytest benchmarks/timing/test_base_ops.py -v -O results.csv
 ```
 
 The CSV contains: `test_name`, `mean`, `stddev`, `min`, `max`, `rounds`.

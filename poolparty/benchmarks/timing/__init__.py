@@ -1,7 +1,6 @@
 """Timing benchmarks for poolparty profiling.
 
-This module auto-discovers all workload_* functions from public modules
-and builds ALL_WORKLOADS and collect_benchmark_specs() automatically.
+Auto-discovers workload_* functions and exports ALL_WORKLOADS for run_profile.py.
 """
 import importlib
 import pkgutil
@@ -22,17 +21,3 @@ for mod in _workload_modules:
             fn = getattr(mod, name)
             key = name.replace('workload_', '')
             ALL_WORKLOADS[key] = fn
-
-
-def collect_benchmark_specs() -> dict:
-    """Collect benchmark specs from all workload functions."""
-    specs = {}
-    for name, workload_fn in ALL_WORKLOADS.items():
-        if hasattr(workload_fn, 'benchmark_specs'):
-            for spec in workload_fn.benchmark_specs:
-                test_class, param, values = spec[:3]
-                constants = spec[3] if len(spec) > 3 else {}
-                if test_class not in specs:
-                    specs[test_class] = []
-                specs[test_class].append((workload_fn, param, values, constants, True))
-    return specs
