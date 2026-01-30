@@ -1,7 +1,9 @@
 """Lower operation - convert sequence characters to lowercase."""
+
 from numbers import Real
-from ..types import Pool_type, Union, Optional, RegionType, beartype
+
 from ..pool import Pool
+from ..types import Optional, Pool_type, RegionType, Union, beartype
 from ..utils.parsing_utils import transform_nontag_chars
 
 
@@ -46,12 +48,13 @@ def lower(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
-        _factory_name='lower',
+        _factory_name="lower",
     )
-    
+
     # Apply style if specified
     if style is not None:
         from .style import stylize
+
         result_pool = stylize(result_pool, style=style)
-    
+
     return result_pool

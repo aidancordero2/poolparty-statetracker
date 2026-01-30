@@ -1,27 +1,30 @@
 """RegionScan operation - insert XML region tags at scanning positions."""
-from poolparty.types import Union, Optional, Literal, RegionType, Seq, SeqStyle
-from numbers import Integral, Real
+
+from numbers import Real
+
 import numpy as np
 
-from ..utils.parsing_utils import build_region_tags, TAG_PATTERN, get_nontag_positions
-from ..utils import validate_positions, build_scan_cache
+from poolparty.types import Literal, Optional, RegionType, Seq, SeqStyle, Union
+
 from ..operation import Operation
+from ..utils import build_scan_cache, validate_positions
+from ..utils.parsing_utils import build_region_tags, get_nontag_positions
 
 # Type aliases
 PositionsType = Union[list[int], tuple[int, ...], slice, None]
-ModeType = Literal['random', 'sequential']
-StrandType = Literal['+', '-', 'both']
+ModeType = Literal["random", "sequential"]
+StrandType = Literal["+", "-", "both"]
 
 
 def region_scan(
     pool,
-    region: str = 'region',
+    region: str = "region",
     positions: PositionsType = None,
     region_constraint: RegionType = None,
     remove_tags: Optional[bool] = None,
     region_length: int = 0,
     prefix: Optional[str] = None,
-    mode: str = 'random',
+    mode: str = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
@@ -55,20 +58,20 @@ def region_scan(
         A Pool yielding sequences with the region tags inserted at selected positions.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..pool import Pool
     from ..party import get_active_party
-    
+    from ..pool import Pool
+
     # Convert string input to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
-    
+
     # Validate region_length
     if region_length < 0:
         raise ValueError(f"region_length must be >= 0, got {region_length}")
-    
+
     # Register the region with the Party
     party = get_active_party()
     registered_region = party.register_region(region, region_length)
-    
+
     op = RegionScanOp(
         parent_pool=pool,
         region_name=region,
@@ -84,18 +87,27 @@ def region_scan(
         _factory_name=_factory_name,
     )
     result_pool = Pool(operation=op)
-    
+
     # Add the region to the pool's region set
     result_pool.add_region(registered_region)
-    
+
     return result_pool
 
 
 class RegionScanOp(Operation):
     """Insert XML region tags at scanning positions."""
+
     factory_name = "region_scan"
-    design_card_keys = ['position_index', 'start', 'stop', 'length', 'region_name', 'region_content', 'region_seq']
-    
+    design_card_keys = [
+        "position_index",
+        "start",
+        "stop",
+        "length",
+        "region_name",
+        "region_content",
+        "region_seq",
+    ]
+
     def __init__(
         self,
         parent_pool,
@@ -103,10 +115,10 @@ class RegionScanOp(Operation):
         positions: PositionsType = None,
         region: RegionType = None,
         remove_tags: Optional[bool] = None,
-        spacer_str: str = '',
+        spacer_str: str = "",
         region_length: int = 0,
         prefix: Optional[str] = None,
-        mode: str = 'random',
+        mode: str = "random",
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -114,8 +126,7 @@ class RegionScanOp(Operation):
     ) -> None:
         """Initialize RegionScanOp."""
         from ..party import get_active_party
-        
-        
+
         self.region_name = region_name
         self._positions = positions
         self._mode = mode
@@ -123,7 +134,7 @@ class RegionScanOp(Operation):
         self._region = region  # Store early for logging
         self._valid_positions = None
         self._sequential_cache = None
-        
+
         # Determine effective seq_length for cache building:
         # If region is a region name, use the region's registered length
         # Otherwise, use the parent pool's seq_length
@@ -137,23 +148,23 @@ class RegionScanOp(Operation):
                 self._seq_length = parent_pool.seq_length
         else:
             self._seq_length = parent_pool.seq_length
-        
+
         # Set factory name if provided
         if _factory_name is not None:
             self.factory_name = _factory_name
- 
+
         # Calculate number of states
-        if mode == 'sequential':
+        if mode == "sequential":
             if self._seq_length is not None:
                 num_states = self._build_caches()
             else:
                 num_states = 1
-        elif mode == 'random':
+        elif mode == "random":
             # num_states stays None for pure random mode
             pass
         else:
             num_states = 1
-        
+
         # Initialize as Operation
         super().__init__(
             parent_pools=[parent_pool],
@@ -166,7 +177,7 @@ class RegionScanOp(Operation):
             region=region,
             remove_tags=remove_tags,
         )
-    
+
     def _build_caches(self) -> int:
         """Build caches for sequential enumeration based on seq_length."""
         return build_scan_cache(
@@ -175,17 +186,17 @@ class RegionScanOp(Operation):
             positions=self._positions,
             error_context="region tag insertion",
         )
-    
+
     def _get_valid_region_positions(self, seq: str) -> tuple[list[int], list[int]]:
         """Get valid region tag insertion positions, excluding tag interiors.
-        
+
         Returns tuple of (valid_nontag_indices, nontag_positions) where:
         - valid_nontag_indices: indices into nontag_positions that are valid start positions
         - nontag_positions: literal positions of all non-tag characters
         """
         # Get positions not inside existing tags
         nontag_positions = get_nontag_positions(seq)
-        
+
         # For region tags, ensure there's room for region_length bases
         if self._region_length > 0:
             # Valid indices are those where we have room for region_length consecutive non-tag chars
@@ -197,7 +208,7 @@ class RegionScanOp(Operation):
         else:
             # For zero-length regions, all positions are valid plus end (len of seq)
             all_valid_indices = list(range(len(nontag_positions) + 1))
-        
+
         # Apply user position filter
         if self._positions is not None:
             indices = validate_positions(
@@ -207,24 +218,24 @@ class RegionScanOp(Operation):
             )
             filtered_indices = [all_valid_indices[i] for i in indices]
             return filtered_indices, nontag_positions
-        
+
         return all_valid_indices, nontag_positions
-    
+
     def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return Seq with region tags inserted and design card."""
-        
+
         seq = parents[0].string
-        
+
         valid_indices, nontag_positions = self._get_valid_region_positions(seq)
         if len(valid_indices) == 0:
             raise ValueError("No valid positions for region tag insertion")
-        
+
         # Select position
-        if self.mode in ('random', 'hybrid'):
+        if self.mode in ("random", "hybrid"):
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
             position_index = int(rng.integers(0, len(valid_indices)))
@@ -232,12 +243,12 @@ class RegionScanOp(Operation):
             state = self.state.value
             state = 0 if state is None else state
             position_index = state % len(valid_indices)
-        
+
         # Build region tags - extract content using non-tag indices
         nontag_idx = valid_indices[position_index]
         if self._region_length > 0:
             # Extract content from non-tag characters only
-            content = ''.join(
+            content = "".join(
                 seq[nontag_positions[i]]
                 for i in range(nontag_idx, nontag_idx + self._region_length)
             )
@@ -253,11 +264,11 @@ class RegionScanOp(Operation):
                 end_literal = nontag_positions[-1] + 1 if nontag_positions else len(seq)
             marked_seq = seq[start_literal:end_literal]
         else:
-            region_tag = build_region_tags(self.region_name, '')
+            region_tag = build_region_tags(self.region_name, "")
             start = nontag_idx
             stop = nontag_idx
-            marked_seq = ''
-        
+            marked_seq = ""
+
         # Insert tags at position
         if self._region_length > 0:
             # Region tags: replace content with tags
@@ -271,10 +282,10 @@ class RegionScanOp(Operation):
                 # One past the last non-tag character (preserves trailing tags)
                 end_literal = nontag_positions[-1] + 1 if nontag_positions else len(seq)
             result_seq = seq[:start_literal] + region_tag + seq[end_literal:]
-            
+
             # Adjust parent styles for region tag insertion
             # Opening tag length is from start of region_tag to first '>' + 1
-            opening_tag_end = region_tag.index('>') + 1
+            opening_tag_end = region_tag.index(">") + 1
             opening_tag_len = opening_tag_end
             # Closing tag length is the rest
             closing_tag_len = len(region_tag) - opening_tag_len - len(content)
@@ -286,44 +297,48 @@ class RegionScanOp(Operation):
             else:
                 raw_position = len(seq)  # Insert at end
             result_seq = seq[:raw_position] + region_tag + seq[raw_position:]
-        
+
         # Adjust parent styles to account for tag insertion
         seq_len = len(seq)
         input_style = parents[0].style
-        
+
         if input_style is None:
             # Styles suppressed
             output_style = None
         elif self._region_length > 0:
             # Region tags: split and reassemble with tag spacers
-            output_style = SeqStyle.join([
-                input_style[:start_literal],              # Before tag
-                SeqStyle.empty(opening_tag_len),          # Opening tag spacer
-                input_style[start_literal:end_literal],   # Inside region
-                SeqStyle.empty(closing_tag_len),          # Closing tag spacer
-                input_style[end_literal:],                # After tag
-            ])
+            output_style = SeqStyle.join(
+                [
+                    input_style[:start_literal],  # Before tag
+                    SeqStyle.empty(opening_tag_len),  # Opening tag spacer
+                    input_style[start_literal:end_literal],  # Inside region
+                    SeqStyle.empty(closing_tag_len),  # Closing tag spacer
+                    input_style[end_literal:],  # After tag
+                ]
+            )
         else:
             # Zero-length region: insert tag spacer at position
-            output_style = SeqStyle.join([
-                input_style[:raw_position],              # Before tag
-                SeqStyle.empty(len(region_tag)),         # Tag spacer
-                input_style[raw_position:],              # After tag
-            ])
-        
+            output_style = SeqStyle.join(
+                [
+                    input_style[:raw_position],  # Before tag
+                    SeqStyle.empty(len(region_tag)),  # Tag spacer
+                    input_style[raw_position:],  # After tag
+                ]
+            )
+
         output_seq = Seq(result_seq, output_style)
-        
+
         from ..party import cards_suppressed
+
         if cards_suppressed():
             return output_seq, {}
-        
+
         return output_seq, {
-            'position_index': position_index,
-            'start': start,
-            'stop': stop,
-            'length': self._region_length,
-            'region_name': self.region_name,
-            'region_content': marked_seq,
-            'region_seq': region_tag,
+            "position_index": position_index,
+            "start": start,
+            "stop": stop,
+            "length": self._region_length,
+            "region_name": self.region_name,
+            "region_content": marked_seq,
+            "region_seq": region_tag,
         }
-    

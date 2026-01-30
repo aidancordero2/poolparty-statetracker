@@ -1,10 +1,13 @@
 """FromSeqs operation - create a pool from a list of sequences."""
+
 from numbers import Real
-from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype, Seq
+
+import numpy as np
+
 from ..operation import Operation
 from ..pool import Pool
+from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Sequence, Union, beartype
 from ..utils import dna_utils
-import numpy as np
 
 
 @beartype
@@ -15,7 +18,7 @@ def from_seqs(
     style: Optional[str] = None,
     seq_names: Optional[Sequence[str]] = None,
     prefix: Optional[str] = None,
-    mode: ModeType = 'random',
+    mode: ModeType = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
@@ -51,39 +54,48 @@ def from_seqs(
     -------
     Pool_type
         A Pool object yielding the provided sequences using the specified selection mode.
-    
+
     Raises
     ------
     ValueError
         If pool is provided without region.
     """
     from ..fixed_ops.from_seq import from_seq
+
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
-    op = FromSeqsOp(seqs, parent_pool=pool_obj, region=region,
-                    style=style,
-                    seq_names=seq_names, prefix=prefix,
-                    mode=mode, num_states=num_states,
-                    name=None, iter_order=iter_order,
-                    _factory_name=_factory_name)
+    op = FromSeqsOp(
+        seqs,
+        parent_pool=pool_obj,
+        region=region,
+        style=style,
+        seq_names=seq_names,
+        prefix=prefix,
+        mode=mode,
+        num_states=num_states,
+        name=None,
+        iter_order=iter_order,
+        _factory_name=_factory_name,
+    )
     result_pool = Pool(operation=op)
     return result_pool
 
 
 class FromSeqsOp(Operation):
     """Create a pool from a list of sequences."""
+
     factory_name = "from_seqs"
-    design_card_keys = ['seq_name', 'seq_index']
-    
+    design_card_keys = ["seq_name", "seq_index"]
+
     def __init__(
         self,
         seqs: Sequence[str],
         parent_pool: Optional[Pool] = None,
         region: RegionType = None,
-        spacer_str: str = '',
+        spacer_str: str = "",
         style: Optional[str] = None,
         seq_names: Optional[Sequence[str]] = None,
         prefix: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -91,29 +103,30 @@ class FromSeqsOp(Operation):
     ) -> None:
         """Initialize FromSeqsOp."""
         from ..party import get_active_party
+
         party = get_active_party()
         if party is None:
             raise RuntimeError(
                 "from_seqs requires an active Party context. "
                 "Use 'with pp.Party() as party:' to create one."
             )
-        
+
         # Set factory name if provided
         if _factory_name is not None:
             self.factory_name = _factory_name
- 
+
         # Validate parent_pool/region combination
         if parent_pool is not None and region is None:
             raise ValueError(
                 "region is required when parent_pool is provided. "
                 "Specify which region of parent_pool to replace with the selected sequence."
             )
-        
+
         self._style = style
-        
+
         if len(seqs) == 0:
             raise ValueError("seqs must not be empty")
-        if mode == 'fixed' and len(seqs) != 1:
+        if mode == "fixed" and len(seqs) != 1:
             raise ValueError("mode='fixed' requires exactly 1 sequence")
         if seq_names is not None and prefix is not None:
             raise ValueError("Cannot specify both seq_names and prefix")
@@ -125,26 +138,26 @@ class FromSeqsOp(Operation):
         self._current_idx: int = 0
         if len(self.seq_names) != len(self.seqs):
             raise ValueError("seq_names must have same length as seqs")
-        
+
         # Determine num_states based on mode
         natural_num_states = None
         match mode:
-            case 'sequential':
+            case "sequential":
                 # Natural count is the number of sequences
                 natural_num_states = len(seqs)
                 # Use user-provided num_states if given, else natural count
                 if num_states is None:
                     num_states = natural_num_states
-            case 'random':
+            case "random":
                 # num_states stays as provided (or None for pure random mode)
                 pass
             case _:
                 num_states = 1
-        
+
         # Use lengths without markers (includes all chars except marker tags)
         lengths = [dna_utils.get_length_without_tags(s) for s in self.seqs]
         seq_length = lengths[0] if all(L == lengths[0] for L in lengths) else None
-        
+
         parent_pools_list = [parent_pool] if parent_pool is not None else []
         super().__init__(
             parent_pools=parent_pools_list,
@@ -157,16 +170,18 @@ class FromSeqsOp(Operation):
             region=region,
             _natural_num_states=natural_num_states,
         )
-    
+
     def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return Seq and design card."""
-        if self.mode == 'random':
+        if self.mode == "random":
             if rng is None:
-                raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
+                raise RuntimeError(
+                    f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)"
+                )
             idx = int(rng.integers(0, len(self.seqs)))
         elif self.state is None:
             # Fixed mode - always use index 0
@@ -175,29 +190,30 @@ class FromSeqsOp(Operation):
             # Sequential mode - use state value (0 when inactive)
             state = self.state.value
             idx = (0 if state is None else state) % len(self.seqs)
-        
+
         # Store index for name computation
         self._current_idx = idx
-        
+
         seq_string = self.seqs[idx]
-        
+
         # Apply style to all positions if specified
-        from ..utils.style_utils import SeqStyle, styles_suppressed
         from ..party import cards_suppressed
+        from ..utils.style_utils import SeqStyle, styles_suppressed
+
         if styles_suppressed():
             output_seq = Seq(seq_string, None)
         else:
             output_style = SeqStyle.full(len(seq_string), self._style)
             output_seq = Seq(seq_string, output_style)
-        
+
         if cards_suppressed():
             return output_seq, {}
-        
+
         return output_seq, {
-            'seq_name': self.seq_names[int(idx)],
-            'seq_index': int(idx),
+            "seq_name": self.seq_names[int(idx)],
+            "seq_index": int(idx),
         }
-    
+
     def compute_name_contributions(self, global_state=None) -> list[str]:
         """Compute name contributions - explicit seq_names or prefix pattern."""
         # Check if state is inactive (for branch selection)
@@ -208,10 +224,10 @@ class FromSeqsOp(Operation):
             return [self.seq_names[self._current_idx]]
         # Otherwise use default prefix logic from base class
         return super().compute_name_contributions(global_state)
-    
+
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         params = super()._get_copy_params()
         # Only include seq_names if explicitly set by user
-        params['seq_names'] = self.seq_names if self._seq_names_explicit else None
+        params["seq_names"] = self.seq_names if self._seq_names_explicit else None
         return params

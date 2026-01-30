@@ -1,7 +1,9 @@
 """ShuffleOp - Randomly shuffle state values given a seed."""
-from ..imports import beartype, Optional, Integral, Sequence, State_type
-from ..operation import Operation
+
 import random
+
+from ..imports import Integral, Optional, Sequence, State_type, beartype
+from ..operation import Operation
 
 
 @beartype
@@ -31,6 +33,7 @@ def shuffle(
         A State whose value order corresponds to a permutation of the parent's values.
     """
     from ..state import State
+
     result = State(
         _parents=(state,),
         _op=ShuffleOp(state.num_values, seed=seed, permutation=permutation),
@@ -42,7 +45,7 @@ def shuffle(
 @beartype
 class ShuffleOp(Operation):
     """Randomly shuffle state values using a deterministic seed."""
-    
+
     def __init__(
         self,
         num_parent_values: Integral,
@@ -72,11 +75,13 @@ class ShuffleOp(Operation):
                 self.seed = None
                 self.permutation = tuple(permutation)
             case (_, _):
-                raise ValueError("Cannot specify both 'seed' and 'permutation'; they are mutually exclusive.")
-    
+                raise ValueError(
+                    "Cannot specify both 'seed' and 'permutation'; they are mutually exclusive."
+                )
+
     def compute_num_states(self, parent_num_values):
         return parent_num_values[0]
-    
+
     def decompose(self, value, parent_num_values):
         if value is None:
             return (None,)

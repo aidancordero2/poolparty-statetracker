@@ -1,10 +1,11 @@
 """Region operation mixins for Pool class."""
-from ..types import Pool_type, Optional, Real, Callable, Union, beartype
+
+from ..types import Callable, Optional, Pool_type, Real, Union
 
 
 class RegionOpsMixin:
     """Mixin providing region operation methods for Pool."""
-    
+
     def apply_at_region(
         self,
         region_name: str,
@@ -13,6 +14,7 @@ class RegionOpsMixin:
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..region_ops.apply_at_region import apply_at_region
+
         return apply_at_region(
             self,
             region_name,
@@ -20,7 +22,7 @@ class RegionOpsMixin:
             remove_tags=remove_tags,
             iter_order=iter_order,
         )
-    
+
     def insert_tags(
         self,
         region_name: str,
@@ -29,6 +31,7 @@ class RegionOpsMixin:
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..region_ops.insert_tags import insert_tags
+
         return insert_tags(
             self,
             region_name,
@@ -36,7 +39,7 @@ class RegionOpsMixin:
             stop,
             iter_order=iter_order,
         )
-    
+
     def remove_tags(
         self,
         region_name: str,
@@ -44,13 +47,14 @@ class RegionOpsMixin:
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..region_ops.remove_tags import remove_tags
+
         return remove_tags(
             self,
             region_name,
             keep_content,
             iter_order=iter_order,
         )
-    
+
     def replace_region(
         self,
         content_pool: Union[Pool_type, str],
@@ -58,18 +62,19 @@ class RegionOpsMixin:
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..region_ops.replace_region import replace_region
+
         return replace_region(
             self,
             content_pool,
             region_name,
             iter_order=iter_order,
         )
-    
+
     def clear_tags(self, **kwargs) -> Pool_type:
         """Remove all region tags from sequences, keeping content."""
         from ..fixed_ops.fixed import fixed_operation
         from ..utils.parsing_utils import strip_all_tags
-        
+
         result = fixed_operation(
             parent_pools=[self],
             seq_from_seqs_fn=lambda seqs: strip_all_tags(seqs[0]),

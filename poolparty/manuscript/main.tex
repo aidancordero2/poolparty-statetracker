@@ -135,7 +135,7 @@ The architecture is designed for extensibility. New Pool types can be created by
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{fig1.png}
-\caption{\textbf{Overview of PoolParty architecture and capabilities.} 
+\caption{\textbf{Overview of PoolParty architecture and capabilities.}
 \textbf{(A)} Pool abstractions. Source Pools (yellow) generate sequences de novo; Modifier Pools (blue) transform upstream sequences at either the nucleotide level or in an ORF-aware (codon-level) manner. Composition operators (\texttt{+}, \texttt{*}, \texttt{[]}) combine Pools algebraically.
 \textbf{(B)} Directed acyclic computation graph. Pools compose into a DAG with source Pools at the leaves, modifier Pools as intermediate nodes, and the composite Pool at the root.
 \textbf{(C)} Region-specific and multi-stage transformations. A three-region construct applies different Pool types to each region: RandomMutationPool introduces point mutations in Region 1 (red highlights), InsertionScanPool combined with MotifPool inserts motifs in Region 2, and BarcodePool appends unique barcodes in Region 3 (green). Calling \texttt{pool.generate\_seqs} produces the enumerated library.
@@ -148,7 +148,7 @@ The architecture is designed for extensibility. New Pool types can be created by
 \begin{figure*}[t]
     \centering
     \includegraphics[width=6.5in]{fig3.png}
-    \caption{\textbf{Lead sentence} 
+    \caption{\textbf{Lead sentence}
     \textbf{(A)} Blots}
     \label{fig:application}
 \end{figure*}
@@ -166,10 +166,10 @@ Looking forward, we envision several extensions. Integration with constraint sol
 In summary, PoolParty transforms oligonucleotide pool design from an error-prone, ad hoc process into a structured, transparent, and reproducible workflow. We anticipate that it will accelerate the design and execution of MPRAs, DMS experiments, and other high-throughput functional genomics assays.
 
 \section{Competing interests}
-The authors declare no competing interests. 
+The authors declare no competing interests.
 
 \section{Author contributions statement}
-Z.L concieved the project. J.B.K designed the project, wrote the software, and wrote the manuscript. J.B.K supervised the research. 
+Z.L concieved the project. J.B.K designed the project, wrote the software, and wrote the manuscript. J.B.K supervised the research.
 
 \section{Acknowledgments}
 This work was supported in part by: NIH grants R01HG011787 (J.B.K, Z.L.). Computational equiptment was supported by NIH grant S10OD028632.

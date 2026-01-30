@@ -43,6 +43,6 @@ Key parameters:
 - `old_string`: text to replace (empty for new cells)
 - `new_string`: replacement text or new cell content
 
-To delete cell content, pass empty string as `new_string`. 
+To delete cell content, pass empty string as `new_string`.
 
 To run notebooks: `uv run jupyter nbconvert --to notebook --execute <notebook.ipynb> --inplace`

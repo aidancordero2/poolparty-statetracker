@@ -1,7 +1,9 @@
 """Sync operation - synchronize pools to iterate in lockstep."""
+
 import statetracker as st
-from ..types import Optional, Sequence, beartype
+
 from ..pool import Pool
+from ..types import Sequence, beartype
 
 
 @beartype

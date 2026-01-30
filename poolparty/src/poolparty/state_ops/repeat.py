@@ -1,9 +1,12 @@
 """Repeat operation - repeat a pool's states n times."""
+
 from numbers import Real
-from ..types import Pool_type, Optional, beartype, Seq
+
+import numpy as np
+
 from ..operation import Operation
 from ..pool import Pool
-import numpy as np
+from ..types import Optional, Pool_type, Seq, beartype
 
 
 @beartype
@@ -40,9 +43,10 @@ def repeat(
 
 class RepeatOp(Operation):
     """Repeat a pool's states n times."""
+
     factory_name = "repeat"
-    design_card_keys = ['repeat_index']
-    
+    design_card_keys = ["repeat_index"]
+
     def __init__(
         self,
         pool: Pool_type,
@@ -58,13 +62,13 @@ class RepeatOp(Operation):
         super().__init__(
             parent_pools=[pool],
             num_states=times,
-            mode='sequential',
+            mode="sequential",
             seq_length=pool.seq_length,
             name=name,
             iter_order=iter_order,
             prefix=prefix,
         )
-    
+
     def _compute_core(
         self,
         parents: list[Seq],
@@ -72,11 +76,11 @@ class RepeatOp(Operation):
     ) -> tuple[Seq, dict]:
         """Return parent Seq and design card."""
         from ..party import cards_suppressed
-        
+
         state = self.state.value
         repeat_index = 0 if state is None else state
-        
+
         # Pass through parent Seq
         if cards_suppressed():
             return parents[0], {}
-        return parents[0], {'repeat_index': repeat_index}
+        return parents[0], {"repeat_index": repeat_index}

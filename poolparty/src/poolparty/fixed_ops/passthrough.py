@@ -1,8 +1,10 @@
 """Passthrough operation - pass sequence unchanged, optionally contributing custom names."""
+
 from numbers import Real
-from ..types import Optional, Callable, beartype
+
 from ..operation import Operation
 from ..pool import Pool
+from ..types import Callable, Optional, beartype
 
 
 @beartype
@@ -13,7 +15,7 @@ def passthrough(
     _factory_name: Optional[str] = None,
 ) -> Pool:
     """Pass through sequence unchanged, optionally contributing custom names.
-    
+
     Parameters
     ----------
     pool : Pool
@@ -24,7 +26,7 @@ def passthrough(
         Iteration order priority for the Operation.
     _factory_name : Optional[str], default=None
         Sets default name of the resulting operation.
-    
+
     Returns
     -------
     Pool
@@ -36,9 +38,10 @@ def passthrough(
 
 class PassthroughOp(Operation):
     """Pass through sequence unchanged, optionally contributing custom names."""
+
     factory_name = "passthrough"
     design_card_keys = []
-    
+
     def __init__(
         self,
         parent_pool: Pool,
@@ -51,15 +54,15 @@ class PassthroughOp(Operation):
         self._name_fn = _name_fn
         super().__init__(
             parent_pools=[parent_pool],
-            mode='fixed',
+            mode="fixed",
             seq_length=parent_pool.seq_length,
             iter_order=iter_order,
         )
-    
+
     def _compute_core(self, parents, rng=None):
         """Pass through the parent sequence unchanged."""
         return parents[0], {}
-    
+
     def compute_name_contributions(self, global_state=None) -> list[str]:
         """Return custom name contributions if _name_fn is set."""
         if self._name_fn is not None:

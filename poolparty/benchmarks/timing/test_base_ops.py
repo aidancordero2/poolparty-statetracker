@@ -1,19 +1,23 @@
 """Base operation workloads for poolparty benchmarking."""
+
 from typing import Literal
-from ._utils import make_sequence, DEFAULT_NUM_SEQS, DEFAULT_SEQ_LEN
 
 # Pre-warm imports before profiling
 import poolparty as pp
+
+from ._utils import DEFAULT_NUM_SEQS, DEFAULT_SEQ_LEN, make_sequence
+
 pp.init()
 
-# uv run python poolparty/benchmarks/run_benchmarks.py benchmark.py -c TestMutagenize -t    
+# uv run python poolparty/benchmarks/run_benchmarks.py benchmark.py -c TestMutagenize -t
+
 
 def workload_mutagenize(
     seq_len: int = DEFAULT_SEQ_LEN,
     mut_rate: float = None,
     num_mut: int = None,
     num_seqs: int = DEFAULT_NUM_SEQS,
-    mode: Literal['random', 'sequential'] = 'random',
+    mode: Literal["random", "sequential"] = "random",
     use_styles: bool = False,
     use_cards: bool = False,
 ):
@@ -22,9 +26,10 @@ def workload_mutagenize(
     pp.toggle_cards(on=use_cards)
     seq = make_sequence(seq_len)
     if num_mut is None and mut_rate is None:
-        num_mut = 2 # Default value
+        num_mut = 2  # Default value
     pool = pp.mutagenize(seq, mutation_rate=mut_rate, num_mutations=num_mut, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
+
 
 workload_mutagenize.benchmark_specs = [
     ("TestMutagenize", "num_mut", [1, 3, 10, 30, 100]),
@@ -36,7 +41,7 @@ workload_mutagenize.benchmark_specs = [
 def workload_shuffle_seq(
     seq_len: int = DEFAULT_SEQ_LEN,
     num_seqs: int = DEFAULT_NUM_SEQS,
-    mode: Literal['random', 'sequential'] = 'random',
+    mode: Literal["random", "sequential"] = "random",
     use_styles: bool = False,
     use_cards: bool = False,
 ):
@@ -47,6 +52,7 @@ def workload_shuffle_seq(
     pool = pp.shuffle_seq(seq, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
 
+
 workload_shuffle_seq.benchmark_specs = [
     ("TestShuffleSeq", "seq_len", [10, 30, 100, 300, 1000]),
 ]
@@ -55,7 +61,7 @@ workload_shuffle_seq.benchmark_specs = [
 def workload_get_kmers(
     kmer_len: int = 5,
     num_seqs: int = DEFAULT_NUM_SEQS,
-    mode: Literal['random', 'sequential'] = 'random',
+    mode: Literal["random", "sequential"] = "random",
     use_styles: bool = False,
     use_cards: bool = False,
 ):
@@ -65,6 +71,7 @@ def workload_get_kmers(
     pool = pp.get_kmers(length=kmer_len, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
 
+
 workload_get_kmers.benchmark_specs = [
     ("TestGetKmers", "kmer_len", [1, 3, 10, 30, 100]),
 ]
@@ -73,16 +80,17 @@ workload_get_kmers.benchmark_specs = [
 def workload_from_iupac(
     seq_len: int = 5,
     num_seqs: int = DEFAULT_NUM_SEQS,
-    mode: Literal['random', 'sequential'] = 'random',
+    mode: Literal["random", "sequential"] = "random",
     use_styles: bool = False,
     use_cards: bool = False,
 ):
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
-    seq = 'N'*seq_len
+    seq = "N" * seq_len
     pool = pp.from_iupac(iupac_seq=seq, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
+
 
 workload_from_iupac.benchmark_specs = [
     ("TestFromIupac", "seq_len", [1, 3, 10, 30, 100]),
@@ -94,7 +102,7 @@ def workload_recombine(
     num_breakpoints: int = 3,
     num_sources: int = 4,
     num_seqs: int = DEFAULT_NUM_SEQS,
-    mode: Literal['random', 'sequential'] = 'random',
+    mode: Literal["random", "sequential"] = "random",
     use_styles: bool = False,
     use_cards: bool = False,
 ):
@@ -105,6 +113,7 @@ def workload_recombine(
     sources = [make_sequence(seq_len) for _ in range(num_sources)]
     pool = pp.recombine(sources=sources, num_breakpoints=num_breakpoints, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
+
 
 workload_recombine.benchmark_specs = [
     ("TestRecombine", "seq_len", [10, 30, 100, 300, 1000]),

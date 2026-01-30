@@ -1,10 +1,21 @@
 """Scan operation mixins for Pool class."""
-from ..types import Pool_type, RegionType, Optional, Real, Integral, ModeType, beartype, Sequence, Union, PositionsType
+
+from ..types import (
+    Integral,
+    ModeType,
+    Optional,
+    Pool_type,
+    PositionsType,
+    Real,
+    RegionType,
+    Sequence,
+    Union,
+)
 
 
 class ScanOpsMixin:
     """Mixin providing scan operation methods for Pool."""
-    
+
     def mutagenize_scan(
         self,
         mutagenize_length: Integral,
@@ -13,11 +24,12 @@ class ScanOpsMixin:
         positions: PositionsType = None,
         region: RegionType = None,
         prefix: Optional[Union[str, Sequence[str]]] = None,
-        mode: Union[ModeType, tuple[ModeType, ModeType]] = 'random',
+        mode: Union[ModeType, tuple[ModeType, ModeType]] = "random",
         num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
         iter_order: Optional[Union[Real, Sequence[Real]]] = None,
     ) -> Pool_type:
         from ..scan_ops.mutagenize_scan import mutagenize_scan
+
         return mutagenize_scan(
             pool=self,
             mutagenize_length=mutagenize_length,
@@ -30,20 +42,21 @@ class ScanOpsMixin:
             num_states=num_states,
             iter_order=iter_order,
         )
-    
+
     def deletion_scan(
         self,
         deletion_length: Integral,
-        deletion_marker: Optional[str] = '-',
+        deletion_marker: Optional[str] = "-",
         region: RegionType = None,
         positions: PositionsType = None,
         prefix: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         style: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..scan_ops.deletion_scan import deletion_scan
+
         return deletion_scan(
             pool=self,
             deletion_length=deletion_length,
@@ -56,7 +69,7 @@ class ScanOpsMixin:
             style=style,
             iter_order=iter_order,
         )
-    
+
     def insertion_scan(
         self,
         ins_pool: Union[Pool_type, str],
@@ -67,11 +80,12 @@ class ScanOpsMixin:
         prefix: Optional[str] = None,
         prefix_position: Optional[str] = None,
         prefix_insert: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..scan_ops.insertion_scan import insertion_scan
+
         return insertion_scan(
             pool=self,
             ins_pool=ins_pool,
@@ -86,7 +100,7 @@ class ScanOpsMixin:
             num_states=num_states,
             iter_order=iter_order,
         )
-    
+
     def replacement_scan(
         self,
         ins_pool: Union[Pool_type, str],
@@ -96,11 +110,12 @@ class ScanOpsMixin:
         prefix: Optional[str] = None,
         prefix_position: Optional[str] = None,
         prefix_insert: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..scan_ops.insertion_scan import replacement_scan
+
         return replacement_scan(
             pool=self,
             ins_pool=ins_pool,
@@ -114,7 +129,7 @@ class ScanOpsMixin:
             num_states=num_states,
             iter_order=iter_order,
         )
-    
+
     def shuffle_scan(
         self,
         shuffle_length: Integral,
@@ -124,12 +139,13 @@ class ScanOpsMixin:
         prefix: Optional[str] = None,
         prefix_position: Optional[str] = None,
         prefix_shuffle: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         style: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..scan_ops.shuffle_scan import shuffle_scan
+
         return shuffle_scan(
             pool=self,
             shuffle_length=shuffle_length,

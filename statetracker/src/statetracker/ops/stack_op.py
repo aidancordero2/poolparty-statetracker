@@ -1,5 +1,6 @@
 """StackOp - Disjoint union of N states."""
-from ..imports import beartype, Sequence, Optional, State_type
+
+from ..imports import Optional, Sequence, State_type, beartype
 from ..operation import Operation
 
 
@@ -21,6 +22,7 @@ def stack(states: Sequence[State_type], name: Optional[str] = None):
         A State whose values correspond to the disjoint union of the input States' values.
     """
     from ..state import State
+
     if len(states) == 0:
         result = State(0)
     else:
@@ -29,10 +31,10 @@ def stack(states: Sequence[State_type], name: Optional[str] = None):
 
 
 @beartype
-class StackOp(Operation):    
+class StackOp(Operation):
     def compute_num_states(self, parent_num_values):
         return sum(parent_num_values)
-    
+
     def decompose(self, value, parent_num_values):
         if value is None:
             return tuple(None for _ in parent_num_values)
@@ -40,8 +42,7 @@ class StackOp(Operation):
         for i, n in enumerate(parent_num_values):
             if value < cumsum + n:
                 return tuple(
-                    value - cumsum if j == i else None
-                    for j in range(len(parent_num_values))
+                    value - cumsum if j == i else None for j in range(len(parent_num_values))
                 )
             cumsum += n
         raise ValueError(f"Invalid value {value}")

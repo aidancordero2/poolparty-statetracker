@@ -1,9 +1,10 @@
 """Insertion multiscan operation - insert sequences at multiple positions simultaneously."""
+
 from numbers import Integral, Real
 
-from ..types import Union, Optional, Sequence, Literal, PositionsType, beartype
-from ..utils import validate_positions
 from ..pool import Pool
+from ..types import Literal, Optional, PositionsType, Sequence, Union, beartype
+from ..utils import validate_positions
 
 
 @beartype
@@ -12,9 +13,9 @@ def insertion_multiscan(
     num_insertions: Integral,
     insertion_pools: Union[Pool, Sequence[Pool]],
     positions: PositionsType = None,
-    insertion_mode: Literal['ordered', 'unordered'] = 'ordered',
+    insertion_mode: Literal["ordered", "unordered"] = "ordered",
     prefix: Optional[str] = None,
-    mode: str = 'random',
+    mode: str = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
 ) -> Pool:
@@ -61,10 +62,8 @@ def insertion_multiscan(
     from ..region_ops import region_multiscan, replace_region
 
     # Validate mode
-    if mode != 'random':
-        raise ValueError(
-            f"insertion_multiscan supports only mode='random', got '{mode}'"
-        )
+    if mode != "random":
+        raise ValueError(f"insertion_multiscan supports only mode='random', got '{mode}'")
 
     # Validate num_insertions
     if num_insertions < 1:
@@ -83,7 +82,7 @@ def insertion_multiscan(
         # Single pool: create deepcopies
         pools_list = [insertion_pools]
         for i in range(num_insertions - 1):
-            pools_list.append(insertion_pools.deepcopy(name=f'_ins_pool_{i+1}'))
+            pools_list.append(insertion_pools.deepcopy(name=f"_ins_pool_{i + 1}"))
     else:
         # Sequence of pools: validate length
         pools_list = list(insertion_pools)
@@ -96,12 +95,10 @@ def insertion_multiscan(
     # Validate all insertion pools have defined seq_length
     for i, pool in enumerate(pools_list):
         if pool.seq_length is None:
-            raise ValueError(
-                f"insertion_pools[{i}] must have a defined seq_length"
-            )
+            raise ValueError(f"insertion_pools[{i}] must have a defined seq_length")
 
     # Generate auto-indexed marker names
-    markers = [f'_ins_{i}' for i in range(num_insertions)]
+    markers = [f"_ins_{i}" for i in range(num_insertions)]
     # Zero-length markers for insertions
     marker_length = 0
     # Can insert at any position from 0 to bg_length (inclusive)

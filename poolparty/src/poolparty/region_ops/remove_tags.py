@@ -1,5 +1,7 @@
 """Remove region tags and optionally their content from sequences."""
+
 from numbers import Real
+
 from poolparty.types import Optional
 
 from ..utils.parsing_utils import validate_single_region
@@ -44,33 +46,33 @@ def remove_tags(
     ...     result = pp.remove_tags(bg, 'region', keep_content=False)
     ...     # Result: 'ACGTGCGC'
     """
-    from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.fixed import fixed_operation
-    
+    from ..fixed_ops.from_seq import from_seq
+
     # Convert string to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
-    
+
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         seq = seqs[0]
         region = validate_single_region(seq, region_name)
-        
-        prefix = seq[:region.start]
-        suffix = seq[region.end:]
-        
+
+        prefix = seq[: region.start]
+        suffix = seq[region.end :]
+
         if keep_content:
             return prefix + region.content + suffix
         else:
             return prefix + suffix
-    
+
     result_pool = fixed_operation(
         parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: None,  # Length changes when removing tags
         iter_order=iter_order,
-        _factory_name='remove_tags',
+        _factory_name="remove_tags",
     )
-    
+
     # The region is removed, so remove it from the pool's region set
     result_pool._untrack_region(region_name)
-    
+
     return result_pool

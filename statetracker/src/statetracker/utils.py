@@ -1,15 +1,16 @@
 """Utility functions for statecounter."""
+
 import pandas as pd
 
 
 def clean_df_int_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Convert float columns that contain only integers/NaN to int/None.
-    
+
     A column is converted only if ALL values are either NaN or whole numbers.
     Columns with actual float values (e.g., 3.14) are left unchanged.
     """
     for col in df.columns:
-        if df[col].dtype == 'float64':
+        if df[col].dtype == "float64":
             notna_mask = df[col].notna()
             # Check if all non-NaN values are whole numbers
             if notna_mask.any():

@@ -39,11 +39,11 @@ class ScanOpMixin:
     def _validate_positions(self, positions, max_position, min_position=0) -> list[int]:
         """Validate and normalize position specification."""
         ...
-    
+
     def _build_position_cache(self, seq_length, item_length, positions) -> int:
         """Build cache for sequential enumeration based on seq_length."""
         ...
-    
+
     def _select_position(self, valid_indices, rng):
         """Select position based on mode (random or sequential)."""
         ...
@@ -148,11 +148,11 @@ Standardize on:
 class RegionHandler:
     def __init__(self, region: RegionType, remove_tags: bool):
         ...
-    
+
     def extract(self, seq: str) -> tuple[str, str, str]:
         """Return (prefix, region_content, suffix)."""
         ...
-    
+
     def reassemble(self, prefix, new_content, suffix) -> str:
         """Reassemble sequence with new region content."""
         ...
@@ -234,12 +234,12 @@ Regions are handled in multiple places with complex logic:
 ```python
 class RegionContext:
     """Manages region extraction and reassembly for an operation."""
-    
+
     def __init__(self, seq: str, region: RegionType, strip_tags: bool = True):
         self.prefix, self.content, self.suffix = self._extract(seq, region)
         self.strip_tags = strip_tags
         ...
-    
+
     def reassemble(self, new_content: str) -> str:
         """Reassemble sequence with new region content."""
         ...

@@ -1,15 +1,14 @@
 """synced_to - Create or pair synced states."""
-from ..imports import beartype, Optional, State_type, Integral
+
+from ..imports import Integral, Optional, State_type, beartype
 
 
 @beartype
 def synced_to(
-    child_state: State_type, 
-    name: Optional[str] = None,
-    num_values: Optional[Integral] = None
+    child_state: State_type, name: Optional[str] = None, num_values: Optional[Integral] = None
 ) -> State_type:
     """Create a new state synchronized with child_state.
-    
+
     Args:
         child_state: The state to synchronize with.
         name: Optional name for the new state.
@@ -17,11 +16,12 @@ def synced_to(
             If not provided, uses child_state.num_values.
             Can be different from child_state.num_values - the group
             will track the max and states receive None when out of range.
-    
+
     Returns:
         A new State synchronized with child_state.
     """
     from ..state import State
+
     nv = num_values if num_values is not None else child_state.num_values
     synced = State(num_values=nv, name=name)
     synced.sync_with(child_state)

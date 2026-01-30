@@ -1,5 +1,7 @@
 """Pytest configuration for poolparty tests."""
+
 import pytest
+
 import poolparty as pp
 
 

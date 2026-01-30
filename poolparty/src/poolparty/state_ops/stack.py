@@ -1,10 +1,14 @@
 """Stack operation - combine pools sequentially (disjoint union)."""
+
 from numbers import Real
+
+import numpy as np
+
 import statetracker as st
-from ..types import Optional, Sequence, Integral, Real, beartype, Seq
+
 from ..operation import Operation
 from ..pool import Pool
-import numpy as np
+from ..types import Optional, Real, Seq, Sequence, beartype
 
 
 @beartype
@@ -28,9 +32,9 @@ def stack(
     Returns
     -------
     Pool
-        A Pool object representing the state-wise stacking of all provided input Pools. 
+        A Pool object representing the state-wise stacking of all provided input Pools.
         Each state corresponds to a sequence from one of the input Pools.
-    
+
     Raises
     ------
     ValueError
@@ -51,9 +55,10 @@ def stack(
 
 class StackOp(Operation):
     """Stack multiple pools sequentially (disjoint union)."""
+
     factory_name = "stack"
-    design_card_keys = ['active_parent']
-    
+    design_card_keys = ["active_parent"]
+
     def __init__(
         self,
         parent_pools: Sequence[Pool],
@@ -71,13 +76,13 @@ class StackOp(Operation):
         super().__init__(
             parent_pools=parent_pools,
             num_states=len(parent_pools),  # Number of branches
-            mode='sequential',  # Stack needs its own state to track active branch
+            mode="sequential",  # Stack needs its own state to track active branch
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
             prefix=prefix,
         )
-    
+
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool],
@@ -85,7 +90,7 @@ class StackOp(Operation):
         """Build pool state using st.stack (disjoint union)."""
         parent_states = [p.state for p in parent_pools]
         return st.stack(parent_states)
-    
+
     def _compute_core(
         self,
         parents: list[Seq],
@@ -93,7 +98,7 @@ class StackOp(Operation):
     ) -> tuple[Seq, dict]:
         """Return Seq from active parent and design card."""
         from ..party import cards_suppressed
-        
+
         # Find active parent
         for i, parent in enumerate(self.parent_pools):
             if parent.state.value is not None:
@@ -103,12 +108,12 @@ class StackOp(Operation):
                 output_seq = parents[active]
                 if cards_suppressed():
                     return output_seq, {}
-                return output_seq, {'active_parent': active}
-        
+                return output_seq, {"active_parent": active}
+
         # No active parent
         self.state.value = None
         active = None
         output_seq = parents[0] if parents else Seq.empty()
         if cards_suppressed():
             return output_seq, {}
-        return output_seq, {'active_parent': active}
+        return output_seq, {"active_parent": active}

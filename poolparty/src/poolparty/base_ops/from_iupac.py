@@ -1,10 +1,13 @@
 """FromIupac operation - generate DNA sequences from IUPAC notation."""
+
 from numbers import Real
-from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype, Seq
+
+import numpy as np
+
 from ..operation import Operation
 from ..pool import Pool
+from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
-import numpy as np
 
 
 @beartype
@@ -13,7 +16,7 @@ def from_iupac(
     pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     prefix: Optional[str] = None,
-    mode: ModeType = 'random',
+    mode: ModeType = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
     style: Optional[str] = None,
@@ -49,13 +52,14 @@ def from_iupac(
     -------
     Pool_type
         A Pool yielding DNA sequences from the IUPAC pattern.
-    
+
     Raises
     ------
     ValueError
         If pool is provided without region.
     """
     from ..fixed_ops.from_seq import from_seq
+
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
     op = FromIupacOp(
         iupac_seq=iupac_seq,
@@ -74,8 +78,9 @@ def from_iupac(
 
 class FromIupacOp(Operation):
     """Generate DNA sequences from IUPAC notation."""
+
     factory_name = "from_iupac"
-    design_card_keys = ['iupac_state']
+    design_card_keys = ["iupac_state"]
 
     def __init__(
         self,
@@ -83,7 +88,7 @@ class FromIupacOp(Operation):
         parent_pool: Optional[Pool] = None,
         region: RegionType = None,
         prefix: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -91,20 +96,21 @@ class FromIupacOp(Operation):
     ) -> None:
         """Initialize FromIupacOp."""
         from ..party import get_active_party
+
         party = get_active_party()
         if party is None:
             raise RuntimeError(
                 "from_iupac requires an active Party context. "
                 "Use 'with pp.Party() as party:' to create one."
             )
-        
+
         # Validate parent_pool/region combination
         if parent_pool is not None and region is None:
             raise ValueError(
                 "region is required when parent_pool is provided. "
                 "Specify which region of parent_pool to replace with the generated sequence."
             )
-        
+
         if not iupac_seq:
             raise ValueError("iupac_seq must be a non-empty string")
 
@@ -141,17 +147,17 @@ class FromIupacOp(Operation):
 
         # Cap to int64 max to avoid overflow in rng.integers()
         self._total_states = min(total_states, np.iinfo(np.int64).max)
-        
+
         # Determine num_states based on mode
         natural_num_states = None
         match mode:
-            case 'sequential':
+            case "sequential":
                 # Natural count is the total number of possible sequences
                 natural_num_states = total_states
                 # Use user-provided num_states if given, else natural count
                 if num_states is None:
                     num_states = natural_num_states
-            case 'random':
+            case "random":
                 # num_states stays as provided (or None for pure random mode)
                 pass
             case _:
@@ -159,7 +165,7 @@ class FromIupacOp(Operation):
 
         # Use length without markers for consistency
         seq_length = dna_utils.get_length_without_tags(iupac_seq)
-        
+
         parent_pools_list = [parent_pool] if parent_pool is not None else []
         super().__init__(
             parent_pools=parent_pools_list,
@@ -179,14 +185,14 @@ class FromIupacOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return Seq and design card."""
-        if self.mode == 'random':
+        if self.mode == "random":
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
             state = rng.integers(0, self._total_states)
         else:
             state_value = self.state.value
             state = (0 if state_value is None else state_value) % self._total_states
-        
+
         # Mixed-radix conversion: map state to specific sequence
         result = []
         remaining = state
@@ -194,20 +200,21 @@ class FromIupacOp(Operation):
             result.append(position_opts[remaining % len(position_opts)])
             remaining //= len(position_opts)
         result = list(reversed(result))
-        seq_string = ''.join(result)
-        
+        seq_string = "".join(result)
+
         # Apply styling if requested
-        from ..utils.style_utils import SeqStyle, styles_suppressed
         from ..party import cards_suppressed
+        from ..utils.style_utils import SeqStyle, styles_suppressed
+
         if styles_suppressed():
             output_seq = Seq(seq_string, None)
         else:
             output_style = SeqStyle.full(len(seq_string), self._style)
             output_seq = Seq(seq_string, output_style)
-        
+
         if cards_suppressed():
             return output_seq, {}
-        
+
         return output_seq, {
-            'iupac_state': state,
+            "iupac_state": state,
         }

@@ -1,18 +1,21 @@
 """Scan operation workloads for poolparty benchmarking."""
+
 from typing import Literal
-from ._utils import make_sequence, DEFAULT_NUM_SEQS, DEFAULT_SEQ_LEN
 
 # Pre-warm imports before profiling
 import poolparty as pp
+
+from ._utils import DEFAULT_NUM_SEQS, DEFAULT_SEQ_LEN, make_sequence
+
 pp.init()
 
 
 def workload_deletion_scan(
     seq_len: int = DEFAULT_SEQ_LEN,
     num_seqs: int = DEFAULT_NUM_SEQS,
-    del_len: int=5,
-    positions = None,
-    mode: Literal['random', 'sequential'] = 'random',
+    del_len: int = 5,
+    positions=None,
+    mode: Literal["random", "sequential"] = "random",
     use_styles: bool = False,
     use_cards: bool = False,
 ):
@@ -23,6 +26,7 @@ def workload_deletion_scan(
     pool = pp.deletion_scan(seq, deletion_length=del_len, positions=positions, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
 
+
 workload_deletion_scan.benchmark_specs = [
     ("TestDeletionScan", "seq_len", [10, 30, 100, 300, 1000]),
 ]
@@ -32,9 +36,9 @@ def workload_insertion_scan(
     seq_len: int = DEFAULT_SEQ_LEN,
     num_seqs: int = DEFAULT_NUM_SEQS,
     num_ins: int = 10,
-    ins_len: int=5,
-    positions = None,
-    mode: Literal['random', 'sequential'] = 'random',
+    ins_len: int = 5,
+    positions=None,
+    mode: Literal["random", "sequential"] = "random",
     use_styles: bool = False,
     use_cards: bool = False,
 ):
@@ -42,10 +46,11 @@ def workload_insertion_scan(
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
     seq = make_sequence(seq_len)
-    ins_seqs = ['A'*ins_len]*num_ins
+    ins_seqs = ["A" * ins_len] * num_ins
     ins_pool = pp.from_seqs(ins_seqs)
-    pool = pp.insertion_scan(seq, ins_pool = ins_pool, positions=positions, mode=mode)
+    pool = pp.insertion_scan(seq, ins_pool=ins_pool, positions=positions, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
+
 
 workload_insertion_scan.benchmark_specs = [
     ("TestInsertionScan", "seq_len", [10, 30, 100, 300, 1000]),

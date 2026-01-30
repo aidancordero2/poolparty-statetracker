@@ -1,8 +1,10 @@
 """Fixed operation - create a pool from a fixed transformation of parent sequences."""
-from numbers import Real, Integral
-from ..types import Pool_type, Union, Optional, Sequence, Callable, RegionType, beartype, Seq
+
+from numbers import Real
+
 from ..operation import Operation
 from ..pool import Pool
+from ..types import Callable, Optional, Pool_type, RegionType, Seq, Sequence, Union, beartype
 
 
 @beartype
@@ -43,7 +45,7 @@ def fixed_operation(
     -------
     Pool
         A Pool yielding sequences computed from parent sequences.
-    """    
+    """
     op = FixedOp(
         parent_pools=parent_pools,
         seq_from_seqs_fn=seq_from_seqs_fn,
@@ -61,6 +63,7 @@ def fixed_operation(
 
 class FixedOp(Operation):
     """Fixed operation that applies a user-defined function to parent sequences."""
+
     factory_name = "fixed"
     design_card_keys: Sequence[str] = []
 
@@ -71,7 +74,7 @@ class FixedOp(Operation):
         seq_length_from_pool_lengths_fn: Callable[[Sequence[Union[int, None]]], Union[int, None]],
         region: RegionType = None,
         remove_tags: Optional[bool] = None,
-        spacer_str: str = '',
+        spacer_str: str = "",
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
@@ -80,13 +83,13 @@ class FixedOp(Operation):
         """Initialize FixedOp."""
         from ..party import get_active_party
         from .from_seq import from_seq
-        
+
         parent_pools = [from_seq(p) if isinstance(p, str) else p for p in parent_pools]
-        
+
         self.seq_from_seqs_fn = seq_from_seqs_fn
         self._seq_length_from_pool_lengths_fn = seq_length_from_pool_lengths_fn
         self._pass_through_styles = _pass_through_styles
-        
+
         # Compute seq_length from pool_lengths
         party = get_active_party()
         if region is not None:
@@ -100,15 +103,15 @@ class FixedOp(Operation):
             pool_lengths = [region_length] + [p.seq_length for p in parent_pools[1:]]
         else:
             pool_lengths = [p.seq_length for p in parent_pools]
-        
+
         seq_length = seq_length_from_pool_lengths_fn(pool_lengths)
-        
+
         if _factory_name is not None:
             self.factory_name = _factory_name
         super().__init__(
             parent_pools=list(parent_pools),
             num_states=1,
-            mode='fixed',
+            mode="fixed",
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
@@ -122,23 +125,29 @@ class FixedOp(Operation):
         rng=None,
     ) -> tuple[Seq, dict]:
         """Compute output Seq using the user-defined function.
-        
+
         Note: Region handling is done by the base class compute() method.
         parents[0] is the region content when region is specified.
         """
         # Extract strings for user function
         parent_strings = [p.string for p in parents]
         result_string = self.seq_from_seqs_fn(parent_strings)
-        
+
         # Pass through parent styles only if _pass_through_styles is True
         # When doing content replacement (e.g., from_seq with region), styles
         # from the original content should not apply to the new content
         if self._pass_through_styles and parents:
-            output_style = parents[0].style[:len(result_string)] if len(parents[0]) >= len(result_string) else parents[0].style
+            output_style = (
+                parents[0].style[: len(result_string)]
+                if len(parents[0]) >= len(result_string)
+                else parents[0].style
+            )
         else:
             from ..types import SeqStyle
-            output_style = None if self._party.suppress_styles else SeqStyle.empty(len(result_string))
-        
+
+            output_style = (
+                None if self._party.suppress_styles else SeqStyle.empty(len(result_string))
+            )
+
         output_seq = Seq(result_string, output_style)
         return output_seq, {}
-

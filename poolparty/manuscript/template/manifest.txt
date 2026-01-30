@@ -36,4 +36,3 @@ Directory mam-authoring-template/doc/
 
 oup-authoring-template-doc.tex -- LaTeX source file of documentation
 oup-authoring-template-doc.pdf -- documentation for mam-authoring-template.cls
-

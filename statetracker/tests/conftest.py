@@ -1,6 +1,7 @@
 """Test configuration for statecounter test suite."""
-from pathlib import Path
+
 import sys
+from pathlib import Path
 
 # Ensure the statecounter package root is on sys.path so imports like
 # `import tests.ops...` (relative to this tests package) work when running

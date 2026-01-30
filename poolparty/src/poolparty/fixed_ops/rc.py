@@ -1,7 +1,9 @@
 """rc operation - reverse complement a sequence."""
+
 from numbers import Real
-from ..types import Pool_type, Union, Optional, RegionType, beartype
+
 from ..pool import Pool
+from ..types import Optional, Pool_type, RegionType, Union, beartype
 from ..utils import dna_utils
 
 
@@ -41,6 +43,7 @@ def rc(
 
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         from ..utils.parsing_utils import strip_all_tags
+
         seq = seqs[0]
         # Strip tags before reverse complementing
         clean_seq = strip_all_tags(seq)
@@ -53,12 +56,13 @@ def rc(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
-        _factory_name='rc',
+        _factory_name="rc",
     )
-    
+
     # Apply style if specified
     if style is not None:
         from .style import stylize
+
         result_pool = stylize(result_pool, style=style)
-    
+
     return result_pool

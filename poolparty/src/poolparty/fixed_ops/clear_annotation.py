@@ -1,7 +1,9 @@
 """ClearAnnotation operation - remove all markers/non-molecular chars and uppercase."""
+
 from numbers import Real
-from ..types import Pool_type, Union, Optional, RegionType, beartype
+
 from ..pool import Pool
+from ..types import Optional, Pool_type, RegionType, Union, beartype
 from ..utils.parsing_utils import strip_all_tags
 
 
@@ -46,7 +48,7 @@ def clear_annotation(
         # Strip all marker tags
         seq_no_markers = strip_all_tags(seq)
         # Filter to molecular chars only and uppercase
-        return ''.join(c.upper() for c in seq_no_markers if c in all_chars_set)
+        return "".join(c.upper() for c in seq_no_markers if c in all_chars_set)
 
     return fixed_operation(
         parent_pools=[pool],
@@ -55,5 +57,5 @@ def clear_annotation(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
-        _factory_name='clear_annotation',
+        _factory_name="clear_annotation",
     )

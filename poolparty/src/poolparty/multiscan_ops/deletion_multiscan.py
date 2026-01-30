@@ -1,9 +1,10 @@
 """Deletion multiscan operation - delete segments at multiple positions simultaneously."""
+
 from numbers import Integral, Real
 
-from ..types import Union, Optional, PositionsType, beartype
-from ..utils import validate_positions
 from ..pool import Pool
+from ..types import Optional, PositionsType, Union, beartype
+from ..utils import validate_positions
 
 
 @beartype
@@ -11,10 +12,10 @@ def deletion_multiscan(
     pool: Union[Pool, str],
     deletion_length: Integral,
     num_deletions: Integral,
-    deletion_marker: Optional[str] = '-',
+    deletion_marker: Optional[str] = "-",
     positions: PositionsType = None,
     prefix: Optional[str] = None,
-    mode: str = 'random',
+    mode: str = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
 ) -> Pool:
@@ -58,10 +59,8 @@ def deletion_multiscan(
     from ..region_ops import region_multiscan, replace_region
 
     # Validate mode
-    if mode != 'random':
-        raise ValueError(
-            f"deletion_multiscan supports only mode='random', got '{mode}'"
-        )
+    if mode != "random":
+        raise ValueError(f"deletion_multiscan supports only mode='random', got '{mode}'")
 
     # Validate num_deletions
     if num_deletions < 1:
@@ -91,10 +90,10 @@ def deletion_multiscan(
             f"{deletion_length} in sequence of length {bg_length}"
         )
 
-    del_char = deletion_marker if deletion_marker else '-'
+    del_char = deletion_marker if deletion_marker else "-"
 
     # Generate auto-indexed marker names
-    markers = [f'_del_{i}' for i in range(num_deletions)]
+    markers = [f"_del_{i}" for i in range(num_deletions)]
     marker_length = int(deletion_length)
     max_position = bg_length - deletion_length
 
@@ -108,7 +107,7 @@ def deletion_multiscan(
         num_insertions=int(num_deletions),
         positions=validated_positions,
         region_length=marker_length,
-        insertion_mode='ordered',
+        insertion_mode="ordered",
         prefix=prefix,
         mode=mode,
         num_states=num_states,
@@ -122,7 +121,7 @@ def deletion_multiscan(
         content = from_seq(marker_str)
     else:
         # Simply remove the segment - use empty content
-        content = from_seq('')
+        content = from_seq("")
 
     # 3. Replace each region's content with deletion content
     result = marked

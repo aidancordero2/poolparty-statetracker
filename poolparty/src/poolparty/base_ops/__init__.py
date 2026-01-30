@@ -1,18 +1,26 @@
 """Operations for poolparty."""
-from .from_seqs import from_seqs, FromSeqsOp
-from .from_iupac import from_iupac, FromIupacOp
-from .from_motif import from_motif, FromMotifOp
-from .get_kmers import get_kmers, GetKmersOp
-from .mutagenize import mutagenize, MutagenizeOp
-from .shuffle_seq import shuffle_seq, SeqShuffleOp
-from .recombine import recombine, RecombineOp
+
+from .from_iupac import FromIupacOp, from_iupac
+from .from_motif import FromMotifOp, from_motif
+from .from_seqs import FromSeqsOp, from_seqs
+from .get_kmers import GetKmersOp, get_kmers
+from .mutagenize import MutagenizeOp, mutagenize
+from .recombine import RecombineOp, recombine
+from .shuffle_seq import SeqShuffleOp, shuffle_seq
 
 __all__ = [
-    'from_seqs', 'FromSeqsOp',
-    'from_iupac', 'FromIupacOp',
-    'from_motif', 'FromMotifOp',
-    'get_kmers', 'GetKmersOp',
-    'mutagenize', 'MutagenizeOp',
-    'shuffle_seq', 'SeqShuffleOp',
-    'recombine', 'RecombineOp',
+    "from_seqs",
+    "FromSeqsOp",
+    "from_iupac",
+    "FromIupacOp",
+    "from_motif",
+    "FromMotifOp",
+    "get_kmers",
+    "GetKmersOp",
+    "mutagenize",
+    "MutagenizeOp",
+    "shuffle_seq",
+    "SeqShuffleOp",
+    "recombine",
+    "RecombineOp",
 ]

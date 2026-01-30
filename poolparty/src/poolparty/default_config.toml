@@ -7,7 +7,7 @@ suppress_cards = false    # Suppress all design cards (overrides [design_cards])
 
 [columns]
 name = true              # Show 'name' column
-seq = true               # Show main 'seq' column  
+seq = true               # Show main 'seq' column
 pool_seqs = true         # Show '{pool}.seq' columns
 pool_states = true       # Show '{pool}.state' columns
 op_states = true         # Show '{op}.state' columns

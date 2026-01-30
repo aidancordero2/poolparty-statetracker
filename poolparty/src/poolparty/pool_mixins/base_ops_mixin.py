@@ -1,12 +1,25 @@
 """Base operation mixins for Pool class."""
-from ..types import Pool_type, RegionType, Optional, Real, Integral, ModeType, StyleByForRecombineType, beartype, Sequence, Union
+
 from typing import Literal
+
 import pandas as pd
+
+from ..types import (
+    Integral,
+    ModeType,
+    Optional,
+    Pool_type,
+    Real,
+    RegionType,
+    Sequence,
+    StyleByForRecombineType,
+    Union,
+)
 
 
 class BaseOpsMixin:
     """Mixin providing base operation methods for Pool."""
-    
+
     def mutagenize(
         self,
         region: RegionType = None,
@@ -15,11 +28,12 @@ class BaseOpsMixin:
         allowed_chars: Optional[str] = None,
         style: Optional[str] = None,
         prefix: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[int] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..base_ops.mutagenize import mutagenize
+
         return mutagenize(
             pool=self,
             region=region,
@@ -32,17 +46,18 @@ class BaseOpsMixin:
             num_states=num_states,
             iter_order=iter_order,
         )
-    
+
     def shuffle_seq(
         self,
         region: RegionType = None,
         prefix: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[int] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
         from ..base_ops.shuffle_seq import shuffle_seq
+
         return shuffle_seq(
             pool=self,
             region=region,
@@ -52,18 +67,19 @@ class BaseOpsMixin:
             iter_order=iter_order,
             style=style,
         )
-    
+
     def insert_from_iupac(
         self,
         iupac_seq: str,
         region: RegionType = None,
         prefix: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[int] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
         from ..base_ops.from_iupac import from_iupac
+
         return from_iupac(
             iupac_seq=iupac_seq,
             bg_pool=self,
@@ -74,18 +90,19 @@ class BaseOpsMixin:
             iter_order=iter_order,
             style=style,
         )
-    
+
     def insert_from_motif(
         self,
         prob_df: pd.DataFrame,
         region: RegionType = None,
         prefix: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[int] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
         from ..base_ops.from_motif import from_motif
+
         return from_motif(
             prob_df=prob_df,
             bg_pool=self,
@@ -96,19 +113,20 @@ class BaseOpsMixin:
             iter_order=iter_order,
             style=style,
         )
-    
+
     def insert_kmers(
         self,
         length: Integral,
         region: RegionType = None,
         style: Optional[str] = None,
-        case: Literal['lower', 'upper'] = 'upper',
+        case: Literal["lower", "upper"] = "upper",
         prefix: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..base_ops.get_kmers import get_kmers
+
         return get_kmers(
             length=length,
             pool=self,
@@ -120,21 +138,22 @@ class BaseOpsMixin:
             num_states=num_states,
             iter_order=iter_order,
         )
-    
+
     def recombine(
         self,
         region: RegionType = None,
         sources: Sequence[Union[Pool_type, str]] = (),
         num_breakpoints: Integral = 1,
         positions: Optional[Sequence[Integral]] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[int] = None,
         prefix: Optional[str] = None,
         styles: Optional[list[str]] = None,
-        style_by: StyleByForRecombineType = 'order',
+        style_by: StyleByForRecombineType = "order",
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..base_ops.recombine import recombine
+
         return recombine(
             pool=self,
             region=region,

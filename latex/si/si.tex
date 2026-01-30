@@ -1,5 +1,5 @@
 % Supplementary Information: Design of PoolParty and StateCounter
-% 
+%
 % COMPILATION NOTE:
 % This document uses the minted package for Python syntax highlighting.
 % Compile with: pdflatex -shell-escape si.tex
@@ -97,20 +97,20 @@
 \section{Introduction}
 \label{sec:introduction}
 
-PoolParty makes it easy to design complex libraries involving barcodes, mutagenesis, insertion and deletion scanning, and other common operations. 
+PoolParty makes it easy to design complex libraries involving barcodes, mutagenesis, insertion and deletion scanning, and other common operations.
 
-The core idea behind PoolPart is that library construction should be \emph{declarative} rather than \emph{imperative}. Rather than explicitly constructing each sequence in the library, users specify high-level operations that, when carried out in series, generated the desired library. After laying out these rules, users simiply specify how many sequence to generate and poolparty takes care of the rest. This approach separates the \emph{what} (library specification) from the \emph{how} (enumeration or sampling), 
+The core idea behind PoolPart is that library construction should be \emph{declarative} rather than \emph{imperative}. Rather than explicitly constructing each sequence in the library, users specify high-level operations that, when carried out in series, generated the desired library. After laying out these rules, users simiply specify how many sequence to generate and poolparty takes care of the rest. This approach separates the \emph{what} (library specification) from the \emph{how} (enumeration or sampling),
 
-Poolparty has two core types of objects: Pools and Operations. A Pool object represents a yet-to-be-realized set of sequences. An Operation object represents a computation that yields a Pool object, and can take zero, one, or multiple Pool objects as input.  To create a sequence library, users first specify the rules for making the library by chaining together a series of Operations, the result of which is a Pool boject. Users then call on that pool to generate the number of desired sequences. 
+Poolparty has two core types of objects: Pools and Operations. A Pool object represents a yet-to-be-realized set of sequences. An Operation object represents a computation that yields a Pool object, and can take zero, one, or multiple Pool objects as input.  To create a sequence library, users first specify the rules for making the library by chaining together a series of Operations, the result of which is a Pool boject. Users then call on that pool to generate the number of desired sequences.
 
 The following two examples illustrate PoolParty's core capabilities.
 
 \subsection{Example 1: Random Mode}
 \label{subsec:example-random}
 
-Each component Operation of the computation graph can be in one of four modes: \inpy{'fixed'}, \inpy{'random'}, \inpy{'sequential'}, or \inpy{'hybrid'}.  Fixed mode operations are deterministic: for a given input they always produce the same output. Random mode operation, on the other hand, will generally produce a different output each time they are called due to them having an internal state that changes unpredictably. 
+Each component Operation of the computation graph can be in one of four modes: \inpy{'fixed'}, \inpy{'random'}, \inpy{'sequential'}, or \inpy{'hybrid'}.  Fixed mode operations are deterministic: for a given input they always produce the same output. Random mode operation, on the other hand, will generally produce a different output each time they are called due to them having an internal state that changes unpredictably.
 
-Here is an example of PoolParty code that uses \inpy{'random'} and \inpy{'fixed'} operations to generate the type of construct commonly used in massively parallel reporter assays (MPRAs). First the core sequence elemenets are defined as simple python strings: \inpy{wt_seq} is a regulatory sequence of iterest, \inpy{adapter_5_seq} is a constant-sequence adapter, and \inpy{adapter_3_iupac} is an adapter containing degerate nucleotides that will be used as a barcode. Next, the \inpy{pp.mutagenize()} operation is called on \inpy{wt_seq}, generating a pool \inpy{mut_pool} comprising randomly mutated versions of \inpy{wt_seq}. Next, the \inpy{pp.from_iupac_motif()} operation is called on \inpy{adapter_3_iupac}, generating a pool \inpy{adapter_3_pool} in which the \inpy{N} characters have been replaced by randomly selected DNA nucleotides. Next, the \inpy{pp.join} operation deterministically joins the 3\' adaptor sequence, mutagenized pool, and barcode-containing 5\' adaptor sequence into a final \inpy{oligo_pool_1}. Finally, the \inpy{pp.generate_library()} method is called with the desired number of sequence. This produces a pandas dataframe \inpy{df} that lists each sequence along with a ``design card'', i.e.\ a series of fields that describes the decisions each operation made in order to arrive at each resulting sequence. 
+Here is an example of PoolParty code that uses \inpy{'random'} and \inpy{'fixed'} operations to generate the type of construct commonly used in massively parallel reporter assays (MPRAs). First the core sequence elemenets are defined as simple python strings: \inpy{wt_seq} is a regulatory sequence of iterest, \inpy{adapter_5_seq} is a constant-sequence adapter, and \inpy{adapter_3_iupac} is an adapter containing degerate nucleotides that will be used as a barcode. Next, the \inpy{pp.mutagenize()} operation is called on \inpy{wt_seq}, generating a pool \inpy{mut_pool} comprising randomly mutated versions of \inpy{wt_seq}. Next, the \inpy{pp.from_iupac_motif()} operation is called on \inpy{adapter_3_iupac}, generating a pool \inpy{adapter_3_pool} in which the \inpy{N} characters have been replaced by randomly selected DNA nucleotides. Next, the \inpy{pp.join} operation deterministically joins the 3\' adaptor sequence, mutagenized pool, and barcode-containing 5\' adaptor sequence into a final \inpy{oligo_pool_1}. Finally, the \inpy{pp.generate_library()} method is called with the desired number of sequence. This produces a pandas dataframe \inpy{df} that lists each sequence along with a ``design card'', i.e.\ a series of fields that describes the decisions each operation made in order to arrive at each resulting sequence.
 
 \begin{minted}{python}
 import poolparty as pp
@@ -118,7 +118,7 @@ import poolparty as pp
 # Mark changes by changing case of affected bases
 pp.set_default('mark_changes',True)
 
-# Define component sequences 
+# Define component sequences
 wt_seq  = 'ATCGATCGATATCGATCGAT'        # 10 nt wild-type
 ad5_seq = 'GAAC'                        # 3 nt 5' adapter
 ad3_seq = 'TGGANNNNNCCAG'               # 3 + 5N barcode + 3
@@ -140,9 +140,9 @@ print(df['seq'])
 Key points:
 \begin{itemize}
     \item \inpy{pp.set_default('mark_changes',True)} sets the default option to mark all changes (mutations) in the generated sequences, typically displaying them in a different case for easy identification.
-    \item \inpy{pp.mutagenize()} generates a pool of sequences containing different combinations of mutations at within a specified wild-type sequence. Here we instruct poolparty to introduce 3 mutations into each sequence. This operation runs in random mode by default, which means that the specific mutations that each sequence recieves is random. 
-    \item \inpy{pp.from_iupac_motif()} generates a pool of sequences derived from an IUPAC sequence, i.e., a DNA sequence in which special characters (such as \'N\') signify degenerate bases. This too runs in random mode by default. 
-    \item \inpy{pp.join()} joins together multiple sequences/Pools. It has no variable internal state so always runs in fixed mode. It also takes an argment, \inpy{spacer_str}, which we use here to add a space between the mutagenized region and adaptor sequences. 
+    \item \inpy{pp.mutagenize()} generates a pool of sequences containing different combinations of mutations at within a specified wild-type sequence. Here we instruct poolparty to introduce 3 mutations into each sequence. This operation runs in random mode by default, which means that the specific mutations that each sequence recieves is random.
+    \item \inpy{pp.from_iupac_motif()} generates a pool of sequences derived from an IUPAC sequence, i.e., a DNA sequence in which special characters (such as \'N\') signify degenerate bases. This too runs in random mode by default.
+    \item \inpy{pp.join()} joins together multiple sequences/Pools. It has no variable internal state so always runs in fixed mode. It also takes an argment, \inpy{spacer_str}, which we use here to add a space between the mutagenized region and adaptor sequences.
     \item \inpy{generate_library(num_seqs=N, seed)} instructs \inpy{oligo_pool} to construct $N$ sequences using the specified random seed. It retuns a Pandas dataframe, here called \inpy{df}. The first column is named \inpy{'seq'} and contains the resulting sequences:
     \begin{center}
         \includegraphics[width=\textwidth]{example1_seqs.png}
@@ -180,14 +180,14 @@ ins_pool = pp.from_seqs(['AAAAA', 'TTTTT'], mode='sequential')
 
 # Replacement scan: 2 inserts x 4 positions = 8 states (Cartesian product)
 rep_pool = pp.replacement_scan(
-    wt_seq, ins_pool, 
-    positions=slice(None,None,5),  
+    wt_seq, ins_pool,
+    positions=slice(None,None,5),
     mode='sequential'
 )
 
 # Deletion scan: 4 positions = 4 states
 del_pool = pp.deletion_scan(
-    wt_seq, 
+    wt_seq,
     deletion_length=5,
     positions=slice(None,None,5),
     mode='sequential'
@@ -212,20 +212,20 @@ This produces the resulting output sequences:
 Key points:
 \begin{itemize}
     \item \inpy{pp.from_seqs(..., mode='sequential')} creates a pool that cycles through its sequences in order. Here it has 2 states: state 0 yields \inpy{'AAAAA'}, state 1 yields \inpy{'TTTTT'}.
-    
+
     \item \inpy{pp.replacement_scan()} replaces a segment of the input sequence with an insert at each specified position. With \inpy{mode='sequential'}, it systematically enumerates all position states. Since \inpy{ins_pool} also has sequential states, the two are combined via Cartesian product: $2 \text{ inserts} \times 4 \text{ positions} = 8$ total states (numbered 0-7).
-     
+
     \item \inpy{pp.deletion_scan()} removes a segment of specified length at each position, replacing it with deletion markers (\inpy{'-'}). With 4 positions, this yields 4 states (numbered 8-11).
-    
+
     \item \inpy{pp.stack()} combines pools as a union: only one pool is ``active'' at any given state. The first 8 states come from \inpy{rep_pool}, the next 4 from \inpy{del_pool}, for a total of 12 states.
 
     \item \inpy{generate_library(num_cycles=1)} iterates through all 12 states exactly once. More generally, \inpy{num_cycles=N} guarantees that every state is visited exactly $N$ times, with the internal states of the contributing operations cyling in a specific order each time.
-    
+
     \item Because \inpy{pp.from_iupac()} remains in random mode, the barcodes present in each sequence \inpy{ad3} remain random and do not cycle in any coordinated way with the internal states of \inpy{pp.from_seqs}, \inpy{pp.replacement_scan}, and \inpy{pp.deletion_scan}.
 \end{itemize}
 
 \medskip
-\noindent The remainder of this document describes the architecture and operations of 
+\noindent The remainder of this document describes the architecture and operations of
 PoolParty and its underlying StateCounter library in detail.
 \newpage
 
@@ -259,7 +259,7 @@ Manager context, and unidirectional state propagation mechanism.]
 % - State propagation: setting child state updates all parent states
 % - Conflict detection: what happens when incompatible states are assigned
 
-[Describe core concepts: leaf counters, derived counters, state propagation, 
+[Describe core concepts: leaf counters, derived counters, state propagation,
 and conflict detection.]
 
 \subsection{The Manager Context}
@@ -288,7 +288,7 @@ and conflict detection.]
 % - Explain the operator overloading (*, +, [], etc.)
 % - Reference the table below for quick lookup
 
-[Write overview of StateCounter operations and how they combine counters 
+[Write overview of StateCounter operations and how they combine counters
 to create complex enumeration patterns.]
 
 % Example table of StateCounter operations
@@ -317,7 +317,7 @@ Interleave & \mintinline{python}{interleave_counters([A, B])} & Interleave state
 
 
 %% ============================================================================
-%% SECTION: POOLPARTY ARCHITECTURE  
+%% SECTION: POOLPARTY ARCHITECTURE
 %% ============================================================================
 
 \section{PoolParty Architecture}
@@ -373,7 +373,7 @@ lazy evaluation, and how Pools compose to define oligonucleotide libraries.]
 % - Explain when to use each operation
 % - Reference the table below
 
-[Write overview of PoolParty operations and how they enable different 
+[Write overview of PoolParty operations and how they enable different
 library design patterns.]
 
 % Example table of PoolParty operations
@@ -456,7 +456,7 @@ library design patterns.]
 % - The flow from Pool.generate_library() through counter iteration
 
 [Write description of how PoolParty uses StateCounter internally,
-including how Pool operations wrap Counter operations and how 
+including how Pool operations wrap Counter operations and how
 state propagation enables lazy sequence generation.]
 
 
@@ -482,10 +482,10 @@ with Manager():
     # Create leaf counters
     A = Counter(num_values=2, name='A')
     B = Counter(num_values=3, name='B')
-    
+
     # Combine with product (Cartesian product)
     C = A * B  # 6 states total
-    
+
     # Iterate and see parent states update
     for state in C:
         print(f"C={state}, A={A.state}, B={B.state}")
