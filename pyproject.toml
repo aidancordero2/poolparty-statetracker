@@ -15,8 +15,10 @@ dev = [
     "ipykernel>=7.1.0",
     "jupyter>=1.1.1",
     "nbconvert>=7.16.6",
+    "pre-commit>=3.5.0",
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "ruff>=0.9.0",
 ]
 benchmark = [
     "pytest-benchmark>=4.0",
@@ -34,3 +36,52 @@ statetracker = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["poolparty/tests", "statetracker/tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    ".eggs",
+    "notebooks",
+    "*/legacy/*",
+    "*/_build/*",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "UP",     # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+    "B905",   # zip without explicit strict parameter
+    "F821",   # false positives on Literal type hints
+    "F722",   # false positives on Literal["+", "-"]
+    "B007",   # unused loop variable (style preference)
+    "B904",   # raise from (style preference)
+    "E712",   # comparison to False (style preference)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = ["B011", "B017", "F841", "F811"]  # Allow assert patterns, unused vars, redefs
+"**/__init__.py" = ["F401", "E402"]  # Allow unused imports, imports after logging setup
+"**/types.py" = ["E402"]  # Allow imports after type aliases
+"**/manager.py" = ["E402"]  # Allow imports after try/except
+"**/state.py" = ["E402"]  # Allow imports after logging setup
+"**/pool.py" = ["E402"]  # Allow imports after logging setup
+"**/generate_library.py" = ["E402"]  # Allow imports after logging setup
+"**/state_ops/*.py" = ["F811"]  # Allow re-imports for API consistency
+"**/region_ops/*.py" = ["F841"]  # Allow unused intermediates for debugging
+"**/docs/*.ipynb" = ["F841"]  # Allow unused vars in notebook examples
+"**/benchmarks/*" = ["E402"]  # Allow imports not at top

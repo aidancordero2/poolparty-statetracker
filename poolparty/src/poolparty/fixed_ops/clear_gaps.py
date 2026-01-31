@@ -1,7 +1,9 @@
 """ClearGaps operation - remove all gap/non-molecular characters from sequences."""
+
 from numbers import Real
-from ..types import Pool_type, Union, Optional, RegionType, beartype
+
 from ..pool import Pool
+from ..types import Optional, Pool_type, RegionType, Union, beartype
 from ..utils.parsing_utils import TAG_PATTERN
 
 
@@ -50,13 +52,13 @@ def clear_gaps(
         last_end = 0
         for match in TAG_PATTERN.finditer(seq):
             # Filter non-marker text to only molecular chars
-            result.append(''.join(c for c in seq[last_end:match.start()] if c in all_chars_set))
+            result.append("".join(c for c in seq[last_end : match.start()] if c in all_chars_set))
             # Keep marker tag unchanged
             result.append(match.group(0))
             last_end = match.end()
         # Handle remaining text after last marker
-        result.append(''.join(c for c in seq[last_end:] if c in all_chars_set))
-        return ''.join(result)
+        result.append("".join(c for c in seq[last_end:] if c in all_chars_set))
+        return "".join(result)
 
     return fixed_operation(
         parent_pools=[pool],
@@ -65,5 +67,5 @@ def clear_gaps(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
-        _factory_name='clear_gaps',
+        _factory_name="clear_gaps",
     )

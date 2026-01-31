@@ -1,11 +1,24 @@
 """GetKmers operation - generate DNA k-mers."""
+
 from numbers import Real
-from ..types import Pool_type, ModeType, Optional, Literal, Union, RegionType, Integral, beartype, Seq
-from ..operation import Operation
-from ..pool import Pool
-from ..party import get_active_party
-from ..utils import dna_utils
+
 import numpy as np
+
+from ..operation import Operation
+from ..party import get_active_party
+from ..pool import Pool
+from ..types import (
+    Integral,
+    Literal,
+    ModeType,
+    Optional,
+    Pool_type,
+    RegionType,
+    Seq,
+    Union,
+    beartype,
+)
+from ..utils import dna_utils
 
 
 @beartype
@@ -14,14 +27,14 @@ def get_kmers(
     pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     style: Optional[str] = None,
-    case: Literal['lower', 'upper'] = 'upper',
+    case: Literal["lower", "upper"] = "upper",
     prefix: Optional[str] = None,
-    mode: ModeType = 'random',
+    mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
 ) -> Pool_type:
     """Create a Pool that generates DNA k-mers (all possible sequences of length k).
-    
+
     Must be called within a Party context.
 
     Parameters
@@ -51,7 +64,7 @@ def get_kmers(
     -------
     Pool_type
         A Pool whose states yield DNA k-mers of the specified length.
-    
+
     Raises
     ------
     RuntimeError
@@ -60,31 +73,40 @@ def get_kmers(
         If pool is provided without region.
     """
     from ..fixed_ops.from_seq import from_seq
+
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
-    op = GetKmersOp(length, pool=pool_obj, region=region,
-                    style=style,
-                    case=case, prefix=prefix, mode=mode,
-                    num_states=num_states,
-                    name=None, iter_order=iter_order)
+    op = GetKmersOp(
+        length,
+        pool=pool_obj,
+        region=region,
+        style=style,
+        case=case,
+        prefix=prefix,
+        mode=mode,
+        num_states=num_states,
+        name=None,
+        iter_order=iter_order,
+    )
     pool = Pool(operation=op)
     return pool
 
 
 class GetKmersOp(Operation):
     """Generate DNA k-mers."""
+
     factory_name = "get_kmers"
-    design_card_keys = ['kmer_index', 'kmer']
-    
+    design_card_keys = ["kmer_index", "kmer"]
+
     def __init__(
         self,
         length: int,
         pool: Optional[Pool] = None,
         region: RegionType = None,
-        spacer_str: str = '',
+        spacer_str: str = "",
         style: Optional[str] = None,
-        case: Literal['lower', 'upper'] = 'upper',
+        case: Literal["lower", "upper"] = "upper",
         prefix: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -96,41 +118,41 @@ class GetKmersOp(Operation):
                 "get_kmers requires an active Party context. "
                 "Use 'with pp.Party() as party:' to create one."
             )
-        
+
         # Validate bg_pool/region combination
         if pool is not None and region is None:
             raise ValueError(
                 "region is required when pool is provided. "
                 "Specify which region of pool to replace with the generated k-mer."
             )
-        
+
         if length < 1:
             raise ValueError(f"length must be >= 1, got {length}")
-        
+
         self._style = style
-        
+
         self.length = length
         self.case = case
         self.alpha_size = len(dna_utils.BASES)
-        self._total_kmers = self.alpha_size ** length
-        
+        self._total_kmers = self.alpha_size**length
+
         # Determine num_states based on mode
         natural_num_states = None
-        if mode == 'sequential':
+        if mode == "sequential":
             # Natural count is the total number of possible k-mers
             natural_num_states = self.validate_num_states(self._total_kmers, mode)
             # Use user-provided num_states if given, else natural count
             if num_states is None:
                 num_states = natural_num_states
-        elif mode == 'random':
+        elif mode == "random":
             # num_states stays as provided (or None for pure random mode)
             pass
         else:
             num_states = 1
-        
+
         self._natural_num_states_local = natural_num_states
         parent_pools = [pool] if pool is not None else []
-        
+
         # Compute seq_length: kmer length when standalone, adjusted when replacing region
         if pool is None:
             seq_length = length
@@ -147,13 +169,13 @@ class GetKmersOp(Operation):
             else:
                 # Interval [start, stop]
                 region_length = region[1] - region[0] if region is not None else None
-            
+
             # Compute output seq_length (None if any component is None)
             if parent_seq_length is None or region_length is None:
                 seq_length = None
             else:
                 seq_length = parent_seq_length - region_length + length
-        
+
         super().__init__(
             parent_pools=parent_pools,
             num_states=num_states,
@@ -165,7 +187,7 @@ class GetKmersOp(Operation):
             region=region,
             _natural_num_states=natural_num_states,
         )
-    
+
     def _value_to_kmer(self, value: int) -> str:
         """Convert a value index to a k-mer string."""
         result = []
@@ -173,22 +195,24 @@ class GetKmersOp(Operation):
         for _ in range(self.length):
             result.append(dna_utils.BASES[remaining % self.alpha_size])
             remaining //= self.alpha_size
-        return ''.join(reversed(result))
-    
+        return "".join(reversed(result))
+
     def _random_kmer(self, rng: np.random.Generator) -> str:
         """Generate a random k-mer."""
         indices = rng.integers(0, self.alpha_size, size=self.length)
-        return ''.join(dna_utils.BASES[i] for i in indices)
-    
+        return "".join(dna_utils.BASES[i] for i in indices)
+
     def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return Seq and design card."""
-        if self.mode == 'random':
+        if self.mode == "random":
             if rng is None:
-                raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
+                raise RuntimeError(
+                    f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)"
+                )
             kmer = self._random_kmer(rng)
             kmer_index = None
         else:
@@ -199,24 +223,25 @@ class GetKmersOp(Operation):
             idx = idx % self._total_kmers
             kmer = self._value_to_kmer(idx)
             kmer_index = idx
-        
+
         # Apply case transformation
-        if self.case == 'lower':
+        if self.case == "lower":
             kmer = kmer.lower()
-        
+
         # Apply style to all positions if specified
-        from ..utils.style_utils import SeqStyle, styles_suppressed
         from ..party import cards_suppressed
+        from ..utils.style_utils import SeqStyle, styles_suppressed
+
         if styles_suppressed():
             output_seq = Seq(kmer, None)
         else:
             output_style = SeqStyle.full(len(kmer), self._style)
             output_seq = Seq(kmer, output_style)
-        
+
         if cards_suppressed():
             return output_seq, {}
-        
+
         return output_seq, {
-            'kmer_index': kmer_index,
-            'kmer': kmer,
+            "kmer_index": kmer_index,
+            "kmer": kmer,
         }

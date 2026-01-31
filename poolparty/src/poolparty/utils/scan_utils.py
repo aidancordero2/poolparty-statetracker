@@ -1,5 +1,6 @@
 """Scan operation utilities."""
-from ..types import PositionsType, Optional
+
+from ..types import Optional, PositionsType
 from .seq_utils import validate_positions
 
 
@@ -10,7 +11,7 @@ def build_scan_cache(
     error_context: str = "scan",
 ) -> int:
     """Build cache and return number of states for a scan operation.
-    
+
     Parameters
     ----------
     seq_length
@@ -21,12 +22,12 @@ def build_scan_cache(
         User-specified positions to scan, or None for all positions.
     error_context
         Context string for error messages (e.g., "deletion", "region tag insertion").
-    
+
     Returns
     -------
     int
         Number of valid positions (states) for the scan operation.
-    
+
     Raises
     ------
     ValueError
@@ -41,12 +42,12 @@ def build_scan_cache(
             )
             return max(1, len(positions_list))
         return 1
-    
+
     # Calculate maximum valid starting position
     max_start = seq_length - item_length
     if max_start < 0:
         max_start = 0
-    
+
     num_all_positions = max_start + 1
     if positions is not None:
         indices = validate_positions(
@@ -57,7 +58,7 @@ def build_scan_cache(
         num_states = len(indices)
     else:
         num_states = num_all_positions
-    
+
     if num_states == 0:
         raise ValueError(f"No valid positions for {error_context}")
     return num_states

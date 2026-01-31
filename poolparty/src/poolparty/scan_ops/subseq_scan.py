@@ -1,10 +1,10 @@
 """Subsequence scan operation - extract subsequences at scanning positions."""
+
 from numbers import Integral, Real
 
-from ..types import Union, Literal, ModeType, Optional, PositionsType, RegionType, beartype
-from ..utils import validate_positions
-from ..party import get_active_party
 from ..pool import Pool
+from ..types import ModeType, Optional, PositionsType, RegionType, Union, beartype
+from ..utils import validate_positions
 
 
 @beartype
@@ -14,7 +14,7 @@ def subseq_scan(
     positions: PositionsType = None,
     region: RegionType = None,
     prefix: Optional[str] = None,
-    mode: ModeType = 'random',
+    mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
 ) -> Pool:
@@ -51,7 +51,7 @@ def subseq_scan(
         A Pool yielding subsequences extracted at each allowed position.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..region_ops import region_scan, extract_region, insert_tags
+    from ..region_ops import extract_region, insert_tags
 
     # Convert string input to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
@@ -73,7 +73,7 @@ def subseq_scan(
             )
         else:
             # Region is [start, stop] - insert temporary tags, extract, then scan
-            temp_region = '_subseq_scan_region'
+            temp_region = "_subseq_scan_region"
             marked_pool = insert_tags(
                 pool,
                 region_name=temp_region,
@@ -113,7 +113,7 @@ def _subseq_scan_impl(
     iter_order: Optional[Real] = None,
 ) -> Pool:
     """Core subseq scan implementation without region handling."""
-    from ..region_ops import region_scan, extract_region
+    from ..region_ops import extract_region, region_scan
 
     # Validate pool has defined seq_length
     pool_length = pool.seq_length
@@ -124,12 +124,10 @@ def _subseq_scan_impl(
     if seq_length <= 0:
         raise ValueError(f"seq_length must be > 0, got {seq_length}")
     if seq_length > pool_length:
-        raise ValueError(
-            f"seq_length ({seq_length}) must be <= pool.seq_length ({pool_length})"
-        )
+        raise ValueError(f"seq_length ({seq_length}) must be <= pool.seq_length ({pool_length})")
 
     # Calculate max position for region tag placement
-    region_name = '_subseq'
+    region_name = "_subseq"
     region_length = int(seq_length)
     max_position = pool_length - seq_length
 

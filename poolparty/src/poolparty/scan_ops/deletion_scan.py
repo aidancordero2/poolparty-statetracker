@@ -1,21 +1,22 @@
 """Deletion scan operation - delete a segment at scanning positions."""
+
 from numbers import Integral, Real
 
-from ..types import Union, ModeType, Optional, PositionsType, RegionType, beartype
 from ..pool import Pool
+from ..types import ModeType, Optional, PositionsType, RegionType, Union, beartype
 
 
 @beartype
 def deletion_scan(
     pool: Union[Pool, str],
     deletion_length: Integral,
-    deletion_marker: Optional[str] = '-',
+    deletion_marker: Optional[str] = "-",
     region: RegionType = None,
     positions: PositionsType = None,
     min_spacing: Optional[Integral] = None,
     max_spacing: Optional[Integral] = None,
     prefix: Optional[str] = None,
-    mode: ModeType = 'random',
+    mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -57,12 +58,12 @@ def deletion_scan(
 
     # Validate min_spacing/max_spacing not supported
     if min_spacing is not None or max_spacing is not None:
-        raise ValueError(
-            "min_spacing and max_spacing are not supported."
-        )
+        raise ValueError("min_spacing and max_spacing are not supported.")
 
     # Convert string to pool
-    pool = from_seq(pool, _factory_name='deletion_scan(from_seq)') if isinstance(pool, str) else pool
+    pool = (
+        from_seq(pool, _factory_name="deletion_scan(from_seq)") if isinstance(pool, str) else pool
+    )
 
     # Validate bg_pool has defined seq_length (only when no region specified)
     bg_length = pool.seq_length
@@ -73,13 +74,11 @@ def deletion_scan(
     if deletion_length <= 0:
         raise ValueError(f"del_length must be > 0, got {deletion_length}")
     if bg_length is not None and deletion_length >= bg_length:
-        raise ValueError(
-            f"del_length ({deletion_length}) must be < pool.seq_length ({bg_length})"
-        )
+        raise ValueError(f"del_length ({deletion_length}) must be < pool.seq_length ({bg_length})")
 
     # Use composition pattern: region_scan + replace_region
-    marker_name = '_del'
-    
+    marker_name = "_del"
+
     # 1. Mark the regions to delete with tags
     marked = region_scan(
         pool,
@@ -92,27 +91,27 @@ def deletion_scan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
-        _factory_name='deletion_scan(region_scan)',
+        _factory_name="deletion_scan(region_scan)",
     )
-    
+
     # 2. Create replacement content (gap markers or empty string)
     if deletion_marker is not None:
         marker_content = deletion_marker * int(deletion_length)
         # Only apply style if there's content to style
         replacement_style = style
     else:
-        marker_content = ''
+        marker_content = ""
         # No style when there's no marker content
         replacement_style = None
-    
-    marker_pool = from_seq(marker_content, _factory_name='deletion_scan(from_seq)')
-    
+
+    marker_pool = from_seq(marker_content, _factory_name="deletion_scan(from_seq)")
+
     # 3. Replace the marked region with the marker content
     return replace_region(
         marked,
         marker_pool,
         marker_name,
         iter_order=iter_order,
-        _factory_name='deletion_scan(replace_region)',
+        _factory_name="deletion_scan(replace_region)",
         _style=replacement_style,
     )

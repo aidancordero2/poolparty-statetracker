@@ -1,12 +1,14 @@
 """Join operation - join multiple sequences together."""
+
 from numbers import Real
-from ..types import Pool_type, Union, Optional, Sequence, beartype
+
+from ..types import Optional, Pool_type, Sequence, Union, beartype
 
 
 @beartype
 def join(
     pools: Sequence[Union[Pool_type, str]],
-    spacer_str: str = '',
+    spacer_str: str = "",
     iter_order: Optional[Real] = None,
     style: Optional[str] = None,
     _factory_name: Optional[str] = None,
@@ -45,12 +47,13 @@ def join(
         seq_from_seqs_fn=lambda seqs: spacer_str.join(seqs),
         seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         iter_order=iter_order,
-        _factory_name=_factory_name if _factory_name is not None else 'join',
+        _factory_name=_factory_name if _factory_name is not None else "join",
     )
-    
+
     # Apply style if specified
     if style is not None:
         from .style import stylize
+
         result_pool = stylize(result_pool, style=style)
-    
+
     return result_pool

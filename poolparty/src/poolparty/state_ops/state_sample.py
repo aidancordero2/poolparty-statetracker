@@ -1,10 +1,14 @@
 """StateSample operation - sample states from a pool."""
+
 from numbers import Real
+
+import numpy as np
+
 import statetracker as st
-from ..types import Optional, Sequence, Integral, Real, beartype, Seq
+
 from ..operation import Operation
 from ..pool import Pool
-import numpy as np
+from ..types import Integral, Optional, Real, Seq, Sequence, beartype
 
 
 @beartype
@@ -58,9 +62,10 @@ def state_sample(
 
 class StateSampleOp(Operation):
     """Sample states from a pool."""
+
     factory_name = "state_sample"
     design_card_keys = []
-    
+
     def __init__(
         self,
         parent_pool: Pool,
@@ -84,7 +89,7 @@ class StateSampleOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
         )
-    
+
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool],
@@ -97,7 +102,7 @@ class StateSampleOp(Operation):
             seed=self.seed,
             with_replacement=self.with_replacement,
         )
-    
+
     def _compute_core(
         self,
         parents: list[Seq],

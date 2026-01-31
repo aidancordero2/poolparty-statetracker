@@ -1,7 +1,9 @@
 """SliceSeq operation - slice SEQUENCES (string slicing)."""
-from numbers import Real, Integral
-from ..types import Union, Optional, Sequence, beartype
+
+from numbers import Integral, Real
+
 from ..pool import Pool
+from ..types import Optional, Sequence, Union, beartype
 
 
 @beartype
@@ -50,12 +52,13 @@ def slice_seq(
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         iter_order=iter_order,
-        _factory_name='slice_seq',
+        _factory_name="slice_seq",
     )
-    
+
     # Apply style if specified
     if style is not None:
         from .style import stylize
+
         result_pool = stylize(result_pool, style=style)
-    
+
     return result_pool

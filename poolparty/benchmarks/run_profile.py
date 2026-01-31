@@ -4,19 +4,20 @@
 Usage:
     # Profile with pyinstrument (call tree)
     uv run python poolparty/benchmarks/run_profile.py mutagenize
-    
+
     # Profile with cProfile (detailed stats)
     uv run python poolparty/benchmarks/run_profile.py mutagenize --cprofile
-    
+
     # Profile with memray (memory)
     uv run python poolparty/benchmarks/run_profile.py mutagenize --memray
-    
+
     # List available workloads
     uv run python poolparty/benchmarks/run_profile.py --list
-    
+
     # Custom parameters
-     
+
 """
+
 import argparse
 import sys
 from pathlib import Path
@@ -31,6 +32,7 @@ PROFILES_DIR = BENCHMARKS_DIR / "profiles"
 def list_workloads():
     """Print available workloads."""
     from timing import ALL_WORKLOADS
+
     print("Available workloads:")
     for name in ALL_WORKLOADS:
         print(f"  - {name}")
@@ -39,15 +41,15 @@ def list_workloads():
 def profile_pyinstrument(workload_func, **kwargs):
     """Profile with pyinstrument (call tree visualization)."""
     from pyinstrument import Profiler
-    
+
     profiler = Profiler()
     profiler.start()
-    
+
     try:
         result = workload_func(**kwargs)
     finally:
         profiler.stop()
-    
+
     print(profiler.output_text(unicode=True, color=True))
     return result
 
@@ -57,28 +59,28 @@ def profile_cprofile(workload_func, output_file=None, **kwargs):
     import cProfile
     import pstats
     from io import StringIO
-    
+
     profiler = cProfile.Profile()
     profiler.enable()
-    
+
     try:
         result = workload_func(**kwargs)
     finally:
         profiler.disable()
-    
+
     # Print top 30 functions by cumulative time
     stream = StringIO()
     stats = pstats.Stats(profiler, stream=stream)
     stats.strip_dirs()
-    stats.sort_stats('cumulative')
+    stats.sort_stats("cumulative")
     stats.print_stats(30)
     print(stream.getvalue())
-    
+
     # Save to file if requested
     if output_file:
         stats.dump_stats(str(output_file))
         print(f"\nProfile saved to: {output_file}")
-    
+
     return result
 
 
@@ -89,20 +91,20 @@ def profile_memray(workload_func, workload_name, **kwargs):
     except ImportError:
         print("memray not installed. Install with: uv add --group benchmark memray")
         sys.exit(1)
-    
+
     output_file = PROFILES_DIR / f"{workload_name}.bin"
-    
-    print(f"Running with memray tracking...")
+
+    print("Running with memray tracking...")
     print(f"Output: {output_file}")
-    
+
     with memray.Tracker(str(output_file)):
         result = workload_func(**kwargs)
-    
-    print(f"\nDone. Generate reports with:")
+
+    print("\nDone. Generate reports with:")
     print(f"  memray flamegraph {output_file}")
     print(f"  memray summary {output_file}")
     print(f"  memray tree {output_file}")
-    
+
     return result
 
 
@@ -147,13 +149,13 @@ def main():
     parser.add_argument(
         "--num_mut",
         type=str,
-        default='None',
+        default="None",
         help="Number of mutations (default: None)",
     )
     parser.add_argument(
         "--mut_rate",
         type=str,
-        default='None',
+        default="None",
         help="Mutations rate (default: None)",
     )
     parser.add_argument(
@@ -161,41 +163,41 @@ def main():
         type=str,
         help="Output file for profile data",
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.list:
         list_workloads()
         return
-    
+
     if not args.workload:
         parser.print_help()
         return
-    
+
     from timing import ALL_WORKLOADS
-    
+
     if args.workload not in ALL_WORKLOADS:
         print(f"Unknown workload: {args.workload}")
         list_workloads()
         sys.exit(1)
-    
+
     workload_func = ALL_WORKLOADS[args.workload]
-    
+
     # Build kwargs based on workload
     kwargs = {}
-    if 'seq_len' in workload_func.__code__.co_varnames:
-        kwargs['seq_len'] = args.seq_len
-    if 'num_seqs' in workload_func.__code__.co_varnames:
-        kwargs['num_seqs'] = args.num_seqs
-    if 'num_mut' in workload_func.__code__.co_varnames:
-        kwargs['num_mut'] = None if args.num_mut=='None' else int(args.num_mut)
-    if 'mut_rate' in workload_func.__code__.co_varnames:
-        kwargs['mut_rate'] = None if args.mut_rate=='None' else float(args.mut_rate)
-    
+    if "seq_len" in workload_func.__code__.co_varnames:
+        kwargs["seq_len"] = args.seq_len
+    if "num_seqs" in workload_func.__code__.co_varnames:
+        kwargs["num_seqs"] = args.num_seqs
+    if "num_mut" in workload_func.__code__.co_varnames:
+        kwargs["num_mut"] = None if args.num_mut == "None" else int(args.num_mut)
+    if "mut_rate" in workload_func.__code__.co_varnames:
+        kwargs["mut_rate"] = None if args.mut_rate == "None" else float(args.mut_rate)
+
     print(f"Profiling: {args.workload}")
     print(f"Parameters: {kwargs}")
     print("-" * 50)
-    
+
     # Run with selected profiler
     if args.memray:
         result = profile_memray(workload_func, args.workload, **kwargs)
@@ -204,7 +206,7 @@ def main():
         result = profile_cprofile(workload_func, output_file, **kwargs)
     else:
         result = profile_pyinstrument(workload_func, **kwargs)
-    
+
     print(f"\nGenerated {len(result)} sequences")
 
 

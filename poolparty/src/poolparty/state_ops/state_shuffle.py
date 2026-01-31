@@ -1,10 +1,14 @@
 """StateShuffle operation - randomly permute a pool's states."""
+
 from numbers import Real
+
+import numpy as np
+
 import statetracker as st
-from ..types import Optional, Sequence, Integral, Real, beartype, Seq
+
 from ..operation import Operation
 from ..pool import Pool
-import numpy as np
+from ..types import Integral, Optional, Real, Seq, Sequence, beartype
 
 
 @beartype
@@ -36,16 +40,19 @@ def state_shuffle(
     Pool
         A Pool containing the same states as the input but in a randomly permuted order.
     """
-    op = StateShuffleOp(pool, seed=seed, permutation=permutation, prefix=prefix, name=None, iter_order=iter_order)
+    op = StateShuffleOp(
+        pool, seed=seed, permutation=permutation, prefix=prefix, name=None, iter_order=iter_order
+    )
     result_pool = Pool(operation=op)
     return result_pool
 
 
 class StateShuffleOp(Operation):
     """Randomly permute a pool's states."""
+
     factory_name = "state_shuffle"
     design_card_keys = []
-    
+
     def __init__(
         self,
         parent_pool: Pool,
@@ -65,7 +72,7 @@ class StateShuffleOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
         )
-    
+
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool],
@@ -76,7 +83,7 @@ class StateShuffleOp(Operation):
             seed=self.seed,
             permutation=self.permutation,
         )
-    
+
     def _compute_core(
         self,
         parents: list[Seq],

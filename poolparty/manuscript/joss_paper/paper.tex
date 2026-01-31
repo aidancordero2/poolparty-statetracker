@@ -97,22 +97,22 @@
 \marginpar{
   \begin{flushleft}
   \sffamily\small
-  
+
   {\bfseries Software}
   \begin{itemize}
     \setlength\itemsep{0em}
     \item \href{https://github.com/[username]/counter}{\color{linky}{Repository}}
   \end{itemize}
-  
+
   \vspace{2mm}
-  
+
   {\bfseries Submitted:} December 2024
-  
+
   \vspace{2mm}
-  
+
   {\bfseries License}\\
   Authors of papers retain copyright and release the work under a Creative Commons Attribution 4.0 International License (\href{http://creativecommons.org/licenses/by/4.0/}{\color{linky}{CC BY 4.0}}).
-  
+
   \end{flushleft}
 }
 
@@ -120,34 +120,34 @@
 \section{Summary}
 %-------------------------------------------------------------------------------
 
-Counter is a Python library for composable finite-state iteration with automatic 
-state propagation. It provides a \texttt{Counter} class representing finite state 
-spaces that can be combined using algebraic operations: product (\texttt{*}) for 
-Cartesian products, sum (\texttt{+}) for disjoint unions, and synchronization for 
-lockstep iteration. When iterating over a composite counter, all ancestor counters 
-automatically update their state properties, eliminating the need to manually 
+Counter is a Python library for composable finite-state iteration with automatic
+state propagation. It provides a \texttt{Counter} class representing finite state
+spaces that can be combined using algebraic operations: product (\texttt{*}) for
+Cartesian products, sum (\texttt{+}) for disjoint unions, and synchronization for
+lockstep iteration. When iterating over a composite counter, all ancestor counters
+automatically update their state properties, eliminating the need to manually
 track indices across nested loops.
 
-The library enforces tree-structured computation graphs, ensuring unambiguous 
-state decomposition. A \texttt{CounterManager} context manager provides lifecycle 
-management for counter objects, including batch reset, inactivation, and iteration 
-testing utilities. Counter is designed for applications requiring systematic 
-enumeration of combinatorial spaces while maintaining explicit access to component 
+The library enforces tree-structured computation graphs, ensuring unambiguous
+state decomposition. A \texttt{CounterManager} context manager provides lifecycle
+management for counter objects, including batch reset, inactivation, and iteration
+testing utilities. Counter is designed for applications requiring systematic
+enumeration of combinatorial spaces while maintaining explicit access to component
 states.
 
 %-------------------------------------------------------------------------------
 \section{Statement of Need}
 %-------------------------------------------------------------------------------
 
-Many scientific and engineering applications require enumerating combinatorial 
-state spaces: experimental designs, parameter sweeps, sequence libraries, and 
-optimization landscapes. Python's standard library provides \texttt{itertools.product} 
-for Cartesian products and \texttt{itertools.chain} for concatenation, while NumPy 
-offers \texttt{ndindex} for multi-dimensional index iteration. However, these tools 
+Many scientific and engineering applications require enumerating combinatorial
+state spaces: experimental designs, parameter sweeps, sequence libraries, and
+optimization landscapes. Python's standard library provides \texttt{itertools.product}
+for Cartesian products and \texttt{itertools.chain} for concatenation, while NumPy
+offers \texttt{ndindex} for multi-dimensional index iteration. However, these tools
 yield tuples or indices without maintaining persistent state objects.
 
-Consider a common scenario: iterating over all combinations of positions and 
-mutations in a biological sequence. With \texttt{itertools.product}, one must 
+Consider a common scenario: iterating over all combinations of positions and
+mutations in a biological sequence. With \texttt{itertools.product}, one must
 unpack tuples and track which component is which:
 
 \begin{lstlisting}
@@ -155,8 +155,8 @@ for pos, mut in itertools.product(range(100), range(4)):
     process(pos, mut)
 \end{lstlisting}
 
-For deeper nesting or when different code paths need access to component states, 
-this becomes unwieldy. Counter addresses this by providing stateful iteration 
+For deeper nesting or when different code paths need access to component states,
+this becomes unwieldy. Counter addresses this by providing stateful iteration
 where component counters expose their current state as properties:
 
 \begin{lstlisting}
@@ -168,7 +168,7 @@ for _ in experiment:
     process(position.state, mutation.state)
 \end{lstlisting}
 
-The state propagation is automatic: advancing \texttt{experiment} updates 
+The state propagation is automatic: advancing \texttt{experiment} updates
 \texttt{position.state} and \texttt{mutation.state} transparently.
 
 %-------------------------------------------------------------------------------
@@ -178,40 +178,40 @@ The state propagation is automatic: advancing \texttt{experiment} updates
 Counter provides the following core operations:
 
 \begin{itemize}
-    \item \textbf{Product} (\texttt{A * B}): Creates a counter over the Cartesian 
-    product with $|A| \times |B|$ states. Supports N-ary products via 
+    \item \textbf{Product} (\texttt{A * B}): Creates a counter over the Cartesian
+    product with $|A| \times |B|$ states. Supports N-ary products via
     \texttt{multiply\_counters(A, B, C, ...)}.
-    
-    \item \textbf{Sum} (\texttt{A + B}): Creates a counter over the disjoint union 
-    with $|A| + |B|$ states. During iteration, exactly one parent is active 
-    (state $\geq 0$) while others are inactive (state $= -1$). Supports N-ary 
+
+    \item \textbf{Sum} (\texttt{A + B}): Creates a counter over the disjoint union
+    with $|A| + |B|$ states. During iteration, exactly one parent is active
+    (state $\geq 0$) while others are inactive (state $= -1$). Supports N-ary
     sums via \texttt{sum\_counters(A, B, C, ...)}.
-    
-    \item \textbf{Synchronize} (\texttt{synchronize\_counters(A, B)}): Creates a 
+
+    \item \textbf{Synchronize} (\texttt{synchronize\_counters(A, B)}): Creates a
     counter that keeps multiple equal-sized counters in lockstep.
-    
-    \item \textbf{Slice} (\texttt{A[start:stop:step]}): Creates a counter over a 
+
+    \item \textbf{Slice} (\texttt{A[start:stop:step]}): Creates a counter over a
     subset of states, supporting Python slice semantics including reversal.
-    
-    \item \textbf{Repeat} (\texttt{A * n} or \texttt{repeat\_counter(A, n)}): 
+
+    \item \textbf{Repeat} (\texttt{A * n} or \texttt{repeat\_counter(A, n)}):
     Creates a counter that cycles through A's states n times.
 \end{itemize}
 
-State propagation is implemented via a \texttt{decompose} method on each operation, 
-which maps a composite state to parent states. For products, this uses mixed-radix 
-decomposition; for sums, it identifies the active branch. The tree constraint 
-(no counter appearing multiple times in a graph) ensures decomposition is 
+State propagation is implemented via a \texttt{decompose} method on each operation,
+which maps a composite state to parent states. For products, this uses mixed-radix
+decomposition; for sums, it identifies the active branch. The tree constraint
+(no counter appearing multiple times in a graph) ensures decomposition is
 unambiguous.
 
-From a mathematical perspective, these operations correspond to products and 
-coproducts in the category \textbf{FinSet} of finite sets, with the inactive 
+From a mathematical perspective, these operations correspond to products and
+coproducts in the category \textbf{FinSet} of finite sets, with the inactive
 state extending each set to a pointed set.
 
 %-------------------------------------------------------------------------------
 \section{Example Usage}
 %-------------------------------------------------------------------------------
 
-The following example demonstrates composing counters and observing automatic 
+The following example demonstrates composing counters and observing automatic
 state propagation:
 
 \begin{lstlisting}
@@ -221,11 +221,11 @@ with CounterManager() as mgr:
     # Define component counters
     row = Counter(3, name='row')
     col = Counter(4, name='col')
-    
+
     # Compose via Cartesian product
     grid = row * col
     grid.name = 'grid'
-    
+
     # Iterate and observe state propagation
     for state in grid:
         print(f"grid={state}, row={row.state}, col={col.state}")

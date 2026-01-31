@@ -1,9 +1,9 @@
 """Insertion scan operation - insert a sequence at scanning positions."""
+
 from numbers import Integral, Real
 
-from ..types import Union, ModeType, Optional, PositionsType, RegionType, beartype
-from ..party import get_active_party
 from ..pool import Pool
+from ..types import ModeType, Optional, PositionsType, RegionType, Union, beartype
 
 
 @beartype
@@ -17,10 +17,10 @@ def insertion_scan(
     prefix: Optional[str] = None,
     prefix_position: Optional[str] = None,
     prefix_insert: Optional[str] = None,
-    mode: ModeType = 'random',
+    mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
-    _factory_name: Optional[str] = 'insertion_scan',
+    _factory_name: Optional[str] = "insertion_scan",
 ) -> Pool:
     """
     Insert or replace a sequence at specified scanning positions.
@@ -63,8 +63,16 @@ def insertion_scan(
     from ..region_ops import region_scan, replace_region
 
     # Convert string inputs to pools
-    pool = from_seq(pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
-    ins_pool = from_seq(ins_pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(ins_pool, str) else ins_pool
+    pool = (
+        from_seq(pool, _factory_name=f"{_factory_name}(from_seq)")
+        if isinstance(pool, str)
+        else pool
+    )
+    ins_pool = (
+        from_seq(ins_pool, _factory_name=f"{_factory_name}(from_seq)")
+        if isinstance(ins_pool, str)
+        else ins_pool
+    )
 
     # Validate ins_pool has defined seq_length
     ins_length = ins_pool.seq_length
@@ -84,7 +92,7 @@ def insertion_scan(
     # replace=False: marker_length=0 (insert without removing background)
     # replace=True: marker_length=ins_length (replace background content)
     # Use different marker names to avoid conflicts when both are used in same Party
-    marker_name = '_rep' if replace else '_ins'
+    marker_name = "_rep" if replace else "_ins"
     marker_length = ins_length if replace else 0
 
     # 1. Insert tags at scanning positions
@@ -98,10 +106,10 @@ def insertion_scan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
-        _factory_name=f'{_factory_name}(region_scan)',
+        _factory_name=f"{_factory_name}(region_scan)",
     )
-    marked = marked.named(f'{marked.name}:{_factory_name}(intermediate)')
-    
+    marked = marked.named(f"{marked.name}:{_factory_name}(intermediate)")
+
     # Capture position state
     pos_state = marked.operation.state
 
@@ -111,40 +119,41 @@ def insertion_scan(
         ins_pool,
         marker_name,
         iter_order=iter_order,
-        _factory_name=f'{_factory_name}(replace_region)',
+        _factory_name=f"{_factory_name}(replace_region)",
         _style=style,
     )
-    
+
     # 3. Add PassthroughOp for custom naming if any prefix is set
     if any([prefix, prefix_position, prefix_insert]):
         num_sites = ins_pool_num_states or 1
-        
+
         def compute_names():
             # Check if this branch is active - if states are None, return empty list
             if pos_state is None or pos_state.value is None:
                 return []
             if ins_pool_state is not None and ins_pool_state.value is None:
                 return []
-            
+
             pos_idx = pos_state.value
             site_idx = ins_pool_state.value if ins_pool_state else 0
-            
+
             contributions = []
             if prefix:  # Cartesian product index
                 W = pos_idx * num_sites + site_idx
-                contributions.append(f'{prefix}_{W}')
+                contributions.append(f"{prefix}_{W}")
             if prefix_position:
-                contributions.append(f'{prefix_position}_{pos_idx}')
+                contributions.append(f"{prefix_position}_{pos_idx}")
             if prefix_insert:
-                contributions.append(f'{prefix_insert}_{site_idx}')
+                contributions.append(f"{prefix_insert}_{site_idx}")
             return contributions
-        
+
         result = passthrough(
-            result, _name_fn=compute_names,
+            result,
+            _name_fn=compute_names,
             iter_order=iter_order,
-            _factory_name=f'{_factory_name}(naming)',
+            _factory_name=f"{_factory_name}(naming)",
         )
-    
+
     return result
 
 
@@ -158,10 +167,10 @@ def replacement_scan(
     prefix: Optional[str] = None,
     prefix_position: Optional[str] = None,
     prefix_insert: Optional[str] = None,
-    mode: ModeType = 'random',
+    mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
-    _factory_name: Optional[str] = 'replacement_scan',
+    _factory_name: Optional[str] = "replacement_scan",
 ) -> Pool:
     """Replace a segment with insert at specified scanning positions.
 
@@ -180,5 +189,5 @@ def replacement_scan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
-        _factory_name=_factory_name if _factory_name is not None else 'replacement_scan',
+        _factory_name=_factory_name if _factory_name is not None else "replacement_scan",
     )

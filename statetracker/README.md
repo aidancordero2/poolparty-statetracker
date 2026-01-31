@@ -35,10 +35,10 @@ with Manager():
     # Create leaf states
     A = State(num_values=2, name='A')
     B = State(num_values=3, name='B')
-    
+
     # Combine with product (Cartesian product)
     C = A * B  # 6 values total
-    
+
     # Iterate and see parent values update
     for value in C:
         print(f"C={value}, A={A.value}, B={B.value}")
@@ -65,14 +65,14 @@ with Manager():
     C = A * B  # 6 values (2 × 3)
 ```
 
-### Stack 
+### Stack
 
 ```python
 with Manager():
     A = State(num_values=2, name='A')
     B = State(num_values=3, name='B')
     C = stack([A,B])  # 5 values (2 + 3)
-    
+
     for _ in C:
         # Only one of A or B is active (non-None) at a time
         print(f"A={A.value}, B={B.value}")
@@ -126,7 +126,7 @@ with Manager():
     A = State(num_values=2, name='A')
     B = State(num_values=3, name='B')
     C = A * B
-    
+
     C.value = 5  # Set child value
     print(A.value)  # 1 (automatically updated)
     print(B.value)  # 2 (automatically updated)
@@ -142,7 +142,7 @@ with Manager():
     B = State(num_values=3, name='B')
     C = A * B
     C.name = 'C'
-    
+
     C.print_dag()
 ```
 

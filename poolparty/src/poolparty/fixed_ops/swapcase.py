@@ -1,7 +1,9 @@
 """SwapCase operation - swap case of sequence characters."""
+
 from numbers import Real
-from ..types import Pool_type, Union, Optional, RegionType, beartype
+
 from ..pool import Pool
+from ..types import Optional, Pool_type, RegionType, Union, beartype
 from ..utils.parsing_utils import transform_nontag_chars
 
 
@@ -48,12 +50,13 @@ def swapcase(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
-        _factory_name=_factory_name if _factory_name is not None else 'swapcase',
+        _factory_name=_factory_name if _factory_name is not None else "swapcase",
     )
-    
+
     # Apply style if specified
     if style is not None:
         from .style import stylize
+
         result_pool = stylize(result_pool, style=style)
-    
+
     return result_pool

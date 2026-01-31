@@ -1,1 +1,0 @@
-Any questions? When using the command line, always execute conda activate poolparty Make sure all tests pass before existing. Please acknowledge these instructions before proceeding.

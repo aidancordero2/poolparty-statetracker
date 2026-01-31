@@ -1,10 +1,14 @@
 """StateSlice operation - slice a pool's states (not sequences)."""
+
 from numbers import Real
+
+import numpy as np
+
 import statetracker as st
-from ..types import Union, Optional, Sequence, Integral, Real, beartype, Seq
+
 from ..operation import Operation
 from ..pool import Pool
-import numpy as np
+from ..types import Integral, Optional, Real, Seq, Sequence, Union, beartype
 
 
 @beartype
@@ -32,7 +36,7 @@ def state_slice(
     -------
     Pool
         A Pool containing states selected by applying the provided index or slice to the input Pool's state space.
-    
+
     Raises
     ------
     ValueError
@@ -57,17 +61,19 @@ def state_slice(
         start = key.start
         stop = key.stop
         step = key.step
-    op = StateSliceOp(pool, start=start, stop=stop, step=step, prefix=prefix,
-                      name=None, iter_order=iter_order)
+    op = StateSliceOp(
+        pool, start=start, stop=stop, step=step, prefix=prefix, name=None, iter_order=iter_order
+    )
     result_pool = Pool(operation=op)
     return result_pool
 
 
 class StateSliceOp(Operation):
     """Slice a pool's states to select a subset."""
+
     factory_name = "state_slice"
     design_card_keys = []
-    
+
     def __init__(
         self,
         parent_pool: Pool,
@@ -89,19 +95,19 @@ class StateSliceOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
         )
-    
+
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool],
     ) -> st.State:
         """Build pool counter using st.slice."""
         return st.slice(
-            parent_pools[0].state, 
-            start=self.start, 
-            stop=self.stop, 
+            parent_pools[0].state,
+            start=self.start,
+            stop=self.stop,
             step=self.step,
         )
-    
+
     def _compute_core(
         self,
         parents: list[Seq],

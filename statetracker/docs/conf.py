@@ -1,41 +1,42 @@
 """Sphinx configuration for StateCounter documentation."""
+
 import os
 import sys
 
 # Add the package source to the path for autodoc
-sys.path.insert(0, os.path.abspath('../src'))
+sys.path.insert(0, os.path.abspath("../src"))
 
 # -- Project information -----------------------------------------------------
-project = 'StateCounter'
-copyright = '2025, Justin Kinney'
-author = 'Justin Kinney'
-release = '0.1.0'
+project = "StateCounter"
+copyright = "2025, Justin Kinney"
+author = "Justin Kinney"
+release = "0.1.0"
 
 # -- General configuration ---------------------------------------------------
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.intersphinx',
-    'sphinx_autodoc_typehints',
-    'nbsphinx',
-    'sphinx_copybutton',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinx_autodoc_typehints",
+    "nbsphinx",
+    "sphinx_copybutton",
 ]
 
 # Do NOT automatically execute notebooks when building.
-nbsphinx_execute = 'never'
+nbsphinx_execute = "never"
 
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for HTML output -------------------------------------------------
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
-html_logo = 'statecounter_logo2.jpg'
-html_css_files = ['custom.css']
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+html_logo = "statecounter_logo2.jpg"
+html_css_files = ["custom.css"]
 
 # Create _static directory if it doesn't exist (avoids warning)
-os.makedirs(os.path.join(os.path.dirname(__file__), '_static'), exist_ok=True)
+os.makedirs(os.path.join(os.path.dirname(__file__), "_static"), exist_ok=True)
 
 # -- Extension configuration -------------------------------------------------
 
@@ -55,23 +56,23 @@ napoleon_type_aliases = None
 
 # Autodoc settings
 autodoc_default_options = {
-    'members': True,
-    'member-order': 'bysource',
-    'special-members': '__init__',
-    'undoc-members': True,
-    'exclude-members': '__weakref__',
-    'show-inheritance': True,
+    "members": True,
+    "member-order": "bysource",
+    "special-members": "__init__",
+    "undoc-members": True,
+    "exclude-members": "__weakref__",
+    "show-inheritance": True,
 }
 
 # Type hints settings
-autodoc_typehints = 'description'
-autodoc_typehints_description_target = 'documented'
+autodoc_typehints = "description"
+autodoc_typehints_description_target = "documented"
 
 # Intersphinx mapping
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://numpy.org/doc/stable/', None),
-    'pandas': ('https://pandas.pydata.org/docs/', None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
 }
 
 # Suppress warnings for missing references to beartype types

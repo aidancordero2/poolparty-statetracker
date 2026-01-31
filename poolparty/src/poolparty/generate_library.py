@@ -1,14 +1,17 @@
 """Library generation functions for poolparty."""
+
 import logging
 
 logger = logging.getLogger(__name__)
 
-import statetracker as st
-from .types import Pool_type, Union, Sequence, Literal, Optional, beartype, Seq
-from .utils.utils import clean_df_int_columns
-from .utils.df_utils import counter_col_name, organize_columns, finalize_generate_df
 import numpy as np
 import pandas as pd
+
+import statetracker as st
+
+from .types import Literal, Optional, Pool_type, Seq, Sequence, Union, beartype
+from .utils.df_utils import counter_col_name, finalize_generate_df, organize_columns
+from .utils.utils import clean_df_int_columns
 
 
 @beartype
@@ -21,12 +24,12 @@ def generate_library(
     seqs_only: bool = False,
     report_design_cards: bool = False,
     aux_pools: Sequence[Pool_type] = (),
-    pools_to_report: Union[str, Sequence[Pool_type]] = 'all',
-    organize_columns_by: Literal['pool', 'type'] = 'type',
+    pools_to_report: Union[str, Sequence[Pool_type]] = "all",
+    organize_columns_by: Literal["pool", "type"] = "type",
     _include_inline_styles: bool = False,
 ) -> Union[pd.DataFrame, list[str]]:
     """Generate sequences from a pool.
-    
+
     Args:
         pool: The pool to generate sequences from.
         num_cycles: Number of complete iterations through all states.
@@ -40,17 +43,17 @@ def generate_library(
         aux_pools: Additional pools to include in output.
         pools_to_report: Which pools to report ('all', 'self', or list of pools).
         organize_columns_by: Column organization ('pool' or 'type').
-    
+
     Returns:
         DataFrame with generated sequences, or list of sequences if seqs_only=True.
     """
     # Initialize state tracking on pool if not present
-    if not hasattr(pool, '_current_state'):
+    if not hasattr(pool, "_current_state"):
         pool._current_state = 0
-    if not hasattr(pool, '_master_seed'):
+    if not hasattr(pool, "_master_seed"):
         pool._master_seed = None
-    
-    # Validate arguments    
+
+    # Validate arguments
     if num_seqs is None:
         if pool.state is None:
             raise ValueError(
@@ -64,101 +67,112 @@ def generate_library(
         pool._master_seed = seed
     if pool._master_seed is None:
         pool._master_seed = 0
-    
+
     # Get config from active party
     from .party import get_active_party
+
     party = get_active_party()
     config = party._config if party else None
     suppress_cards = config.suppress_cards if config else False
-    
-    logger.info("Starting library generation: pool=%s num_seqs=%s seed=%s", pool.name, num_seqs, seed)
-    
+
+    logger.info(
+        "Starting library generation: pool=%s num_seqs=%s seed=%s", pool.name, num_seqs, seed
+    )
+
     # Build outputs dict
-    outputs: dict[str, Pool_type] = {f'{pool.name}.seq': pool}
+    outputs: dict[str, Pool_type] = {f"{pool.name}.seq": pool}
     if report_design_cards and not suppress_cards:
         for aux_pool in aux_pools:
-            outputs[f'{aux_pool.name}.seq'] = aux_pool
-    
+            outputs[f"{aux_pool.name}.seq"] = aux_pool
+
     sorted_ops = _topo_sort_operations(outputs)
     _seed_random_operations(sorted_ops, pool._master_seed)
-    
+
     # Determine which pools to report (only used when report_design_cards=True and cards not suppressed)
     if report_design_cards and not suppress_cards:
-        if pools_to_report == 'all':
+        if pools_to_report == "all":
             pools_filter = _collect_all_pools(outputs)
-        elif pools_to_report == 'self':
+        elif pools_to_report == "self":
             pools_filter = {pool}
         else:
             pools_filter = set(pools_to_report)
-        
+
         ops_to_report = {p.operation.id for p in pools_filter}
-        
+
         # Add filtered pools to outputs if not already present
         for p in pools_filter:
-            key = f'{p.name}.seq'
+            key = f"{p.name}.seq"
             if key not in outputs:
                 outputs[key] = p
-        
+
         # Get column visibility from config (defaults to True)
         report_pool_states = config.show_pool_states if config else True
         report_op_states = config.show_op_states if config else True
-        
+
         states = _collect_counters(pools_filter, report_pool_states, report_op_states)
     else:
         pools_filter = {pool}
         ops_to_report = set()
         states = []
-    
+
     # Generate rows
     rows = []
     for i in range(num_seqs):
         global_state = pool._current_state + i
         row = _compute_one(
-            pool, sorted_ops, outputs, global_state, 
-            states, report_design_cards and not suppress_cards, 
-            ops_to_report, pools_filter, _include_inline_styles
+            pool,
+            sorted_ops,
+            outputs,
+            global_state,
+            states,
+            report_design_cards and not suppress_cards,
+            ops_to_report,
+            pools_filter,
+            _include_inline_styles,
         )
         rows.append(row)
-    
+
     pool._current_state += num_seqs
-    
+
     # Build and format DataFrame
     df = pd.DataFrame(rows)
-    
+
     if not report_design_cards:
         # Minimal output: just "name" and "seq" columns
-        df = df[['name', f'{pool.name}.seq']].rename(columns={f'{pool.name}.seq': 'seq'})
+        df = df[["name", f"{pool.name}.seq"]].rename(columns={f"{pool.name}.seq": "seq"})
         if seqs_only:
-            return list(df['seq'])
+            return list(df["seq"])
         return df
-    
+
     # Full design card output
     df = clean_df_int_columns(df)
     df = organize_columns(df, pools_filter, organize_columns_by)
-    
+
     # Get column visibility from config
     report_seq = config.show_seq if config else True
     report_pool_seqs = config.show_pool_seqs if config else True
     show_name = config.show_name if config else True
-    
+
     df = finalize_generate_df(df, pool.name, report_seq, report_pool_seqs, pools_filter, show_name)
-    
+
     # If cards are suppressed, remove the pool-specific seq column (keep only 'seq')
-    if suppress_cards and f'{pool.name}.seq' in df.columns:
-        df = df.drop(columns=[f'{pool.name}.seq'])
-    
+    if suppress_cards and f"{pool.name}.seq" in df.columns:
+        df = df.drop(columns=[f"{pool.name}.seq"])
+
     logger.info("Completed library generation: %d sequences", len(df))
     if seqs_only:
-        return list(df['seq'])
+        return list(df["seq"])
     return df
+
 
 ## THIS IS THE TOPOLOGICAL SORTING FUNCTION THAT IS USED TO DETERMINE THE ORDER OF OPERATIONS.
 def _topo_sort_operations(outputs: dict) -> list:
     """Topologically sort operations reachable from outputs."""
     from .operation import Operation
+
     visited: set[int] = set()
     result: list[Operation] = []
-    
+
     def visit(pool: Pool_type) -> None:
         op = pool.operation
         if op.id in visited:
@@ -167,7 +181,7 @@ def _topo_sort_operations(outputs: dict) -> list:
             visit(parent)
         visited.add(op.id)
         result.append(op)
-    
+
     for pool in outputs.values():
         visit(pool)
     return result
@@ -183,7 +197,7 @@ def _collect_all_pools(outputs: dict) -> set:
     """Collect all pools reachable from the outputs."""
     visited: set[int] = set()
     result: set = set()
-    
+
     def visit(pool: Pool_type) -> None:
         pool_id = id(pool)
         if pool_id in visited:
@@ -192,7 +206,7 @@ def _collect_all_pools(outputs: dict) -> set:
         result.add(pool)
         for parent in pool.operation.parent_pools:
             visit(parent)
-    
+
     for pool in outputs.values():
         visit(pool)
     return result
@@ -220,6 +234,7 @@ def _collect_counters(
                 result.append(op_counter)
     return result
 
+
 ## THIS IS THE FUNCTION THAT COMPUTES ONE ROW OF OUTPUT FOR THE GIVEN GLOBAL STATE.
 ## CALLS EACH OPERATION IN THE TOPOLOGICAL SORT ORDER AND CACHES THE RESULTS.
 def _compute_one(
@@ -237,24 +252,24 @@ def _compute_one(
     seq_cache: dict[int, Seq] = {}
     card_cache: dict[int, dict] = {}
     row: dict = {}
-    
+
     # Sets the value of the pool state and, in doing so, the value
     # of all pool and operation states that affect this state.
     # Skip if pool has no state (fully random DAG)
     if pool.state is not None:
         pool.state.value = global_state % pool.state.num_values
-    
+
     # Collect all name contributions from operations in topological order
     all_contributions: list[str] = []
-    
+
     # Iterates over the operations in topological order (sources to final).
     # This is the code that effectively implements the DAG.
     for op in sorted_ops:
         # Get parent Seq objects (already cached because of topological sort)
         parents = [seq_cache[p.operation.id] for p in op.parent_pools]
-        
+
         # Determine RNG for this operation
-        if op.mode == 'random':
+        if op.mode == "random":
             if op.state is not None:
                 # Explicit num_states: use state value
                 state = op.state.value if op.state.value is not None else 0
@@ -265,17 +280,17 @@ def _compute_one(
             op_rng = np.random.default_rng(seed_seq)
         else:
             op_rng = op.rng
-        
+
         # Compute output Seq and design card (handles region wrapping automatically)
         output_seq, card = op.compute(parents, op_rng)
-        
+
         # Store in caches for downstream operations
         seq_cache[op.id] = output_seq
         card_cache[op.id] = card
-        
+
         # Collect name contributions from this operation
         all_contributions.extend(op.compute_name_contributions(global_state))
-        
+
         # Design cards are already filtered in Operation.compute()
         if report_design_cards and (ops_to_report is None or op.id in ops_to_report):
             for key, value in card.items():
@@ -285,13 +300,13 @@ def _compute_one(
                     row[f"{op.name}.key.{key}"] = None
                 else:
                     row[f"{op.name}.key.{key}"] = value
-    
+
     # Read state values AFTER design card computation
     # (allows operations like StackOp to set state value during compute_design_card)
     for i, state in enumerate(states):
         col_name = counter_col_name(state, i)
         row[col_name] = state.value
-    
+
     for output_name, output_pool in outputs.items():
         # For pools with state: return None if state is inactive (value=None)
         # For stateless pools (state=None): always generate sequences
@@ -300,15 +315,14 @@ def _compute_one(
         else:
             seq_obj = seq_cache[output_pool.operation.id]
             row[output_name] = seq_obj.string
-    
+
     # Compute final name from contributions (already in topological order)
-    final_name = '.'.join(all_contributions) if all_contributions else None
-    row['name'] = final_name
-    
+    final_name = ".".join(all_contributions) if all_contributions else None
+    row["name"] = final_name
+
     # Get inline styles from final Seq object (only if requested)
     if include_inline_styles:
         final_seq = seq_cache[pool.operation.id]
-        row['_inline_styles'] = final_seq.style
-    
-    return row
+        row["_inline_styles"] = final_seq.style
 
+    return row

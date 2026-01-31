@@ -1,0 +1,41 @@
+version: 2
+updates:
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  # Maintain dependencies for Python (root workspace)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      python-deps:
+        patterns:
+          - "*"
+
+  # Maintain dependencies for StateTracker
+  - package-ecosystem: "pip"
+    directory: "/statetracker"
+    schedule:
+      interval: "weekly"
+    groups:
+      statetracker-deps:
+        patterns:
+          - "*"
+
+  # Maintain dependencies for PoolParty
+  - package-ecosystem: "pip"
+    directory: "/poolparty"
+    schedule:
+      interval: "weekly"
+    groups:
+      poolparty-deps:
+        patterns:
+          - "*"

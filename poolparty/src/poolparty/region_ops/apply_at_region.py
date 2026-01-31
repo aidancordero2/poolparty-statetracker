@@ -1,6 +1,9 @@
 """Apply a transformation to content at a region."""
+
 from numbers import Real
-from poolparty.types import Optional, Callable
+
+from poolparty.types import Callable, Optional
+
 from ..utils import dna_utils
 
 
@@ -68,16 +71,16 @@ def apply_at_region(
     from ..fixed_ops.from_seq import from_seq
     from .extract_region import extract_region
     from .replace_region import replace_region
-    
+
     # Convert string to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
-    
+
     # Step 1: Extract content from the region
     content_pool = extract_region(pool, region_name, rc=rc)
-    
+
     # Step 2: Apply the transformation
     transformed_pool = transform_fn(content_pool)
-    
+
     if remove_tags:
         # Step 3a: Replace region with transformed content (tags removed)
         result = replace_region(
@@ -96,7 +99,7 @@ def apply_at_region(
             rc=rc,
             iter_order=iter_order,
         )
-    
+
     return result
 
 
@@ -109,35 +112,35 @@ def _replace_keeping_tags(
 ):
     """Replace region content while preserving region tags."""
     from ..fixed_ops.fixed import fixed_operation
-    from ..utils.parsing_utils import validate_single_region, build_region_tags
-    
+    from ..utils.parsing_utils import build_region_tags, validate_single_region
+
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         bg_seq = seqs[0]
         content_seq = seqs[1]
-        
+
         # Find the region in the background sequence
         region = validate_single_region(bg_seq, region_name)
-        
+
         # If rc=True, reverse complement the content before insertion
         if rc:
             content_seq = dna_utils.reverse_complement(content_seq)
-        
+
         # Build wrapped content with region tags
         wrapped = build_region_tags(region_name, content_seq)
-        
+
         # Build result: prefix + wrapped + suffix
-        prefix = bg_seq[:region.start]
-        suffix = bg_seq[region.end:]
+        prefix = bg_seq[: region.start]
+        suffix = bg_seq[region.end :]
         return prefix + wrapped + suffix
-    
+
     result_pool = fixed_operation(
         parent_pools=[pool, content_pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: None,  # Variable length
         iter_order=iter_order,
     )
-    
+
     # Region is preserved, so keep it in the pool's region set
     # (it was inherited from pool, so nothing to add)
-    
+
     return result_pool

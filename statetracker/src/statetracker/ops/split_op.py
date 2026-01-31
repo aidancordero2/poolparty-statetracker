@@ -1,10 +1,15 @@
 """split_state - Split a state into multiple states."""
-from ..imports import beartype, Sequence, Optional, Real, Integral, Union, State_type
+
+from ..imports import Integral, Optional, Real, Sequence, State_type, Union, beartype
 from .slice_op import SliceOp
 
 
 @beartype
-def split(state: State_type, split_spec: Union[Integral, Sequence[Real]], names: Optional[Sequence[str]] = None):
+def split(
+    state: State_type,
+    split_spec: Union[Integral, Sequence[Real]],
+    names: Optional[Sequence[str]] = None,
+):
     """
     Split a State into multiple sub-States according to equal or proportional partitioning.
 
@@ -23,6 +28,7 @@ def split(state: State_type, split_spec: Union[Integral, Sequence[Real]], names:
         Tuple of new State objects corresponding to each partition of the original values.
     """
     from ..state import State
+
     num_values = state.num_values
     if isinstance(split_spec, Integral):
         if split_spec < 2:

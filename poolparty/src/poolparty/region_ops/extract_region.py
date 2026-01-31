@@ -1,9 +1,11 @@
 """Extract content from a region as a new Pool."""
-from numbers import Real
-from poolparty.types import Union, Optional
 
-from ..utils.parsing_utils import validate_single_region
+from numbers import Real
+
+from poolparty.types import Optional
+
 from ..utils import dna_utils
+from ..utils.parsing_utils import validate_single_region
 
 
 def extract_region(
@@ -44,24 +46,24 @@ def extract_region(
     ...     content_rc = pp.extract_region(bg, 'region', rc=True)
     ...     # content_rc yields: 'TTAA' (reverse complement of TTAA)
     """
-    from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.fixed import fixed_operation
+    from ..fixed_ops.from_seq import from_seq
     from ..party import get_active_party
-    
+
     # Convert string to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
-    
+
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         seq = seqs[0]
         region = validate_single_region(seq, region_name)
         content = region.content
-        
+
         # If rc=True, reverse complement the content
         if rc:
             content = dna_utils.reverse_complement(content)
-        
+
         return content
-    
+
     # Get seq_length from the registered region
     party = get_active_party()
     if party.has_region(region_name):
@@ -71,16 +73,16 @@ def extract_region(
         # Region not registered - this shouldn't happen in normal usage
         # but we handle it gracefully by inferring from content
         region_seq_length = None
-    
+
     result_pool = fixed_operation(
         parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: region_seq_length,  # Use registered region's seq_length
         iter_order=iter_order,
     )
-    
+
     # The extracted content does not contain any regions
     # (we only inherit parent regions minus the extracted one)
     result_pool._untrack_region(region_name)
-    
+
     return result_pool

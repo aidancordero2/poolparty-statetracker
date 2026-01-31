@@ -1,9 +1,9 @@
 """Mutagenize scan operation - apply mutagenesis within a window at scanning positions."""
+
 from numbers import Integral, Real
 
-from ..types import Union, ModeType, Optional, PositionsType, RegionType, Tuple, Sequence, beartype
-from ..party import get_active_party
 from ..pool import Pool
+from ..types import ModeType, Optional, PositionsType, RegionType, Sequence, Tuple, Union, beartype
 
 
 @beartype
@@ -15,10 +15,10 @@ def mutagenize_scan(
     positions: PositionsType = None,
     region: RegionType = None,
     prefix: Optional[Union[str, Sequence[str]]] = None,
-    mode: Union[ModeType, Tuple[ModeType, ModeType]] = 'random',
+    mode: Union[ModeType, Tuple[ModeType, ModeType]] = "random",
     num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
     iter_order: Optional[Union[Real, Sequence[Real]]] = None,
-    _factory_name: Optional[str] = 'mutagenize_scan',
+    _factory_name: Optional[str] = "mutagenize_scan",
 ) -> Pool:
     """
     Apply mutagenesis within a window at specified scanning positions.
@@ -40,7 +40,7 @@ def mutagenize_scan(
         Region to constrain the scan to. Can be a marker name (str) or [start, stop].
         If specified, positions are relative to the region start.
     prefix : Optional[Union[str, Sequence[str]]], default=None
-        Prefix for sequence names. 
+        Prefix for sequence names.
         If sequence, first element is for scanning positions, second element is for mutagenization.
     mode : Union[ModeType, Sequence[ModeType]], default='random'
         Selection mode for scanning positions: 'random' or 'sequential'.
@@ -60,12 +60,16 @@ def mutagenize_scan(
         A Pool yielding sequences where a region of the specified length is mutagenized
         at each allowed position.
     """
-    from ..fixed_ops.from_seq import from_seq
     from ..base_ops.mutagenize import mutagenize
+    from ..fixed_ops.from_seq import from_seq
     from ..region_ops import region_scan
 
     # Convert string inputs to pools if needed
-    pool = from_seq(pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
+    pool = (
+        from_seq(pool, _factory_name=f"{_factory_name}(from_seq)")
+        if isinstance(pool, str)
+        else pool
+    )
 
     # Validate num_mutations/mutation_rate
     if num_mutations is None and mutation_rate is None:
@@ -74,7 +78,7 @@ def mutagenize_scan(
         raise ValueError("Only one of num_mutations or mutation_rate can be provided, not both")
 
     # Determine marker configuration
-    marker_name = '_mut'
+    marker_name = "_mut"
     marker_length = mutagenize_length
 
     # Resolve mode - expand single value to tuple of two
@@ -119,20 +123,20 @@ def mutagenize_scan(
         mode=mode_scan,
         num_states=num_states_scan,
         iter_order=iter_order_scan,
-        _factory_name=f'{_factory_name}(region_scan)',
+        _factory_name=f"{_factory_name}(region_scan)",
     )
 
-    # 2. Mutagenize marker with content 
+    # 2. Mutagenize marker with content
     result = mutagenize(
         pool=marked,
         num_mutations=num_mutations,
         mutation_rate=mutation_rate,
-        region='_mut',
+        region="_mut",
         prefix=prefix_mut,
         mode=mode_mut,
         num_states=num_states_mut,
         iter_order=iter_order_mut,
-        _factory_name=f'{_factory_name}(mutagenize)',
+        _factory_name=f"{_factory_name}(mutagenize)",
     )
-    
+
     return result

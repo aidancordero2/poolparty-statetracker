@@ -1,9 +1,10 @@
 """Replacement multiscan operation - replace segments at multiple positions simultaneously."""
+
 from numbers import Integral, Real
 
-from ..types import Union, Optional, Sequence, Literal, PositionsType, beartype
-from ..utils import validate_positions
 from ..pool import Pool
+from ..types import Literal, Optional, PositionsType, Sequence, Union, beartype
+from ..utils import validate_positions
 
 
 @beartype
@@ -12,9 +13,9 @@ def replacement_multiscan(
     num_replacements: Integral,
     replacement_pools: Union[Pool, Sequence[Pool]],
     positions: PositionsType = None,
-    insertion_mode: Literal['ordered', 'unordered'] = 'ordered',
+    insertion_mode: Literal["ordered", "unordered"] = "ordered",
     prefix: Optional[str] = None,
-    mode: str = 'random',
+    mode: str = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
 ) -> Pool:
@@ -65,10 +66,8 @@ def replacement_multiscan(
     from ..region_ops import region_multiscan, replace_region
 
     # Validate mode
-    if mode != 'random':
-        raise ValueError(
-            f"replacement_multiscan supports only mode='random', got '{mode}'"
-        )
+    if mode != "random":
+        raise ValueError(f"replacement_multiscan supports only mode='random', got '{mode}'")
 
     # Validate num_replacements
     if num_replacements < 1:
@@ -87,7 +86,7 @@ def replacement_multiscan(
         # Single pool: create deepcopies
         pools_list = [replacement_pools]
         for i in range(num_replacements - 1):
-            pools_list.append(replacement_pools.deepcopy(name=f'_rep_pool_{i+1}'))
+            pools_list.append(replacement_pools.deepcopy(name=f"_rep_pool_{i + 1}"))
     else:
         # Sequence of pools: validate length
         pools_list = list(replacement_pools)
@@ -101,9 +100,7 @@ def replacement_multiscan(
     replacement_lengths = []
     for i, pool in enumerate(pools_list):
         if pool.seq_length is None:
-            raise ValueError(
-                f"replacement_pools[{i}] must have a defined seq_length"
-            )
+            raise ValueError(f"replacement_pools[{i}] must have a defined seq_length")
         replacement_lengths.append(pool.seq_length)
 
     # All replacement pools must have the same seq_length
@@ -122,7 +119,7 @@ def replacement_multiscan(
         )
 
     # Generate auto-indexed marker names
-    markers = [f'_rep_{i}' for i in range(num_replacements)]
+    markers = [f"_rep_{i}" for i in range(num_replacements)]
     marker_length = int(replacement_length)
     max_position = bg_length - replacement_length
 

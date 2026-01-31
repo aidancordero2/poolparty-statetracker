@@ -8,17 +8,17 @@ combinatorial spaces through state algebra operations.
 Why StateTracker?
 -----------------
 
-StateTracker was developed to support the design of complex DNA sequence 
-libraries (see `PoolParty <https://github.com/jkinney/poolparty>`_), but it 
+StateTracker was developed to support the design of complex DNA sequence
+libraries (see `PoolParty <https://github.com/jkinney/poolparty>`_), but it
 solves a general problem: **random access to combinatorial spaces**.
 
-If you've ever written nested loops to enumerate a Cartesian product and then 
-wished you could shuffle the order, sample a subset, or split into train/test 
+If you've ever written nested loops to enumerate a Cartesian product and then
+wished you could shuffle the order, sample a subset, or split into train/test
 sets—all while tracking which component indices correspond to each item—
-StateTracker is for you. Build your combinatorial structure once using state 
+StateTracker is for you. Build your combinatorial structure once using state
 algebra, and StateTracker handles the index math automatically.
 
-See the :doc:`motivation` page for a detailed explanation of the problem 
+See the :doc:`motivation` page for a detailed explanation of the problem
 StateTracker solves.
 
 .. code-block:: python
@@ -29,7 +29,7 @@ StateTracker solves.
         A = State(num_values=2, name='A')
         B = State(num_values=3, name='B')
         C = product([A, B])  # Cartesian product: 6 values
-        
+
         for value in C:
             print(f"C={value}, A={A.value}, B={B.value}")
 
@@ -92,13 +92,13 @@ Create states and combine them to enumerate a combinatorial space:
         # Create leaf states
         control = State(num_values=5, name='control')
         treatment = State(num_values=5, name='treatment')
-        
+
         # Combine with stack (disjoint union)
         samples = stack([control, treatment])  # 10 values
-        
+
         # Shuffle for randomization
         randomized = shuffle(samples, seed=42)
-        
+
         # Iterate through all samples
         for value in randomized:
             if control.is_active():

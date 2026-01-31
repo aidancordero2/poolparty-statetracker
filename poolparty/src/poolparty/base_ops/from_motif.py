@@ -1,12 +1,15 @@
 """FromMotif operation - generate sequences by sampling from a position probability matrix."""
+
 from numbers import Real
-from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype, Seq
-from ..operation import Operation
-from ..pool import Pool
-from ..utils import dna_utils
-from ..party import get_active_party
+
 import numpy as np
 import pandas as pd
+
+from ..operation import Operation
+from ..party import get_active_party
+from ..pool import Pool
+from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
+from ..utils import dna_utils
 
 
 @beartype
@@ -15,7 +18,7 @@ def from_motif(
     pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     prefix: Optional[str] = None,
-    mode: ModeType = 'random',
+    mode: ModeType = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
     style: Optional[str] = None,
@@ -50,18 +53,19 @@ def from_motif(
     -------
     Pool_type
         A Pool yielding sequences sampled from the probability matrix.
-    
+
     Raises
     ------
     ValueError
         If pool is provided without region.
     """
-    if mode != 'random':
+    if mode != "random":
         raise ValueError(
             f"from_motif only supports mode='random', got mode='{mode}'. "
             "Sequential iteration is not available for probability-based sampling."
         )
     from ..fixed_ops.from_seq import from_seq
+
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
     op = FromMotifOp(
         prob_df=prob_df,
@@ -80,17 +84,18 @@ def from_motif(
 
 class FromMotifOp(Operation):
     """Sample sequences from a position probability matrix."""
+
     factory_name = "from_motif"
-    design_card_keys = ['prob_state']
+    design_card_keys = ["prob_state"]
 
     def __init__(
         self,
         prob_df: pd.DataFrame,
         parent_pool: Optional[Pool] = None,
         region: RegionType = None,
-        spacer_str: str = '',
+        spacer_str: str = "",
         prefix: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -105,7 +110,7 @@ class FromMotifOp(Operation):
                 "from_motif requires an active Party context. "
                 "Use 'with pp.Party() as party:' to create one."
             )
-        
+
         # Validate parent_pool/region combination
         if parent_pool is not None and region is None:
             raise ValueError(
@@ -119,7 +124,7 @@ class FromMotifOp(Operation):
         self._style = style
 
         match mode:
-            case 'random':
+            case "random":
                 # num_states stays None for pure random mode
                 pass
             case _:
@@ -149,22 +154,23 @@ class FromMotifOp(Operation):
         random_vals = rng.random(length)
         indices = (random_vals[:, np.newaxis] < self._cumprobs).argmax(axis=1)
         indices_list = indices.tolist()
-        seq_string = ''.join(dna_utils.BASES[i] for i in indices_list)
-        
+        seq_string = "".join(dna_utils.BASES[i] for i in indices_list)
+
         # Apply styling if requested
-        from ..utils.style_utils import SeqStyle, styles_suppressed
         from ..party import cards_suppressed
+        from ..utils.style_utils import SeqStyle, styles_suppressed
+
         if styles_suppressed():
             output_seq = Seq(seq_string, None)
         else:
             output_style = SeqStyle.full(len(seq_string), self._style)
             output_seq = Seq(seq_string, output_style)
-        
+
         if cards_suppressed():
             return output_seq, {}
-        
+
         return output_seq, {
-            'prob_state': indices_list,
+            "prob_state": indices_list,
         }
 
 

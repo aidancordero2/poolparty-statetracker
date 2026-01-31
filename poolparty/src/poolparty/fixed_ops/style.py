@@ -1,15 +1,18 @@
 """Stylize operation - apply inline styling to sequences without modification."""
+
 import re
 from numbers import Real
+
 import numpy as np
-from ..types import Pool_type, Union, Optional, RegionType, Literal, beartype, Seq
+
 from ..operation import Operation
 from ..pool import Pool
+from ..types import Literal, Optional, Pool_type, RegionType, Seq, Union, beartype
 
 # Reuse constants from style
 from ..utils.style_utils import DEFAULT_GAP_CHARS
 
-WhichType = Literal['all', 'upper', 'lower', 'gap', 'tags', 'contents']
+WhichType = Literal["all", "upper", "lower", "gap", "tags", "contents"]
 
 
 @beartype
@@ -18,13 +21,13 @@ def stylize(
     region: RegionType = None,
     *,
     style: str,
-    which: WhichType = 'contents',
+    which: WhichType = "contents",
     regex: Optional[str] = None,
     iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Apply inline styling to sequences without modifying them.
-    
+
     Styles are attached directly to sequences as they flow through the pool chain.
 
     Parameters
@@ -50,6 +53,7 @@ def stylize(
         A Pool with inline styling attached to sequences.
     """
     from .from_seq import from_seq
+
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
 
     op = StylizeOp(
@@ -66,6 +70,7 @@ def stylize(
 
 class StylizeOp(Operation):
     """Apply inline styling to sequences without modification."""
+
     factory_name = "stylize"
     design_card_keys: list[str] = []
 
@@ -74,25 +79,26 @@ class StylizeOp(Operation):
         pool: Pool,
         style: str,
         region: RegionType = None,
-        which: WhichType = 'contents',
+        which: WhichType = "contents",
         regex: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize StylizeOp."""
         from ..party import get_active_party
+
         get_active_party()  # Ensure we're in a Party context
 
         self.style = style
         self.which = which if regex is None else None
         self.regex = regex
-        
+
         # Store region locally - we handle it ourselves, not via base class
         # (base class region handling modifies sequences, which we don't want)
         self._style_region = region
 
         # These patterns only apply to molecular characters (outside tags)
-        self._excludes_tags = self.which in ('upper', 'lower', 'gap', 'contents')
+        self._excludes_tags = self.which in ("upper", "lower", "gap", "contents")
 
         # Build the internal regex pattern
         self._pattern = self._build_pattern()
@@ -100,7 +106,7 @@ class StylizeOp(Operation):
         super().__init__(
             parent_pools=[pool],
             num_states=1,
-            mode='fixed',
+            mode="fixed",
             seq_length=pool.seq_length,
             name=name,
             iter_order=iter_order,
@@ -113,28 +119,30 @@ class StylizeOp(Operation):
             return re.compile(self.regex)
 
         match self.which:
-            case 'all' | 'contents':
-                return re.compile(r'.')
-            case 'upper':
-                return re.compile(r'[A-Z]')
-            case 'lower':
-                return re.compile(r'[a-z]')
-            case 'gap':
+            case "all" | "contents":
+                return re.compile(r".")
+            case "upper":
+                return re.compile(r"[A-Z]")
+            case "lower":
+                return re.compile(r"[a-z]")
+            case "gap":
                 escaped = re.escape(DEFAULT_GAP_CHARS)
-                return re.compile(f'[{escaped}]')
-            case 'tags':
+                return re.compile(f"[{escaped}]")
+            case "tags":
                 if self._style_region is None or not isinstance(self._style_region, str):
                     from ..utils.parsing_utils import TAG_PATTERN
+
                     return TAG_PATTERN
                 else:
                     name = re.escape(self._style_region)
-                    return re.compile(rf'</?{name}(?:\s[^>]*)?>|<{name}(?:\s[^>]*)?/>')
+                    return re.compile(rf"</?{name}(?:\s[^>]*)?>|<{name}(?:\s[^>]*)?/>")
             case _:
                 raise ValueError(f"Unknown 'which' value: {self.which}")
 
     def _get_tag_positions(self, text: str) -> set[int]:
         """Get positions of all characters inside XML tags."""
         from ..utils.parsing_utils import TAG_PATTERN
+
         tag_positions: set[int] = set()
         for match in TAG_PATTERN.finditer(text):
             for i in range(match.start(), match.end()):
@@ -161,7 +169,7 @@ class StylizeOp(Operation):
 
         for r in regions:
             if r.name == self._style_region:
-                if self.which == 'contents':
+                if self.which == "contents":
                     return (r.content_start, r.content_end)
                 else:
                     return (r.start, r.end)
@@ -206,27 +214,27 @@ class StylizeOp(Operation):
     ) -> tuple[Seq, dict]:
         """Return unchanged Seq with styling applied."""
         from ..utils.style_utils import styles_suppressed
+
         parent_seq = parents[0]
-        
+
         # If styles suppressed, pass through unchanged
         if styles_suppressed():
             return parent_seq, {}
-        
+
         # Get positions matching the pattern
         positions = self._get_matching_positions(parent_seq.string)
-        
+
         # Add new style to parent Seq
         if len(positions) > 0:
             output_seq = parent_seq.add_style(self.style, positions)
         else:
             output_seq = parent_seq
-        
+
         return output_seq, {}
-    
+
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         params = super()._get_copy_params()
         # region parameter is stored as _style_region (non-standard naming)
-        params['region'] = self._style_region
+        params["region"] = self._style_region
         return params
-

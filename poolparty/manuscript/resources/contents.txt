@@ -11,8 +11,8 @@ Motivation
 Related and competing tools:
 - General-purpose sequence toolkits – competitor
 E.g. tangermeme, BioPython, pydna, SeqPro, GeneBlocks
-Low-level sequence ops: slice, mutate, shuffle, rc, insert, assemble, file I/O 
-No notion of a library as a structured object. 
+Low-level sequence ops: slice, mutate, shuffle, rc, insert, assemble, file I/O
+No notion of a library as a structured object.
 Users hand-code loops, region segmentation, and all bookkeeping
 
 Assay-template library designers – competitor

@@ -1,9 +1,12 @@
 """SeqShuffle operation - shuffle characters within a sequence region."""
+
 from numbers import Real
-from ..types import Pool_type, ModeType, Optional, Union, RegionType, beartype, Seq
+
+import numpy as np
+
 from ..operation import Operation
 from ..pool import Pool
-import numpy as np
+from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 
 
 @beartype
@@ -11,7 +14,7 @@ def shuffle_seq(
     pool: Union[Pool_type, str],
     region: RegionType = None,
     prefix: Optional[str] = None,
-    mode: ModeType = 'random',
+    mode: ModeType = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
     _remove_tags: bool = False,
@@ -20,7 +23,7 @@ def shuffle_seq(
 ) -> Pool:
     """
     Create a Pool that shuffles characters within a specified region.
-    
+
     Parameters
     ----------
     pool : Pool_type
@@ -38,13 +41,14 @@ def shuffle_seq(
         If True and region is a marker name, remove the marker tags from output.
     style : Optional[str], default=None
         Style to apply to shuffled characters (e.g., 'purple', 'red bold').
-    
+
     Returns
     -------
     Pool
         A Pool that yields shuffled sequences.
     """
     from ..fixed_ops.from_seq import from_seq
+
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
     op = SeqShuffleOp(
         parent_pool=pool_obj,
@@ -64,16 +68,17 @@ def shuffle_seq(
 
 class SeqShuffleOp(Operation):
     """Randomly shuffle characters within a region of the parent sequence."""
+
     factory_name = "shuffle_seq"
-    design_card_keys = ['permutation']
-    
+    design_card_keys = ["permutation"]
+
     def __init__(
         self,
         parent_pool: Pool,
         region: RegionType = None,
-        spacer_str: str = '',
+        spacer_str: str = "",
         prefix: Optional[str] = None,
-        mode: ModeType = 'random',
+        mode: ModeType = "random",
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -82,20 +87,19 @@ class SeqShuffleOp(Operation):
         _factory_name: Optional[str] = None,
     ) -> None:
         """Initialize SeqShuffleOp."""
-        from ..party import get_active_party
-        
-        if mode == 'sequential':
+
+        if mode == "sequential":
             raise ValueError("mode='sequential' is not supported for SeqShuffleOp")
-        
+
         # Set factory_name if provided
         if _factory_name is not None:
             self.factory_name = _factory_name
-        
+
         # Store styling parameter
         self._style = style
-        
+
         # Determine num_states
-        if mode == 'random':
+        if mode == "random":
             # num_states stays None for pure random mode
             pass
         else:
@@ -111,39 +115,41 @@ class SeqShuffleOp(Operation):
             region=region,
             remove_tags=_remove_tags,
         )
-    
+
     def _compute_core(
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return shuffled Seq and design card.
-        
+
         Note: Region handling is done by base class compute() method.
         parents[0] is the region content when region is specified.
         """
-        if self.mode == 'random':
+        if self.mode == "random":
             if rng is None:
-                raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
+                raise RuntimeError(
+                    f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)"
+                )
         else:
             raise RuntimeError(f"Unsupported mode {self.mode!r}")
-        
+
         seq = parents[0].string
-        
+
         # Cache molecular positions, position array, and sequence array for repeated sequences
-        if not hasattr(self, '_mol_pos_cache'):
+        if not hasattr(self, "_mol_pos_cache"):
             self._mol_pos_cache = {}
             self._pos_arr_cache = {}
             self._seq_arr_cache = {}
-        
+
         if seq not in self._mol_pos_cache:
             self._mol_pos_cache[seq] = self._get_molecular_positions(seq)
             self._pos_arr_cache[seq] = np.array(self._mol_pos_cache[seq], dtype=np.intp)
-            self._seq_arr_cache[seq] = np.array(list(seq), dtype='U1')
+            self._seq_arr_cache[seq] = np.array(list(seq), dtype="U1")
         molecular_positions = self._mol_pos_cache[seq]
         pos_arr = self._pos_arr_cache[seq]
         num_molecular = len(molecular_positions)
-        
+
         if num_molecular == 0:
             permutation = tuple()
             shuffled_seq = seq
@@ -151,30 +157,27 @@ class SeqShuffleOp(Operation):
             order = rng.permutation(num_molecular)
             # Use argsort to compute inverse permutation (vectorized)
             permutation = tuple(np.argsort(order).tolist())
-            
+
             # Vectorized character shuffling using cached numpy arrays
             seq_arr = self._seq_arr_cache[seq].copy()
             molecular_chars = seq_arr[pos_arr]
             seq_arr[pos_arr] = molecular_chars[order]
-            shuffled_seq = ''.join(seq_arr)
-        
+            shuffled_seq = "".join(seq_arr)
+
         # Pass through parent styles and add styling to shuffled characters if requested
         output_style = parents[0].style
         if output_style is not None and self._style and molecular_positions:
             output_style = output_style.add_style(
-                self._style, 
-                np.array(molecular_positions, dtype=np.int64)
+                self._style, np.array(molecular_positions, dtype=np.int64)
             )
-        
+
         output_seq = Seq(shuffled_seq, output_style)
-        
+
         from ..party import cards_suppressed
+
         if cards_suppressed():
             return output_seq, {}
-        
-        return output_seq, {
-            'permutation': permutation,
-        }
-    
-    
 
+        return output_seq, {
+            "permutation": permutation,
+        }

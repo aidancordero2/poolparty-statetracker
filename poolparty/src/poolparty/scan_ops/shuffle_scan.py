@@ -1,9 +1,9 @@
 """Shuffle scan operation - shuffle characters within a window at scanning positions."""
+
 from numbers import Integral, Real
 
-from ..types import Union, ModeType, Optional, PositionsType, RegionType, beartype
-from ..party import get_active_party
 from ..pool import Pool
+from ..types import ModeType, Optional, PositionsType, RegionType, Union, beartype
 
 
 @beartype
@@ -16,11 +16,11 @@ def shuffle_scan(
     prefix: Optional[str] = None,
     prefix_position: Optional[str] = None,
     prefix_shuffle: Optional[str] = None,
-    mode: ModeType = 'random',
+    mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    _factory_name: Optional[str] = 'shuffle_scan',
+    _factory_name: Optional[str] = "shuffle_scan",
 ) -> Pool:
     """
     Shuffle characters within a window at specified scanning positions.
@@ -54,13 +54,17 @@ def shuffle_scan(
         A Pool yielding sequences where a region of the specified length is shuffled
         at each allowed position.
     """
+    from ..base_ops.shuffle_seq import shuffle_seq
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.passthrough import passthrough
-    from ..base_ops.shuffle_seq import shuffle_seq
     from ..region_ops import region_scan
 
     # Convert string inputs to pools
-    pool = from_seq(pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
+    pool = (
+        from_seq(pool, _factory_name=f"{_factory_name}(from_seq)")
+        if isinstance(pool, str)
+        else pool
+    )
 
     # Validate pool has defined seq_length (only when no region specified)
     bg_length = pool.seq_length
@@ -75,7 +79,7 @@ def shuffle_scan(
             f"shuffle_length ({shuffle_length}) must be < pool.seq_length ({bg_length})"
         )
 
-    region_name = '_shuf'
+    region_name = "_shuf"
     region_length = int(shuffle_length)
 
     # 1. Insert tags at scanning positions
@@ -89,9 +93,9 @@ def shuffle_scan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
-        _factory_name=f'{_factory_name}(region_scan)',
+        _factory_name=f"{_factory_name}(region_scan)",
     )
-    
+
     # Capture position state
     pos_state = marked.operation.state
 
@@ -101,43 +105,44 @@ def shuffle_scan(
         region=region_name,
         _remove_tags=True,  # Remove _shuf tags
         style=style,
-        mode='random',
+        mode="random",
         num_states=shuffles_per_position,
         iter_order=-1,
-        _factory_name=f'{_factory_name}(shuffle_seq)',
+        _factory_name=f"{_factory_name}(shuffle_seq)",
     )
-    
+
     # Capture shuffle state
     shuffle_state = result.operation.state
-    
+
     # 3. Add PassthroughOp for custom naming if any prefix is set
     if any([prefix, prefix_position, prefix_shuffle]):
         num_shuffles = int(shuffles_per_position) if shuffles_per_position else 1
-        
+
         def compute_names():
             # Check if this branch is active - if states are None, return empty list
             if pos_state is None or pos_state.value is None:
                 return []
             if shuffle_state is not None and shuffle_state.value is None:
                 return []
-            
+
             pos_idx = pos_state.value
             shuffle_idx = shuffle_state.value if shuffle_state else 0
-            
+
             contributions = []
             if prefix:  # Cartesian product index
                 W = pos_idx * num_shuffles + shuffle_idx
-                contributions.append(f'{prefix}_{W}')
+                contributions.append(f"{prefix}_{W}")
             if prefix_position:
-                contributions.append(f'{prefix_position}_{pos_idx}')
+                contributions.append(f"{prefix_position}_{pos_idx}")
             if prefix_shuffle:
-                contributions.append(f'{prefix_shuffle}_{shuffle_idx}')
+                contributions.append(f"{prefix_shuffle}_{shuffle_idx}")
             return contributions
-        
+
         result = passthrough(
-            result, _name_fn=compute_names,
+            result,
+            _name_fn=compute_names,
             iter_order=iter_order,
-            _factory_name=f'{_factory_name}(naming)',
+            _factory_name=f"{_factory_name}(naming)",
         )
-    
+
     return result

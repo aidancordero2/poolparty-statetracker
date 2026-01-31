@@ -1,7 +1,9 @@
 """FromSeq operation - create a pool from a single sequence."""
+
 from numbers import Real
-from ..types import Pool_type, Union, Optional, RegionType, beartype
+
 from ..pool import Pool
+from ..types import Optional, Pool_type, RegionType, Union, beartype
 from ..utils import dna_utils
 
 
@@ -44,26 +46,26 @@ def from_seq(
     from ..party import get_active_party
     from ..utils.parsing_utils import _validate_regions
     from .fixed import fixed_operation
-    
+
     party = get_active_party()
     if party is None:
         raise RuntimeError(
             "from_seq requires an active Party context. "
             "Use 'with pp.Party() as party:' to create one."
         )
-    
+
     # Validate and register any regions in the sequence
     regions = _validate_regions(seq)
     seq_length = dna_utils.get_length_without_tags(seq)
-    
+
     # If bg_pool and region provided, replace region content with seq
     if (pool is not None) and (region is None):
         raise ValueError("region is required when pool is provided")
-    
+
     # When replacing region content (pool + region provided), don't pass through
     # styles from the original region to the new content
     is_replacement = pool is not None and region is not None
-    
+
     # Create the pool
     result_pool = fixed_operation(
         parent_pools=[pool] if pool is not None else [],
@@ -72,17 +74,18 @@ def from_seq(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
-        _factory_name=_factory_name if _factory_name is not None else 'from_seq',
+        _factory_name=_factory_name if _factory_name is not None else "from_seq",
         _pass_through_styles=not is_replacement,
     )
-    
+
     # Add validated regions to the pool
     for region in regions:
         result_pool.add_region(region)
-    
+
     # Apply style if specified
     if style is not None:
         from .style import stylize
+
         result_pool = stylize(result_pool, style=style)
-    
+
     return result_pool

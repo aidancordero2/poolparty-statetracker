@@ -5,7 +5,7 @@ from .insertion_multiscan import insertion_multiscan
 from .replacement_multiscan import replacement_multiscan
 
 __all__ = [
-    'deletion_multiscan',
-    'insertion_multiscan',
-    'replacement_multiscan',
+    "deletion_multiscan",
+    "insertion_multiscan",
+    "replacement_multiscan",
 ]

@@ -1,7 +1,9 @@
 """SampleOp - Sample values from a parent state."""
-from ..imports import beartype, Optional, Integral, Sequence, State_type
-from ..operation import Operation
+
 import random
+
+from ..imports import Integral, Optional, Sequence, State_type, beartype
+from ..operation import Operation
 
 
 @beartype
@@ -37,6 +39,7 @@ def sample(
         A State whose values are a sampled subset of those of the parent State.
     """
     from ..state import State
+
     return State(
         _parents=(state,),
         _op=SampleOp(
@@ -53,7 +56,7 @@ def sample(
 @beartype
 class SampleOp(Operation):
     """Sample values from parent state."""
-    
+
     def __init__(
         self,
         num_parent_values: Integral,
@@ -91,10 +94,10 @@ class SampleOp(Operation):
                 self.sampled_states = tuple(sampled_states)
             case (_, _):
                 raise ValueError("Cannot specify both 'num_values' and 'sampled_states'.")
-    
+
     def compute_num_states(self, parent_num_values):
         return len(self.sampled_states)
-    
+
     def decompose(self, value, parent_num_values):
         if value is None:
             return (None,)
