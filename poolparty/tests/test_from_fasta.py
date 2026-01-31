@@ -1,12 +1,29 @@
 """Tests for the from_fasta operation."""
 
+import gc
 import os
 import tempfile
+import time
 
 import pytest
 
 from poolparty.fixed_ops.fixed import FixedOp
 from poolparty.fixed_ops.from_fasta import from_fasta
+
+
+def _remove_file_with_retry(path, max_attempts=5, delay=0.1):
+    """Remove a file with retry logic for Windows file locking issues."""
+    for attempt in range(max_attempts):
+        try:
+            if os.path.exists(path):
+                os.unlink(path)
+            return
+        except PermissionError:
+            if attempt < max_attempts - 1:
+                gc.collect()  # Force garbage collection to release file handles
+                time.sleep(delay * (attempt + 1))  # Increasing delay
+            else:
+                raise
 
 
 @pytest.fixture
@@ -21,10 +38,10 @@ AAAACCCCGGGGTTTT
         f.write(content)
         fasta_path = f.name
     yield fasta_path
-    # Cleanup
-    os.unlink(fasta_path)
-    if os.path.exists(fasta_path + ".fai"):
-        os.unlink(fasta_path + ".fai")
+    # Cleanup with retry logic for Windows
+    gc.collect()  # Ensure any lingering file handles are released
+    _remove_file_with_retry(fasta_path)
+    _remove_file_with_retry(fasta_path + ".fai")
 
 
 class TestFromFastaFactory:
