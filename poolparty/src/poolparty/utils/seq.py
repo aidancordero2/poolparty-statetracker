@@ -4,7 +4,11 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from ..types import Literal, SeqStyle, Sequence
+from typing import Literal
+
+from collections.abc import Sequence
+
+from .style_utils import SeqStyle
 
 CoordSystem = Literal["literal", "nontag", "molecular"]
 
