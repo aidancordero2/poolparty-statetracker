@@ -39,9 +39,9 @@ def from_fasta(
             "Use 'with pp.Party() as party:' to create one."
         )
 
-    # Load FASTA and extract sequence
-    fasta = Fasta(fasta_path)
-    seq = str(fasta[chrom][start:end].seq)
+    # Load FASTA and extract sequence (context manager ensures file handle is released)
+    with Fasta(fasta_path) as fasta:
+        seq = str(fasta[chrom][start:end].seq)
 
     # Reverse complement if strand is '-'
     if strand == "-":
