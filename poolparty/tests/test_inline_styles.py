@@ -510,6 +510,101 @@ class TestInvertInlineStyles:
         assert clean == "ACGT"
 
 
+class TestBackgroundInlineStyles:
+    """Test background color styles using 'on_xxx' syntax."""
+
+    def test_on_red_applies_ansi_code(self):
+        """'on_red' applies ANSI background red code (101)."""
+        styles = [("on_red", np.array([0, 1]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[101m" in result
+
+    def test_on_blue_applies_ansi_code(self):
+        """'on_blue' applies ANSI background blue code (104)."""
+        styles = [("on_blue", np.array([0, 1]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[104m" in result
+
+    def test_on_white_applies_ansi_code(self):
+        """'on_white' applies ANSI background white code (107)."""
+        styles = [("on_white", np.array([0, 1]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[107m" in result
+
+    def test_on_black_applies_ansi_code(self):
+        """'on_black' applies ANSI background black code (40)."""
+        styles = [("on_black", np.array([0, 1]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[40m" in result
+
+    def test_on_css_color(self):
+        """'on_coral' applies CSS color as background."""
+        styles = [("on_coral", np.array([0, 1, 2, 3]))]
+        result = apply_inline_styles("ACGT", styles)
+        # Should have true-color background code (48;2;R;G;B)
+        assert "\033[48;2;" in result
+        clean = reset(result)
+        assert clean == "ACGT"
+
+    def test_on_hex_color(self):
+        """'on_#ff7f50' applies hex color as background."""
+        styles = [("on_#ff7f50", np.array([0, 1, 2, 3]))]
+        result = apply_inline_styles("ACGT", styles)
+        # Coral hex is #ff7f50 -> 48;2;255;127;80
+        assert "\033[48;2;255;127;80m" in result
+        clean = reset(result)
+        assert clean == "ACGT"
+
+    def test_foreground_and_background_combined(self):
+        """'red on_blue' applies both foreground and background."""
+        styles = [("red on_blue", np.array([0, 1, 2, 3]))]
+        result = apply_inline_styles("ACGT", styles)
+        # Should have both foreground (91) and background (104) codes
+        assert "\033[" in result
+        clean = reset(result)
+        assert clean == "ACGT"
+
+    def test_white_foreground(self):
+        """'white' applies ANSI foreground white code (97)."""
+        styles = [("white", np.array([0, 1]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[97m" in result
+
+    def test_black_foreground(self):
+        """'black' applies ANSI foreground black code (30)."""
+        styles = [("black", np.array([0, 1]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[30m" in result
+
+    def test_white_on_blue(self):
+        """'white on_blue' applies white text on blue background."""
+        styles = [("white on_blue", np.array([0, 1, 2, 3]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[" in result
+        clean = reset(result)
+        assert clean == "ACGT"
+
+    def test_background_conflict_resolution(self):
+        """Later background color wins when multiple are applied."""
+        styles = [
+            ("on_red", np.array([0, 1])),
+            ("on_blue", np.array([0])),  # Later, should win at position 0
+        ]
+        result = apply_inline_styles("ACGT", styles)
+        # Position 0 should have blue (104), position 1 should have red (101)
+        assert "\033[" in result
+        clean = reset(result)
+        assert clean == "ACGT"
+
+    def test_background_with_modifiers(self):
+        """Background colors work with modifiers like bold."""
+        styles = [("bold on_yellow", np.array([0, 1, 2, 3]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[" in result
+        clean = reset(result)
+        assert clean == "ACGT"
+
+
 class TestDeletionScanStylePropagation:
     """Test inline styles propagate through deletion_scan operations."""
 

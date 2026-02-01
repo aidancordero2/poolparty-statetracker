@@ -19,18 +19,31 @@ def styles_suppressed() -> bool:
 
 # ANSI escape codes for styling
 STYLE_CODES = {
+    # Foreground colors
     "red": "91",
     "green": "92",
     "yellow": "93",
     "blue": "94",
     "magenta": "95",
     "cyan": "96",
+    "white": "97",
+    "black": "30",
+    # Modifiers
     "bold": "1",
     "underline": "4",
     "blink": "5",
     "blinking": "5",
     "invert": "7",
     "reverse": "7",
+    # Background colors
+    "on_red": "101",
+    "on_green": "102",
+    "on_yellow": "103",
+    "on_blue": "104",
+    "on_magenta": "105",
+    "on_cyan": "106",
+    "on_white": "107",
+    "on_black": "40",
 }
 
 # CSS/HTML named colors (hex values)
@@ -186,21 +199,49 @@ ANSI_ESCAPE_PATTERN = re.compile(r"\033\[[0-9;]*m")
 DEFAULT_GAP_CHARS = "-. "
 
 # Basic ANSI foreground color codes (mutually exclusive)
-_BASIC_FG_CODES = {"91", "92", "93", "94", "95", "96"}
+_BASIC_FG_CODES = {"91", "92", "93", "94", "95", "96", "97", "30"}
+
+# Basic ANSI background color codes (mutually exclusive)
+_BASIC_BG_CODES = {"101", "102", "103", "104", "105", "106", "107", "40"}
 
 # Case transformation tokens for inline styles (not ANSI codes)
 CASE_TRANSFORMS = {"upper", "lower", "uppercase", "lowercase", "swapcase"}
 
 
 def _hex_to_ansi(hex_color: str) -> str:
-    """Convert hex color (#RRGGBB) to true-color ANSI code (38;2;R;G;B)."""
+    """Convert hex color (#RRGGBB) to true-color ANSI foreground code (38;2;R;G;B)."""
     hex_color = hex_color.lstrip("#")
     r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"38;2;{r};{g};{b}"
 
 
+def _hex_to_ansi_bg(hex_color: str) -> str:
+    """Convert hex color (#RRGGBB) to true-color ANSI background code (48;2;R;G;B)."""
+    hex_color = hex_color.lstrip("#")
+    r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    return f"48;2;{r};{g};{b}"
+
+
 def _parse_style(style: str) -> str:
     """Convert style name to ANSI code. Supports STYLE_CODES, CSS colors, hex, or raw codes."""
+    # Check for on_ prefix (background colors)
+    if style.startswith("on_"):
+        color_part = style[3:]  # Strip "on_"
+        # Check if it's a basic background color in STYLE_CODES
+        if style in STYLE_CODES:
+            return STYLE_CODES[style]
+        # Check if it's a CSS color name
+        if color_part in CSS_COLORS:
+            return _hex_to_ansi_bg(CSS_COLORS[color_part])
+        # Check if it's a hex code
+        if color_part.startswith("#") and len(color_part) == 7:
+            return _hex_to_ansi_bg(color_part)
+        # Unknown background color
+        raise ValueError(
+            f"Unknown background color: {style!r}. Valid options: "
+            f"on_<color> where color is a CSS color name or hex code (#RRGGBB)."
+        )
+    # Foreground colors and modifiers
     if style in STYLE_CODES:
         return STYLE_CODES[style]
     if style in CSS_COLORS:
@@ -223,20 +264,33 @@ def _is_foreground_code(code: str) -> bool:
     return code in _BASIC_FG_CODES or code.startswith("38;2;") or code.startswith("38;5;")
 
 
-def _resolve_styles(styles_with_priority: dict[str, int]) -> list[str]:
-    """Resolve conflicting styles using priority (higher wins for foreground colors)."""
-    # Separate foreground colors from other styles
-    fg_codes = {c: p for c, p in styles_with_priority.items() if _is_foreground_code(c)}
-    other_codes = sorted(c for c in styles_with_priority if not _is_foreground_code(c))
+def _is_background_code(code: str) -> bool:
+    """Check if an ANSI code is a background color (basic or true-color)."""
+    return code in _BASIC_BG_CODES or code.startswith("48;2;") or code.startswith("48;5;")
 
-    # Build result with COLOR first, then modifiers (bold/underline)
+
+def _resolve_styles(styles_with_priority: dict[str, int]) -> list[str]:
+    """Resolve conflicting styles using priority (higher wins for fg/bg colors)."""
+    # Separate foreground colors, background colors, and other styles
+    fg_codes = {c: p for c, p in styles_with_priority.items() if _is_foreground_code(c)}
+    bg_codes = {c: p for c, p in styles_with_priority.items() if _is_background_code(c)}
+    other_codes = sorted(
+        c for c in styles_with_priority
+        if not _is_foreground_code(c) and not _is_background_code(c)
+    )
+
+    # Build result with FG COLOR first, then BG COLOR, then modifiers
     # Some terminals (VS Code) need this order to render correctly
     result = []
     if fg_codes:
         # Pick the foreground color with highest priority (later highlighter wins)
         winner = max(fg_codes.items(), key=lambda x: x[1])[0]
         result.append(winner)
-    result.extend(other_codes)  # Add modifiers after color
+    if bg_codes:
+        # Pick the background color with highest priority (later highlighter wins)
+        winner = max(bg_codes.items(), key=lambda x: x[1])[0]
+        result.append(winner)
+    result.extend(other_codes)  # Add modifiers after colors
 
     return result
 
