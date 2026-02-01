@@ -27,6 +27,10 @@ STYLE_CODES = {
     "cyan": "96",
     "bold": "1",
     "underline": "4",
+    "blink": "5",
+    "blinking": "5",
+    "invert": "7",
+    "reverse": "7",
 }
 
 # CSS/HTML named colors (hex values)

@@ -417,6 +417,99 @@ class TestCaseTransformInlineStyles:
         assert clean == "ACGT"
 
 
+class TestBlinkInlineStyles:
+    """Test 'blink' and 'blinking' style modifiers."""
+
+    def test_blink_applies_ansi_code(self):
+        """'blink' applies ANSI blink code (5) to characters."""
+        styles = [("blink", np.array([0, 1]))]
+        result = apply_inline_styles("ACGT", styles)
+        # Should have ANSI codes
+        assert "\033[" in result
+        # ANSI code 5 is for blink
+        assert "\033[5m" in result
+
+    def test_blinking_alias_applies_ansi_code(self):
+        """'blinking' is an alias for 'blink' and applies same ANSI code."""
+        styles = [("blinking", np.array([0, 1]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[5m" in result
+
+    def test_blink_with_color(self):
+        """'blink' combines with color styles like 'blink red'."""
+        styles = [("blink red", np.array([0, 1, 2, 3]))]
+        result = apply_inline_styles("ACGT", styles)
+        # Should have ANSI codes for both blink and color
+        assert "\033[" in result
+        # Should contain all characters
+        clean = reset(result)
+        assert clean == "ACGT"
+
+    def test_blink_with_multiple_modifiers(self):
+        """'blink' works with combined styles like 'blink bold cyan'."""
+        styles = [("blink bold cyan", np.array([0, 1, 2, 3]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[" in result
+        clean = reset(result)
+        assert clean == "ACGT"
+
+    def test_blink_only_specified_positions(self):
+        """Only positions in the style array get blink effect."""
+        styles = [("blink", np.array([1]))]
+        result = apply_inline_styles("ACGT", styles)
+        # Position 1 (C) should be styled, others should not
+        # The result should have reset codes around position 1
+        assert "\033[5m" in result
+        clean = reset(result)
+        assert clean == "ACGT"
+
+
+class TestInvertInlineStyles:
+    """Test 'invert' and 'reverse' style modifiers (reverse video)."""
+
+    def test_invert_applies_ansi_code(self):
+        """'invert' applies ANSI reverse video code (7) to characters."""
+        styles = [("invert", np.array([0, 1]))]
+        result = apply_inline_styles("ACGT", styles)
+        # Should have ANSI codes
+        assert "\033[" in result
+        # ANSI code 7 is for invert/reverse video
+        assert "\033[7m" in result
+
+    def test_reverse_alias_applies_ansi_code(self):
+        """'reverse' is an alias for 'invert' and applies same ANSI code."""
+        styles = [("reverse", np.array([0, 1]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[7m" in result
+
+    def test_invert_with_color(self):
+        """'invert' combines with color styles like 'invert red'."""
+        styles = [("invert red", np.array([0, 1, 2, 3]))]
+        result = apply_inline_styles("ACGT", styles)
+        # Should have ANSI codes for both invert and color
+        assert "\033[" in result
+        # Should contain all characters
+        clean = reset(result)
+        assert clean == "ACGT"
+
+    def test_invert_with_multiple_modifiers(self):
+        """'invert' works with combined styles like 'invert bold cyan'."""
+        styles = [("invert bold cyan", np.array([0, 1, 2, 3]))]
+        result = apply_inline_styles("ACGT", styles)
+        assert "\033[" in result
+        clean = reset(result)
+        assert clean == "ACGT"
+
+    def test_invert_only_specified_positions(self):
+        """Only positions in the style array get invert effect."""
+        styles = [("invert", np.array([1]))]
+        result = apply_inline_styles("ACGT", styles)
+        # Position 1 (C) should be styled, others should not
+        assert "\033[7m" in result
+        clean = reset(result)
+        assert clean == "ACGT"
+
+
 class TestDeletionScanStylePropagation:
     """Test inline styles propagate through deletion_scan operations."""
 
