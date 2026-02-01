@@ -250,9 +250,10 @@ class TestMutagenizeRandomModeWithNum:
         with pp.Party() as party:
             pool = mutagenize("ACGT", num_mutations=1, mode="random")
             # Stays stateless (no implicit syncing to parent)
-            assert pool.operation.num_states is None
-            # Operations always have state now, but stateless ones have is_fixed=True
-            assert pool.operation.state.is_fixed is True
+            assert pool.operation.num_states == 1
+            # Operations always have state now, stateless ones have num_values=1
+            assert pool.operation.state.num_values == 1
+            assert pool.operation.action_uniquely_determined_by_state is False
 
 
 # =============================================================================
@@ -268,9 +269,10 @@ class TestMutagenizeRandomModeWithRate:
         with pp.Party() as party:
             pool = mutagenize("ACGT", mutation_rate=0.1, mode="random")
             # Stays stateless (no implicit syncing to parent)
-            assert pool.operation.num_states is None
-            # Operations always have state now, but stateless ones have is_fixed=True
-            assert pool.operation.state.is_fixed is True
+            assert pool.operation.num_states == 1
+            # Operations always have state now, stateless ones have num_values=1
+            assert pool.operation.state.num_values == 1
+            assert pool.operation.action_uniquely_determined_by_state is False
 
     def test_random_mode_produces_valid_output(self):
         """Random mode generates valid mutated sequences."""

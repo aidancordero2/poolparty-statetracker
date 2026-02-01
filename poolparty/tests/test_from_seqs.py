@@ -87,11 +87,11 @@ class TestFromSeqsRandomMode:
         assert 400 < counts["A"] < 600
         assert 400 < counts["B"] < 600
 
-    def test_random_num_states_is_none(self):
-        """Test that random mode has num_values=None."""
+    def test_random_num_states_is_one(self):
+        """Test that random mode has num_states=1."""
         with pp.Party() as party:
             pool = from_seqs(["A", "B", "C"], mode="random")
-            assert pool.operation.num_states is None
+            assert pool.operation.num_states == 1
 
 
 class TestFromSeqsFixedMode:

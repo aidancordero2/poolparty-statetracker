@@ -193,12 +193,12 @@ class TestRecombineNumStatesOverride:
 class TestNaturalNumStatesProperty:
     """Test the natural_num_states property across operations."""
 
-    def test_natural_num_states_is_none_for_random_mode(self):
-        """Test that natural_num_states is None for random mode operations."""
+    def test_natural_num_states_is_one_for_stateless_random_mode(self):
+        """Test that natural_num_states is 1 for stateless random mode operations."""
         with pp.Party() as party:
             pool = from_seqs(["A", "B"], mode="random").named("test")
 
-        assert pool.operation.natural_num_states is None
+        assert pool.operation.natural_num_states == 1
 
     def test_natural_num_states_for_fixed_mode(self):
         """Test that natural_num_states equals num_states for fixed mode."""

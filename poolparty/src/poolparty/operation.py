@@ -23,10 +23,10 @@ class Operation:
     @classmethod
     def validate_num_states(
         cls, num_states: int | float | None, mode: ModeType
-    ) -> int | float | None:
+    ) -> int | float:
         """Validate num_states against max_num_sequential_states."""
         if num_states is None:
-            return None
+            return 1
         if num_states != np.inf and num_states < 1:
             raise ValueError(f"num_states must be >= 1, np.inf, or None, got {num_states}")
         if num_states > cls.max_num_sequential_states:
@@ -71,6 +71,18 @@ class Operation:
         # Set _name directly during init (state doesn't exist yet)
         self._name = name if name is not None else f"op[{self._id}]:{self.factory_name}"
         self._seq_length = seq_length
+
+        # Compute before validation loses the None vs 1 distinction
+        if mode == "fixed":
+            self._action_uniquely_determined_by_state = True
+        elif mode == "sequential":
+            self._action_uniquely_determined_by_state = True
+        else:  # mode == "random"
+            # False if num_states is None or 1 (stateless random)
+            self._action_uniquely_determined_by_state = (
+                num_states is not None and num_states > 1
+            )
+
         validated_num_states = self.validate_num_states(num_states, mode)
 
         # Store natural num_states for cycling in sequential mode
@@ -78,8 +90,7 @@ class Operation:
         self._natural_num_states = _natural_num_states
 
         # ALL operations get State objects
-        # num_values=None creates a fixed state (is_fixed=True)
-        # This applies to: mode='fixed', or mode='random' with num_states=None
+        # num_values is always a positive integer (defaults to 1 for fixed/stateless)
         self.state = st.State(
             num_values=validated_num_states, name=f"{self._name}.state", iter_order=iter_order
         )
@@ -112,7 +123,7 @@ class Operation:
     @property
     def iter_order(self) -> Real:
         """Iteration order for this operation."""
-        if self.state.is_fixed:
+        if self.state.num_values == 1:
             return 0
         return self.state.iter_order
 
@@ -131,6 +142,11 @@ class Operation:
     def natural_num_states(self) -> Optional[int]:
         """Natural number of states (computed from operation, before user override)."""
         return self._natural_num_states
+
+    @property
+    def action_uniquely_determined_by_state(self) -> bool:
+        """True if same state value always produces the same output."""
+        return self._action_uniquely_determined_by_state
 
     def _get_effective_seq_length(self, seq: str) -> int:
         """Get effective sequence length (DNA characters only, excluding markers)."""
@@ -326,20 +342,15 @@ class Operation:
             return []
         if not self.state.is_active:
             return []  # Inactive branch - no name contribution
-        if self.state.is_fixed:
-            # Fixed state - naming depends on mode
-            if self.mode == "random":
-                return [f"{self.prefix}_{global_state}"]  # Stateless random: varies by row
-            elif self.mode == "fixed":
-                return [f"{self.prefix}"]  # Fixed: nothing varies, just prefix
-            else:
-                raise ValueError(f"Unexpected mode '{self.mode}' for fixed state")
+        if self.mode == "fixed":
+            return [f"{self.prefix}"]  # Fixed: just prefix
+        elif self.action_uniquely_determined_by_state:
+            return [f"{self.prefix}_{self.state.value}"]  # State determines output
         else:
-            return [f"{self.prefix}_{self.state.value}"]  # Sequential: varies by state value
+            return [f"{self.prefix}_{global_state}"]  # Global state determines output
 
     def __repr__(self) -> str:
-        num_states_str = "None" if self.num_states is None else str(self.num_states)
-        return f"{self.__class__.__name__}(id={self._id}, name={self.name!r}, mode={self.mode!r}, num_states={num_states_str})"
+        return f"{self.__class__.__name__}(id={self._id}, name={self.name!r}, mode={self.mode!r}, num_states={self.num_states})"
 
     def _get_copy_params(self) -> dict:
         """Auto-generate copy params from __init__ signature using conventions.
@@ -374,7 +385,7 @@ class Operation:
             return self.parent_pools[1] if len(self.parent_pools) > 1 else None
         elif param_name == "num_states":
             # Only preserve for random mode with explicit values > 1
-            if self.mode == "random" and self.num_states is not None and self.num_states > 1:
+            if self.mode == "random" and self.num_states > 1:
                 return self.num_states
             return None
 

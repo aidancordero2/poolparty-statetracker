@@ -70,11 +70,11 @@ class TestFromIupacSequentialMode:
 class TestFromIupacRandomMode:
     """Test random mode."""
 
-    def test_random_num_states_is_none(self):
-        """Random mode has num_values=None."""
+    def test_random_num_states_is_one(self):
+        """Random mode has num_states=1."""
         with pp.Party() as party:
             pool = from_iupac("ACGT", mode="random")
-            assert pool.operation.num_states is None
+            assert pool.operation.num_states == 1
 
     def test_random_sampling(self):
         """Random mode produces valid DNA sequences."""

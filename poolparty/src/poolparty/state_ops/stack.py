@@ -34,20 +34,7 @@ def stack(
     Pool
         A Pool object representing the state-wise stacking of all provided input Pools.
         Each state corresponds to a sequence from one of the input Pools.
-
-    Raises
-    ------
-    ValueError
-        If any input pool has no state (mode='random' with num_states=None).
     """
-    # Check for fixed/stateless pools
-    for i, pool in enumerate(pools):
-        if pool.state.is_fixed:
-            raise ValueError(
-                f"Cannot stack fixed/stateless pool '{pool.name}' (index {i}). "
-                f"Pools with mode='random' and num_states=None have no state to stack. "
-                f"Use num_states=N to create a pool with explicit states."
-            )
     op = StackOp(pools, prefix=prefix, name=None, iter_order=iter_order)
     result_pool = Pool(operation=op)
     return result_pool

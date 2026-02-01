@@ -183,7 +183,7 @@ class FromSeqsOp(Operation):
                     f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)"
                 )
             idx = int(rng.integers(0, len(self.seqs)))
-        elif self.state.is_fixed:
+        elif self.mode == "fixed":
             # Fixed mode - always use index 0
             idx = 0
         else:

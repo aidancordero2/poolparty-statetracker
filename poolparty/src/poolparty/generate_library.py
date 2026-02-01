@@ -73,11 +73,6 @@ def generate_library(
             "Cannot use num_cycles with filtering."
         )
     if num_seqs is None:
-        if pool.state.is_fixed:
-            raise ValueError(
-                "num_seqs must be specified when pool has a fixed state (mode='random' with num_states=None). "
-                "Cannot use num_cycles for fixed/stateless pools."
-            )
         num_seqs = num_cycles * pool.state.num_values
     if init_state is not None:
         pool._current_state = init_state
@@ -88,7 +83,7 @@ def generate_library(
 
     # Set default max_iterations
     if max_iterations is None:
-        if not pool.state.is_fixed:
+        if pool.state.num_values > 1:
             max_iterations = pool.state.num_values
         else:
             max_iterations = num_seqs * 100
@@ -206,7 +201,7 @@ def generate_library(
 
         # Check state space exhaustion (only for filtering in sequential mode)
         # When not filtering, allow cycling through states multiple times
-        if discard_null_seqs and not pool.state.is_fixed:
+        if discard_null_seqs and pool.state.num_values > 1:
             if state >= pool._current_state + pool.state.num_values:
                 if len(rows) < num_seqs:
                     warnings.warn(
@@ -345,12 +340,7 @@ def _compute_one(
 
     # Sets the value of the pool state and, in doing so, propagates values
     # to all parent pool and operation states in the DAG.
-    # For fixed states: set value=0 to trigger propagation (fixed states accept 0 or None).
-    # For non-fixed states: set value to trigger propagation.
-    if pool.state.is_fixed:
-        pool.state.value = 0
-    else:
-        pool.state.value = global_state % pool.state.num_values
+    pool.state.value = global_state % pool.state.num_values
 
     # Collect all name contributions from operations in topological order
     all_contributions: list[str] = []
@@ -363,11 +353,11 @@ def _compute_one(
 
         # Determine RNG for this operation
         if op.mode == "random":
-            if not op.state.is_fixed:
-                # Explicit num_states: use state value
+            if op.action_uniquely_determined_by_state:
+                # Explicit num_states > 1: use state value
                 state = op.state.value if op.state.value is not None else 0
             else:
-                # Fixed/stateless random: use global_state (row number)
+                # Stateless random (num_states=None or 1): use global_state (row number)
                 state = global_state
             seed_seq = np.random.SeedSequence([pool._master_seed, op.id, state])
             op_rng = np.random.default_rng(seed_seq)

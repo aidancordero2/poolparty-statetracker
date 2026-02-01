@@ -71,13 +71,8 @@ class SynchronizedGroup:
         self._value = val
 
         for state in self._states:
-            # Determine the value for this state
-            if state._is_fixed:
-                # Fixed states: only 0 or None
-                state_val = 0 if (val is not None and val == 0) else None
-            else:
-                # Only set if value is in range for this state
-                state_val = val if (val is not None and val < state.num_values) else None
+            # Only set if value is in range for this state
+            state_val = val if (val is not None and val < state.num_values) else None
 
             match (state._value, state_val):
                 case (None, None):

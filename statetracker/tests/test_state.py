@@ -22,12 +22,11 @@ class TestStateCreation:
             # Auto-named when registered
             assert A.name == "State[0]"
 
-    def test_leaf_state_with_none_num_values_creates_fixed(self):
-        """Creating State with num_values=None creates a fixed state."""
+    def test_leaf_state_with_none_num_values_defaults_to_one(self):
+        """Creating State with num_values=None defaults to num_values=1."""
         with Manager():
-            A = State()  # No num_values = fixed state
-            assert A.is_fixed is True
-            assert A.num_values is None
+            A = State()  # No num_values defaults to 1
+            assert A.num_values == 1
 
     def test_name_setter(self):
         with Manager():

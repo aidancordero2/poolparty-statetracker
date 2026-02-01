@@ -20,12 +20,13 @@ class TestRandomNumStatesBasic:
         with pp.Party() as party:
             # With a parent but no explicit num_states, stays stateless
             pool = mutagenize("ACGT", num_mutations=1, mode="random")
-            assert pool.operation.num_states is None
-            assert pool.operation.state.is_fixed is True
+            assert pool.operation.num_states == 1
+            assert pool.operation.state.num_values == 1
+            assert pool.operation.action_uniquely_determined_by_state is False
 
             # Without a parent (source operation), also stays stateless
             source_pool = get_kmers(length=4, mode="random")
-            assert source_pool.operation.num_states is None
+            assert source_pool.operation.num_states == 1
 
     def test_random_mode_generates_correct_count(self):
         """Test that random mode with num_states generates the expected number of sequences."""
@@ -243,11 +244,11 @@ class TestRandomNumStatesVsRandomMode:
 
             # Without explicit num_states, stays stateless (no implicit syncing)
             random_pool = mutagenize("ACGT", num_mutations=1, mode="random")
-            assert random_pool.operation.num_states is None
+            assert random_pool.operation.num_states == 1
 
             # Source op with no parents is also stateless
             stateless_pool = get_kmers(length=4, mode="random")
-            assert stateless_pool.operation.num_states is None
+            assert stateless_pool.operation.num_states == 1
 
     def test_random_with_num_states_iterates_deterministically(self):
         """Test that random mode with num_states iterates through states deterministically."""
@@ -333,9 +334,10 @@ class TestStatelessRandomWithGlobalState:
             # Random mode without explicit num_states should stay stateless
             child = mutagenize(parent, num_mutations=1, mode="random").named("mutant")
 
-            # Operation should be stateless (has fixed state)
-            assert child.operation.state.is_fixed is True
-            assert child.operation.num_states is None
+            # Operation should be stateless (num_values=1, action not determined by state)
+            assert child.operation.state.num_values == 1
+            assert child.operation.num_states == 1
+            assert child.operation.action_uniquely_determined_by_state is False
             # Pool state comes from parent only
             assert child.num_states == 3
 
@@ -376,23 +378,23 @@ class TestStatelessRandomWithGlobalState:
             # Parent pool with no state (pure random source operation)
             parent = get_kmers(length=4, mode="random")
 
-            # Verify parent is truly stateless (has fixed state)
-            assert parent.operation.state.is_fixed is True
-            assert parent.state.is_fixed is True
+            # Verify parent is truly stateless (num_values=1)
+            assert parent.operation.state.num_values == 1
+            assert parent.state.num_values == 1
 
             # Child should also be stateless
             child = mutagenize(parent, num_mutations=1, mode="random").named("mutant")
 
-            assert child.operation.state.is_fixed is True
-            assert child.state.is_fixed is True
+            assert child.operation.state.num_values == 1
+            assert child.state.num_values == 1
 
     def test_stateless_random_without_parent(self):
         """Test that random operation without parent remains stateless."""
         with pp.Party() as party:
             pool = get_kmers(length=4, mode="random").named("kmer")
 
-            assert pool.operation.state.is_fixed is True
-            assert pool.state.is_fixed is True
+            assert pool.operation.state.num_values == 1
+            assert pool.state.num_values == 1
 
     def test_stateless_random_with_multiple_stateful_parents(self):
         """Test random operation with multiple stateful parents stays stateless."""
@@ -405,9 +407,9 @@ class TestStatelessRandomWithGlobalState:
             # Random operation on joined pool should be stateless
             child = mutagenize(joined, num_mutations=1, mode="random").named("mutant")
 
-            # Op should be stateless (has fixed state)
-            assert child.operation.state.is_fixed is True
-            assert child.operation.num_states is None
+            # Op should be stateless (num_values=1)
+            assert child.operation.state.num_values == 1
+            assert child.operation.num_states == 1
             # Pool state comes from parents (product)
             assert child.num_states == 6
 
@@ -417,8 +419,8 @@ class TestStatelessRandomWithGlobalState:
             parent = from_seqs(["ACGT"], mode="sequential")  # 1 state
             child = mutagenize(parent, num_mutations=1, mode="random").named("mutant")
 
-            # Should be stateless (has fixed state)
-            assert child.operation.state.is_fixed is True
+            # Should be stateless (num_values=1)
+            assert child.operation.state.num_values == 1
 
         # Should generate different outputs for each row (not cycling)
         df = child.generate_library(num_seqs=10, seed=42)
@@ -434,10 +436,10 @@ class TestStatelessRandomWithGlobalState:
             mut1 = mutagenize(base, num_mutations=1, mode="random")  # stateless
             mut2 = mutagenize(mut1, num_mutations=1, mode="random").named("final")  # stateless
 
-            # Base has states, but random ops are stateless (have fixed states)
+            # Base has states, but random ops are stateless (num_values=1)
             assert base.num_states == 2
-            assert mut1.operation.state.is_fixed is True
-            assert mut2.operation.state.is_fixed is True
+            assert mut1.operation.state.num_values == 1
+            assert mut2.operation.state.num_values == 1
             # Pool states come from base only
             assert mut1.num_states == 2
             assert mut2.num_states == 2
@@ -463,8 +465,8 @@ class TestStatelessRandomWithGlobalState:
             parent = from_seqs(["AA<bc></bc>CC", "TT<bc></bc>GG"], mode="sequential")  # 2 states
             child = get_kmers(length=3, pool=parent, region="bc", mode="random").named("barcode")
 
-            # Should be stateless (has fixed state)
-            assert child.operation.state.is_fixed is True
+            # Should be stateless (num_values=1)
+            assert child.operation.state.num_values == 1
             # Pool state comes from parent
             assert child.num_states == 2
 

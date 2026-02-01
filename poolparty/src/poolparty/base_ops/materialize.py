@@ -124,11 +124,8 @@ class MaterializeOp(Operation):
         from ..party import cards_suppressed
 
         # Get index from state (cycling if needed)
-        if self.state.is_fixed:
-            idx = 0
-        else:
-            state = self.state.value
-            idx = (0 if state is None else state) % len(self._seqs)
+        state = self.state.value
+        idx = (0 if state is None else state) % len(self._seqs)
 
         # Store for name computation
         self._current_idx = idx

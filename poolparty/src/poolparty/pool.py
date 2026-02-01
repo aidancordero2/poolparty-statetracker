@@ -78,7 +78,7 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, OrfOpsMixin, StateOpsMixin
     @property
     def iter_order(self) -> Real:
         """Iteration order for this pool."""
-        if self.state.is_fixed:
+        if self.state.num_values == 1:
             return 0
         return self.state.iter_order
 
@@ -127,10 +127,8 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, OrfOpsMixin, StateOpsMixin
             self._party._update_pool_name(self, old_name, value)
 
     @property
-    def num_states(self) -> int | None:
+    def num_states(self) -> int:
         """Number of states for this pool."""
-        if self.state.is_fixed:
-            return None
         return self.state.num_values
 
     @property
