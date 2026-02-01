@@ -6,7 +6,7 @@ from ..types import Integral, Optional, Pool_type, Real, Sequence, Union
 class StateOpsMixin:
     """Mixin providing state operation methods for Pool."""
 
-    def repeat_states(
+    def repeat(
         self,
         times: Integral,
         prefix: Optional[str] = None,
@@ -21,21 +21,21 @@ class StateOpsMixin:
             iter_order=iter_order,
         )
 
-    def sample_states(
+    def sample(
         self,
-        num_values: Optional[Integral] = None,
-        sampled_states: Optional[Sequence[Integral]] = None,
+        num_seqs: Optional[Integral] = None,
+        seq_states: Optional[Sequence[Integral]] = None,
         seed: Optional[Integral] = None,
         with_replacement: bool = True,
         prefix: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
-        from ..state_ops.state_sample import state_sample
+        from ..state_ops.sample import sample
 
-        return state_sample(
+        return sample(
             pool=self,
-            num_values=num_values,
-            sampled_states=sampled_states,
+            num_seqs=num_seqs,
+            seq_states=seq_states,
             seed=seed,
             with_replacement=with_replacement,
             prefix=prefix,

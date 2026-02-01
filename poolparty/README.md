@@ -150,7 +150,7 @@ orf_mutants = template.mutagenize_orf(
 | **Base** | `from_seq`, `from_seqs`, `from_fasta`, `from_iupac`, `from_motif`, `get_kmers`, `mutagenize`, `shuffle_seq`, `recombine` |
 | **Scan** | `deletion_scan`, `insertion_scan`, `replacement_scan`, `shuffle_scan`, `mutagenize_scan`, `subseq_scan` |
 | **Region** | `insert_tags`, `extract_region`, `replace_region`, `remove_tags`, `apply_at_region` |
-| **State** | `stack`, `repeat`, `state_slice`, `state_shuffle`, `state_sample`, `sync` |
+| **State** | `stack`, `repeat`, `state_slice`, `state_shuffle`, `sample`, `sync` |
 | **ORF** | `mutagenize_orf` |
 
 ## Documentation

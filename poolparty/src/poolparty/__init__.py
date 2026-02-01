@@ -97,13 +97,13 @@ from .scan_ops import (
 # Import state operations from state_ops module
 from .state_ops import (
     RepeatOp,
+    SampleOp,
     StackOp,
-    StateSampleOp,
     StateShuffleOp,
     StateSliceOp,
     repeat,
+    sample,
     stack,
-    state_sample,
     state_shuffle,
     state_slice,
     sync,
@@ -186,8 +186,8 @@ __all__ = [
     "StateSliceOp",
     "state_shuffle",
     "StateShuffleOp",
-    "state_sample",
-    "StateSampleOp",
+    "sample",
+    "SampleOp",
     "sync",
     # Region operations
     "annotate_region",
@@ -286,8 +286,8 @@ _POOL_FACTORY_MAP = {
     "clear_annotation": clear_annotation,
     "stylize": stylize,
     # State ops
-    "repeat_states": repeat,
-    "sample_states": state_sample,
+    "repeat": repeat,
+    "sample": sample,
     "shuffle_states": state_shuffle,
     "slice_states": state_slice,
     # Region ops

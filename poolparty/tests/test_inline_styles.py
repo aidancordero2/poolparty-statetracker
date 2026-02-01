@@ -147,7 +147,7 @@ class TestInlineStylesChain:
         """Styles pass through state operations unchanged."""
         with pp.Party() as party:
             pool = mutagenize("ACGT", num_mutations=1, style="red", mode="sequential")
-            repeated = pool.repeat_states(2).named("repeated")
+            repeated = pool.repeat(2).named("repeated")
 
         df = repeated.generate_library(
             num_seqs=1, report_design_cards=True, _include_inline_styles=True
@@ -970,10 +970,10 @@ class TestStackRepeatStylePropagation:
         assert seq_style1.style_list[0][0] == "blue"
 
     def test_repeat_passes_styles_unchanged(self):
-        """repeat_states() passes through parent styles unchanged."""
+        """repeat() passes through parent styles unchanged."""
         with pp.Party() as party:
             pool = pp.from_seq("ACGT").stylize(style="green").named("pool")
-            repeated = pool.repeat_states(3).named("repeated")
+            repeated = pool.repeat(3).named("repeated")
 
         df = repeated.generate_library(
             num_seqs=3, report_design_cards=True, _include_inline_styles=True
@@ -1015,7 +1015,7 @@ class TestCompositeOperationsStyleChain:
             mutated = bg.mutagenize(num_mutations=1, style="bold", mode="sequential").named(
                 "mutated"
             )
-            repeated = mutated.repeat_states(2).named("repeated")
+            repeated = mutated.repeat(2).named("repeated")
             pool2 = pp.from_seq("TTTTTTTT").stylize(style="red").named("pool2")
             stacked = pp.stack([repeated, pool2]).named("stacked")
 
@@ -1682,7 +1682,7 @@ class TestStyleSuppression:
                 pp.from_seq("ACGTACGT")
                 .mutagenize(num_mutations=1, style="red", mode="sequential")
                 .stylize(style="blue")
-                .repeat_states(2)
+                .repeat(2)
                 .named("test")
             )
             df = pool.generate_library(
@@ -1859,7 +1859,7 @@ class TestCardSuppression:
             pool = (
                 pp.from_seq("ACGTACGT")
                 .mutagenize(num_mutations=1, mode="sequential")
-                .repeat_states(2)
+                .repeat(2)
                 .named("test")
             )
             df = pool.generate_library(
@@ -1875,7 +1875,7 @@ class TestCardSuppression:
         with pp.Party():
             pool1 = pp.from_seq("AAAA").named("pool1")
             pool2 = pool1.mutagenize(num_mutations=1, mode="sequential").named("pool2")
-            pool3 = pool2.repeat_states(2).named("pool3")
+            pool3 = pool2.repeat(2).named("pool3")
 
             # Without suppression - all pool sequences reported
             df_with = pool3.generate_library(
@@ -1901,7 +1901,7 @@ class TestCardSuppression:
             pool = (
                 pp.from_seq("ACGT")
                 .mutagenize(num_mutations=1, mode="sequential")
-                .repeat_states(2)
+                .repeat(2)
                 .named("test")
             )
 
@@ -1926,7 +1926,7 @@ class TestCardSuppression:
             pool = (
                 pp.from_seq("ACGT")
                 .mutagenize(num_mutations=1, mode="sequential")
-                .repeat_states(2)
+                .repeat(2)
                 .named("test")
             )
 
@@ -1952,7 +1952,7 @@ class TestCardSuppression:
             pool = (
                 pp.from_seq("ACGTACGT")
                 .mutagenize(num_mutations=1, mode="sequential")
-                .repeat_states(2)
+                .repeat(2)
                 .named("final_pool")
             )
             df = pool.generate_library(
@@ -1973,7 +1973,7 @@ class TestCardSuppression:
                 sources=[pool1, pool2], num_breakpoints=1, mode="sequential"
             ).named("recomb")
             mutated = recomb.mutagenize(num_mutations=1, mode="sequential").named("mutated")
-            final = mutated.repeat_states(2).named("final")
+            final = mutated.repeat(2).named("final")
 
             # Without suppression - many columns
             df_with = final.generate_library(

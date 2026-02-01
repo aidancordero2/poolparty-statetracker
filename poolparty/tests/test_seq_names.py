@@ -148,13 +148,13 @@ def test_no_name_duplication_complex_pipeline():
                 segment_set.add(seg)
 
 
-def test_repeat_states_naming():
-    """Test that repeat_states generates correct names."""
+def test_repeat_naming():
+    """Test that repeat generates correct names."""
     with pp.Party():
         pool = (
             pp.from_seq("ACGT")
             .mutagenize(num_mutations=1, mode="sequential", prefix="mut")
-            .repeat_states(3, prefix="rep")
+            .repeat(3, prefix="rep")
         )
 
     df = pool.generate_library(num_cycles=1)

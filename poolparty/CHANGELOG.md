@@ -53,7 +53,7 @@ Initial release of PoolParty for declarative DNA library design.
 #### State Operations (via StateTracker)
 - `state_slice()` - Slice state space
 - `state_shuffle()` - Shuffle state ordering
-- `state_sample()` - Sample from state space
+- `sample()` - Sample from state space
 - `state_repeat()` - Repeat state patterns
 
 #### Utilities

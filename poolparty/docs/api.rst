@@ -176,7 +176,7 @@ Operations that manipulate the state space of pools.
 
 .. autofunction:: poolparty.state_shuffle
 
-.. autofunction:: poolparty.state_sample
+.. autofunction:: poolparty.sample
 
 .. autofunction:: poolparty.sync
 
@@ -277,7 +277,7 @@ State Operation Classes
 .. autoclass:: poolparty.StateShuffleOp
    :show-inheritance:
 
-.. autoclass:: poolparty.StateSampleOp
+.. autoclass:: poolparty.SampleOp
    :show-inheritance:
 
 ORF Operation Classes

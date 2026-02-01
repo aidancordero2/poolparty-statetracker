@@ -1,4 +1,4 @@
-"""StateSample operation - sample states from a pool."""
+"""Sample operation - sample states from a pool."""
 
 from numbers import Real
 
@@ -12,10 +12,10 @@ from ..types import Integral, Optional, Real, Seq, Sequence, beartype
 
 
 @beartype
-def state_sample(
+def sample(
     pool: Pool,
-    num_values: Optional[Integral] = None,
-    sampled_states: Optional[Sequence[Integral]] = None,
+    num_seqs: Optional[Integral] = None,
+    seq_states: Optional[Sequence[Integral]] = None,
     seed: Optional[Integral] = None,
     with_replacement: bool = True,
     prefix: Optional[str] = None,
@@ -28,14 +28,14 @@ def state_sample(
     ----------
     pool : Pool
         The Pool to sample states from.
-    num_values : Optional[Integral], default=None
-        Number of states to sample. Mutually exclusive with sampled_states.
-    sampled_states : Optional[Sequence[Integral]], default=None
-        Explicit list of states to sample. Mutually exclusive with num_values.
+    num_seqs : Optional[Integral], default=None
+        Number of states to sample. Mutually exclusive with seq_states.
+    seq_states : Optional[Sequence[Integral]], default=None
+        Explicit list of states to sample. Mutually exclusive with num_seqs.
     seed : Optional[Integral], default=None
-        Random seed for deterministic sampling. Only used with num_values.
+        Random seed for deterministic sampling. Only used with num_seqs.
     with_replacement : bool, default=True
-        If False, num_values must be <= pool.num_states (no duplicates).
+        If False, num_seqs must be <= pool.num_states (no duplicates).
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     iter_order : Optional[Real], default=None
@@ -46,10 +46,10 @@ def state_sample(
     Pool
         A Pool containing the sampled states from the input Pool.
     """
-    op = StateSampleOp(
+    op = SampleOp(
         pool,
-        num_values=num_values,
-        sampled_states=sampled_states,
+        num_seqs=num_seqs,
+        seq_states=seq_states,
         seed=seed,
         with_replacement=with_replacement,
         prefix=prefix,
@@ -60,26 +60,26 @@ def state_sample(
     return result_pool
 
 
-class StateSampleOp(Operation):
+class SampleOp(Operation):
     """Sample states from a pool."""
 
-    factory_name = "state_sample"
+    factory_name = "sample"
     design_card_keys = []
 
     def __init__(
         self,
         parent_pool: Pool,
-        num_values: Optional[Integral] = None,
-        sampled_states: Optional[Sequence[Integral]] = None,
+        num_seqs: Optional[Integral] = None,
+        seq_states: Optional[Sequence[Integral]] = None,
         seed: Optional[Integral] = None,
         with_replacement: bool = True,
         prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
-        """Initialize StateSampleOp."""
-        self._num_values = num_values
-        self.sampled_states = sampled_states
+        """Initialize SampleOp."""
+        self._num_seqs = num_seqs
+        self.seq_states = seq_states
         self.seed = seed
         self.with_replacement = with_replacement
         super().__init__(
@@ -97,8 +97,8 @@ class StateSampleOp(Operation):
         """Build pool counter using st.sample."""
         return st.sample(
             parent_pools[0].state,
-            num_values=self._num_values,
-            sampled_states=self.sampled_states,
+            num_values=self._num_seqs,
+            sampled_states=self.seq_states,
             seed=self.seed,
             with_replacement=self.with_replacement,
         )

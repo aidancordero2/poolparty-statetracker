@@ -473,7 +473,7 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, OrfOpsMixin, StateOpsMixin
     #                 replacement_scan, shuffle_scan
     # - FixedOpsMixin: rc, swapcase, upper, lower, clear_gaps,
     #                  clear_annotation, stylize
-    # - StateOpsMixin: repeat_states, sample_states, shuffle_states,
+    # - StateOpsMixin: repeat, sample, shuffle_states,
     #                  slice_states
     # - RegionOpsMixin: apply_at_region, insert_tags, remove_tags,
     #                   replace_region, clear_tags

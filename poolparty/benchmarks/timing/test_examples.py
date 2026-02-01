@@ -33,7 +33,7 @@ def workload_mpra_example(
             prefix="mutagenize",
         )
         .named("mutated_pool")
-        .repeat_states(2, prefix="v", iter_order=-2)
+        .repeat(2, prefix="v", iter_order=-2)
     )
 
     L = len("GGAAAGCGGGCAGTGAGCACACAGGA")
@@ -49,7 +49,7 @@ def workload_mpra_example(
             prefix="recomb",
         )
         .named("recomb_pool")
-        .repeat_states(2, prefix="v", iter_order=-2)
+        .repeat(2, prefix="v", iter_order=-2)
     )
 
     deletion_pool = (
@@ -63,7 +63,7 @@ def workload_mpra_example(
             prefix="delscan",
         )
         .named("deletion_pool")
-        .repeat_states(2, prefix="v", iter_order=-2)
+        .repeat(2, prefix="v", iter_order=-2)
     )
 
     sites_pool = pp.from_seqs(["AAAAAA", "TTTTTT"], mode="sequential", iter_order=-1).named(
