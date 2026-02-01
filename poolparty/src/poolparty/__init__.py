@@ -20,7 +20,8 @@ from .base_ops import (
     MutagenizeOp,
     RecombineOp,
     SeqShuffleOp,
-    filter_seq,
+    filter,
+    filter_seq,  # Backward compatibility alias
     from_iupac,
     from_motif,
     from_seqs,
@@ -176,6 +177,9 @@ __all__ = [
     "upper",
     "lower",
     "clear_gaps",
+    "filter",
+    "filter_seq",  # Backward compatibility alias
+    "FilterOp",
     "stylize",
     "StylizeOp",
     "stack",
@@ -284,6 +288,7 @@ _POOL_FACTORY_MAP = {
     "lower": lower,
     "clear_gaps": clear_gaps,
     "clear_annotation": clear_annotation,
+    "filter": filter,
     "stylize": stylize,
     # State ops
     "repeat": repeat,

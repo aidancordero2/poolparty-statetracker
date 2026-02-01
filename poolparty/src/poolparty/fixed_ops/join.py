@@ -10,6 +10,7 @@ def join(
     pools: Sequence[Union[Pool_type, str]],
     spacer_str: str = "",
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
     style: Optional[str] = None,
     _factory_name: Optional[str] = None,
 ) -> Pool_type:
@@ -47,6 +48,7 @@ def join(
         seq_from_seqs_fn=lambda seqs: spacer_str.join(seqs),
         seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         iter_order=iter_order,
+        prefix=prefix,
         _factory_name=_factory_name if _factory_name is not None else "join",
     )
 

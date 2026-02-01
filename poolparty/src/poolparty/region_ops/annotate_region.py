@@ -11,6 +11,7 @@ def annotate_region(
     extent: Optional[tuple[int, int]] = None,
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
 ) -> Pool_type:
     """
     Annotate a region in the pool's sequences, optionally applying a style.
@@ -79,7 +80,7 @@ def annotate_region(
             start, stop = extent
 
         # Insert tags to create the region
-        result_pool = insert_tags(pool, name, start=start, stop=stop, iter_order=iter_order)
+        result_pool = insert_tags(pool, name, start=start, stop=stop, iter_order=iter_order, prefix=prefix)
 
     # Apply styling if requested
     if style is not None:

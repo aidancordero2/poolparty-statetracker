@@ -60,6 +60,7 @@ def stylize_orf(
     style_frames: Optional[list[str]] = None,
     frame: Optional[int] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
 ) -> Pool:
     """
     Apply ORF-aware inline styling to sequences.
@@ -114,6 +115,7 @@ def stylize_orf(
         frame=resolved_frame,
         name=None,
         iter_order=iter_order,
+        prefix=prefix,
     )
     return Pool(operation=op)
 
@@ -133,6 +135,7 @@ class StylizeOrfOp(Operation):
         frame: int = 1,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> None:
         """Initialize StylizeOrfOp."""
         from ..party import get_active_party
@@ -178,6 +181,7 @@ class StylizeOrfOp(Operation):
             seq_length=pool.seq_length,
             name=name,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def _get_tag_positions(self, text: str) -> set[int]:

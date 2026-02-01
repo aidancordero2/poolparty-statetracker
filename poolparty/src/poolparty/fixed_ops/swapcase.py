@@ -13,6 +13,7 @@ def swapcase(
     region: RegionType = None,
     remove_tags: Optional[bool] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
     style: Optional[str] = None,
     _factory_name: Optional[str] = None,
 ) -> Pool:
@@ -50,6 +51,7 @@ def swapcase(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
+        prefix=prefix,
         _factory_name=_factory_name if _factory_name is not None else "swapcase",
     )
 

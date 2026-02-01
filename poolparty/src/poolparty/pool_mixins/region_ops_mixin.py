@@ -12,6 +12,7 @@ class RegionOpsMixin:
         extent: Optional[tuple[int, int]] = None,
         style: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> Pool_type:
         """Annotate a region, optionally applying styling. See annotate_region() for details."""
         from ..region_ops.annotate_region import annotate_region
@@ -22,6 +23,7 @@ class RegionOpsMixin:
             extent=extent,
             style=style,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def apply_at_region(
@@ -30,6 +32,7 @@ class RegionOpsMixin:
         transform_fn: Callable,
         remove_tags: bool = True,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> Pool_type:
         from ..region_ops.apply_at_region import apply_at_region
 
@@ -39,6 +42,7 @@ class RegionOpsMixin:
             transform_fn,
             remove_tags=remove_tags,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def insert_tags(
@@ -47,6 +51,7 @@ class RegionOpsMixin:
         start: int,
         stop: Optional[int] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> Pool_type:
         from ..region_ops.insert_tags import insert_tags
 
@@ -56,6 +61,7 @@ class RegionOpsMixin:
             start,
             stop,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def remove_tags(
@@ -63,6 +69,7 @@ class RegionOpsMixin:
         region_name: str,
         keep_content: bool = True,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> Pool_type:
         from ..region_ops.remove_tags import remove_tags
 
@@ -71,6 +78,7 @@ class RegionOpsMixin:
             region_name,
             keep_content,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def replace_region(
@@ -78,6 +86,7 @@ class RegionOpsMixin:
         content_pool: Union[Pool_type, str],
         region_name: str,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> Pool_type:
         from ..region_ops.replace_region import replace_region
 
@@ -86,6 +95,7 @@ class RegionOpsMixin:
             content_pool,
             region_name,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def clear_tags(self, **kwargs) -> Pool_type:

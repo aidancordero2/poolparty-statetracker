@@ -13,6 +13,7 @@ def insert_tags(
     start: int,
     stop: Optional[int] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
 ):
     """
     Insert XML-style region tags at a fixed position in sequences.
@@ -89,6 +90,7 @@ def insert_tags(
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: lengths[0] if lengths else None,
         iter_order=iter_order,
+        prefix=prefix,
     )
 
     # Add the new region to the pool's region set

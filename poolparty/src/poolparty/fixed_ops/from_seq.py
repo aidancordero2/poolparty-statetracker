@@ -15,6 +15,7 @@ def from_seq(
     remove_tags: Optional[bool] = None,
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
     _factory_name: Optional[str] = None,
 ) -> Pool_type:
     """
@@ -74,6 +75,7 @@ def from_seq(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
+        prefix=prefix,
         _factory_name=_factory_name if _factory_name is not None else "from_seq",
         _pass_through_styles=not is_replacement,
     )

@@ -12,6 +12,7 @@ def remove_tags(
     region_name: str,
     keep_content: bool = True,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
 ):
     """
     Remove region tags from sequences.
@@ -69,6 +70,7 @@ def remove_tags(
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: None,  # Length changes when removing tags
         iter_order=iter_order,
+        prefix=prefix,
         _factory_name="remove_tags",
     )
 

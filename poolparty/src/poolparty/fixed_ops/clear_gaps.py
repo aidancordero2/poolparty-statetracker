@@ -13,6 +13,7 @@ def clear_gaps(
     region: RegionType = None,
     remove_tags: Optional[bool] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
 ) -> Pool:
     """
     Create a Pool with all gap/non-molecular characters removed from sequences.
@@ -67,5 +68,6 @@ def clear_gaps(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
+        prefix=prefix,
         _factory_name="clear_gaps",
     )

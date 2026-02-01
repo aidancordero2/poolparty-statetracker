@@ -13,6 +13,7 @@ def rc(
     region: RegionType = None,
     remove_tags: Optional[bool] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
     style: Optional[str] = None,
 ) -> Pool:
     """
@@ -56,6 +57,7 @@ def rc(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
+        prefix=prefix,
         _factory_name="rc",
     )
 

@@ -13,6 +13,7 @@ class FixedOpsMixin:
         region: RegionType = None,
         remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
         from ..fixed_ops.rc import rc
@@ -22,6 +23,7 @@ class FixedOpsMixin:
             region=region,
             remove_tags=remove_tags,
             iter_order=iter_order,
+            prefix=prefix,
             style=style,
         )
 
@@ -30,6 +32,7 @@ class FixedOpsMixin:
         region: RegionType = None,
         remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
         from ..fixed_ops.swapcase import swapcase
@@ -39,6 +42,7 @@ class FixedOpsMixin:
             region=region,
             remove_tags=remove_tags,
             iter_order=iter_order,
+            prefix=prefix,
             style=style,
         )
 
@@ -47,6 +51,7 @@ class FixedOpsMixin:
         region: RegionType = None,
         remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
         from ..fixed_ops.upper import upper
@@ -56,6 +61,7 @@ class FixedOpsMixin:
             region=region,
             remove_tags=remove_tags,
             iter_order=iter_order,
+            prefix=prefix,
             style=style,
         )
 
@@ -64,6 +70,7 @@ class FixedOpsMixin:
         region: RegionType = None,
         remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
         from ..fixed_ops.lower import lower
@@ -73,6 +80,7 @@ class FixedOpsMixin:
             region=region,
             remove_tags=remove_tags,
             iter_order=iter_order,
+            prefix=prefix,
             style=style,
         )
 
@@ -81,6 +89,7 @@ class FixedOpsMixin:
         region: RegionType = None,
         remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> Pool_type:
         from ..fixed_ops.clear_gaps import clear_gaps
 
@@ -89,6 +98,7 @@ class FixedOpsMixin:
             region=region,
             remove_tags=remove_tags,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def clear_annotation(
@@ -96,6 +106,7 @@ class FixedOpsMixin:
         region: RegionType = None,
         remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> Pool_type:
         from ..fixed_ops.clear_annotation import clear_annotation
 
@@ -104,6 +115,7 @@ class FixedOpsMixin:
             region=region,
             remove_tags=remove_tags,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def stylize(
@@ -114,6 +126,7 @@ class FixedOpsMixin:
         which: Literal["all", "upper", "lower", "gap", "tags", "contents"] = "contents",
         regex: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> Pool_type:
         from ..fixed_ops.stylize import stylize
 
@@ -124,4 +137,5 @@ class FixedOpsMixin:
             which=which,
             regex=regex,
             iter_order=iter_order,
+            prefix=prefix,
         )

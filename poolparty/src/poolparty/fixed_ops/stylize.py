@@ -24,6 +24,7 @@ def stylize(
     which: WhichType = "contents",
     regex: Optional[str] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
 ) -> Pool:
     """
     Apply inline styling to sequences without modifying them.
@@ -64,6 +65,7 @@ def stylize(
         regex=regex,
         name=None,
         iter_order=iter_order,
+        prefix=prefix,
     )
     return Pool(operation=op)
 
@@ -83,6 +85,7 @@ class StylizeOp(Operation):
         regex: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> None:
         """Initialize StylizeOp."""
         from ..party import get_active_party
@@ -110,6 +113,7 @@ class StylizeOp(Operation):
             seq_length=pool.seq_length,
             name=name,
             iter_order=iter_order,
+            prefix=prefix,
             # Don't pass region - we handle it ourselves for styling only
         )
 

@@ -13,6 +13,7 @@ def extract_region(
     region_name: str,
     rc: bool = False,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
 ):
     """
     Extract content from a named region as a new Pool.
@@ -79,6 +80,7 @@ def extract_region(
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: region_seq_length,  # Use registered region's seq_length
         iter_order=iter_order,
+        prefix=prefix,
     )
 
     # The extracted content does not contain any regions

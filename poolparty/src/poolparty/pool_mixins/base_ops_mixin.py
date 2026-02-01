@@ -173,15 +173,16 @@ class BaseOpsMixin:
         self,
         predicate: Callable[[str], bool],
         name: Optional[str] = None,
+        prefix: Optional[str] = None,
     ) -> Pool_type:
         """Filter sequences based on a predicate function.
 
         Sequences for which the predicate returns False are replaced with NullSeq.
         Use generate_library with discard_null_seqs=True to exclude them.
         """
-        from ..base_ops.filter_seq import filter_seq
+        from ..base_ops.filter_seq import filter
 
-        return filter_seq(self, predicate=predicate, name=name)
+        return filter(self, predicate=predicate, name=name, prefix=prefix)
 
     def materialize(
         self,

@@ -16,6 +16,7 @@ def replace_region(
     region_name: str,
     rc: bool = False,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
     _factory_name: Optional[str] = None,
     _style: Optional[str] = None,
 ):
@@ -75,6 +76,7 @@ def replace_region(
         rc=rc,
         name=None,
         iter_order=iter_order,
+        prefix=prefix,
         _factory_name=_factory_name,
         _style=_style,
     )
@@ -100,6 +102,7 @@ class ReplaceRegionOp(Operation):
         rc: bool = False,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
         _factory_name: Optional[str] = None,
         _style: Optional[str] = None,
     ) -> None:
@@ -123,6 +126,7 @@ class ReplaceRegionOp(Operation):
             seq_length=None,  # Variable length
             name=name,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def _compute_core(

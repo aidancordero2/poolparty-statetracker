@@ -15,6 +15,7 @@ def annotate_orf(
     style_codons: Optional[list[str]] = None,
     style_frames: Optional[list[str]] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
 ) -> Pool_type:
     """
     Annotate an ORF region with reading frame, optionally applying styling.
@@ -127,7 +128,7 @@ def annotate_orf(
         region_length = stop - start
 
         # Insert tags to create the region
-        result_pool = insert_tags(pool, name, start=start, stop=stop, iter_order=iter_order)
+        result_pool = insert_tags(pool, name, start=start, stop=stop, iter_order=iter_order, prefix=prefix)
 
         # Register as OrfRegion with Party (need to replace the plain Region that insert_tags created)
         # First get the region that was just registered

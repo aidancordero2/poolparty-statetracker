@@ -330,3 +330,57 @@ def test_stack_multiple_branches_name_isolation():
 
         # Barcode should be present
         assert "bc_" in name, f"Row {idx} should contain 'bc_': {name}"
+
+
+def test_fixed_operation_prefix():
+    """Test that fixed operations can have a prefix that adds a constant label."""
+    with pp.Party():
+        # Fixed operation with prefix
+        pool = pp.from_seq("ACGT", prefix="bg").upper(prefix="up")
+
+    df = pool.generate_library(num_cycles=1)
+
+    # Names should be "bg.up" - just constant labels, no indices
+    assert len(df) == 1
+    name = df.loc[0, "name"]
+    assert "bg" in name, f"Name should contain 'bg': {name}"
+    assert "up" in name, f"Name should contain 'up': {name}"
+
+
+def test_fixed_and_variable_ops_prefix():
+    """Test prefix on both fixed and variable operations."""
+    with pp.Party():
+        pool = (
+            pp.from_seq("ACGTACGT", prefix="bg")
+            .mutagenize(num_mutations=1, mode="sequential", prefix="mut")
+            .upper(prefix="upper")
+        )
+
+    df = pool.generate_library(num_cycles=1)
+
+    # Names should be like: bg.mut_0.upper, bg.mut_1.upper, ...
+    for idx, name in enumerate(df["name"]):
+        assert "bg" in name, f"Name should contain 'bg': {name}"
+        assert f"mut_{idx}" in name, f"Name should contain 'mut_{idx}': {name}"
+        assert "upper" in name, f"Name should contain 'upper': {name}"
+
+
+def test_filter_with_prefix():
+    """Test that filter operation can have a prefix."""
+    with pp.Party():
+        pool = (
+            pp.from_seqs(["AAAA", "CCCC", "GGGG"], mode="sequential", prefix="seq")
+            .filter(lambda s: s.startswith("A"), prefix="filtered")
+        )
+
+    df = pool.generate_library(num_seqs=3)
+
+    # First row passes filter
+    assert df.loc[0, "seq"] == "AAAA"
+    name = df.loc[0, "name"]
+    assert "seq_0" in name, f"Name should contain 'seq_0': {name}"
+    assert "filtered" in name, f"Name should contain 'filtered': {name}"
+
+    # Filtered rows have None name
+    assert df.loc[1, "name"] is None
+    assert df.loc[2, "name"] is None

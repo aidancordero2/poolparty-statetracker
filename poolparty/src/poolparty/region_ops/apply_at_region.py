@@ -14,6 +14,7 @@ def apply_at_region(
     rc: bool = False,
     remove_tags: bool = True,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
 ):
     """
     Apply a transformation to the content of a region.
@@ -89,6 +90,7 @@ def apply_at_region(
             region_name,
             rc=rc,
             iter_order=iter_order,
+            prefix=prefix,
         )
     else:
         # Step 3b: Replace region content but keep tags
@@ -98,6 +100,7 @@ def apply_at_region(
             region_name,
             rc=rc,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     return result
@@ -109,6 +112,7 @@ def _replace_keeping_tags(
     region_name: str,
     rc: bool = False,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
 ):
     """Replace region content while preserving region tags."""
     from ..fixed_ops.fixed import fixed_operation
@@ -138,6 +142,7 @@ def _replace_keeping_tags(
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: None,  # Variable length
         iter_order=iter_order,
+        prefix=prefix,
     )
 
     # Region is preserved, so keep it in the pool's region set

@@ -15,6 +15,7 @@ def fixed_operation(
     region: RegionType = None,
     remove_tags: Optional[bool] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
     _factory_name: Optional[str] = None,
     _pass_through_styles: bool = True,
 ) -> Pool:
@@ -54,6 +55,7 @@ def fixed_operation(
         remove_tags=remove_tags,
         name=None,
         iter_order=iter_order,
+        prefix=prefix,
         _factory_name=_factory_name,
         _pass_through_styles=_pass_through_styles,
     )
@@ -77,6 +79,7 @@ class FixedOp(Operation):
         spacer_str: str = "",
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
         _factory_name: Optional[str] = None,
         _pass_through_styles: bool = True,
     ) -> None:
@@ -115,6 +118,7 @@ class FixedOp(Operation):
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
+            prefix=prefix,
             region=region,
             remove_tags=remove_tags,
         )

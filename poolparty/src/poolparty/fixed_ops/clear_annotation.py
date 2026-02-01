@@ -13,6 +13,7 @@ def clear_annotation(
     region: RegionType = None,
     remove_tags: Optional[bool] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
 ) -> Pool:
     """
     Create a Pool with all annotations cleared and sequences uppercased.
@@ -57,5 +58,6 @@ def clear_annotation(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
+        prefix=prefix,
         _factory_name="clear_annotation",
     )

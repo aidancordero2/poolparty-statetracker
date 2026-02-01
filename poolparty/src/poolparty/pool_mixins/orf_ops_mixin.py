@@ -15,6 +15,7 @@ class OrfOpsMixin:
         style_codons: Optional[list[str]] = None,
         style_frames: Optional[list[str]] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> Pool_type:
         """Annotate an ORF region with frame, optionally applying styling. See annotate_orf() for details."""
         from ..orf_ops.annotate_orf import annotate_orf
@@ -28,6 +29,7 @@ class OrfOpsMixin:
             style_codons=style_codons,
             style_frames=style_frames,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def stylize_orf(
@@ -38,6 +40,7 @@ class OrfOpsMixin:
         style_frames: Optional[list[str]] = None,
         frame: Optional[int] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> Pool_type:
         """Apply ORF-aware styling. See stylize_orf() for details."""
         from ..orf_ops.stylize_orf import stylize_orf
@@ -49,6 +52,7 @@ class OrfOpsMixin:
             style_frames=style_frames,
             frame=frame,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def mutagenize_orf(

@@ -20,6 +20,7 @@ def from_fasta(
     region: RegionType = None,
     remove_tags: Optional[bool] = None,
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
     style: Optional[str] = None,
 ) -> Pool_type:
     """
@@ -54,6 +55,7 @@ def from_fasta(
         region=region,
         remove_tags=remove_tags,
         iter_order=iter_order,
+        prefix=prefix,
         style=style,
         _factory_name="from_fasta",
     )

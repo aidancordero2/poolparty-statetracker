@@ -11,6 +11,7 @@ def slice_seq(
     pool: Pool,
     key: Union[Integral, slice],
     iter_order: Optional[Real] = None,
+    prefix: Optional[str] = None,
     style: Optional[str] = None,
 ) -> Pool:
     """
@@ -52,6 +53,7 @@ def slice_seq(
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         iter_order=iter_order,
+        prefix=prefix,
         _factory_name="slice_seq",
     )
 

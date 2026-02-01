@@ -25,6 +25,7 @@ class FilterOp(Operation):
         predicate: Callable[[str], bool],
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
     ) -> None:
         """Initialize FilterOp."""
         super().__init__(
@@ -33,6 +34,7 @@ class FilterOp(Operation):
             mode="fixed",
             name=name,
             iter_order=iter_order,
+            prefix=prefix,
         )
         self._predicate = predicate
 
@@ -56,10 +58,11 @@ class FilterOp(Operation):
 
 
 @beartype
-def filter_seq(
+def filter(
     pool: Pool_type,
     predicate: Callable[[str], bool],
     name: Optional[str] = None,
+    prefix: Optional[str] = None,
 ) -> Pool:
     """Filter sequences based on a predicate function.
 
@@ -75,11 +78,17 @@ def filter_seq(
         Function taking sequence string (clean, no tags), returning True to keep.
     name : Optional[str]
         Optional name for the operation.
+    prefix : Optional[str]
+        Prefix for sequence naming.
 
     Returns
     -------
     Pool
         New pool that may contain NullSeq for filtered sequences.
     """
-    op = FilterOp(parent_pool=pool, predicate=predicate, name=name)
+    op = FilterOp(parent_pool=pool, predicate=predicate, name=name, prefix=prefix)
     return Pool(op)
+
+
+# Backward compatibility alias
+filter_seq = filter
