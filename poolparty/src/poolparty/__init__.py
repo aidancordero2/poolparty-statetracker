@@ -59,7 +59,7 @@ from .multiscan_ops import (
 from .operation import Operation
 
 # Import ORF operations from orf_ops module
-from .orf_ops import MutagenizeOrfOp, StylizeOrfOp, mutagenize_orf, stylize_orf
+from .orf_ops import MutagenizeOrfOp, StylizeOrfOp, annotate_orf, mutagenize_orf, stylize_orf
 from .party import (
     Party,
     _init_default_party,
@@ -70,10 +70,11 @@ from .party import (
     load_config,
 )
 from .pool import Pool
-from .region import Region
+from .region import OrfRegion, Region
 
 # Import from region_ops module
 from .region_ops import (
+    annotate_region,
     apply_at_region,
     extract_region,
     insert_tags,
@@ -128,6 +129,7 @@ __all__ = [
     "Pool",
     "Operation",
     "Region",
+    "OrfRegion",
     "State",
     "StateManager",
     "generate_library",
@@ -154,6 +156,7 @@ __all__ = [
     "MaterializeOp",
     "mutagenize",
     "MutagenizeOp",
+    "annotate_orf",
     "mutagenize_orf",
     "MutagenizeOrfOp",
     "stylize_orf",
@@ -187,6 +190,7 @@ __all__ = [
     "StateSampleOp",
     "sync",
     # Region operations
+    "annotate_region",
     "insert_tags",
     "region_scan",
     "region_multiscan",
@@ -287,10 +291,15 @@ _POOL_FACTORY_MAP = {
     "shuffle_states": state_shuffle,
     "slice_states": state_slice,
     # Region ops
+    "annotate_region": annotate_region,
     "apply_at_region": apply_at_region,
     "insert_tags": insert_tags,
     "remove_tags": remove_tags,
     "replace_region": replace_region,
+    # ORF ops
+    "annotate_orf": annotate_orf,
+    "mutagenize_orf": mutagenize_orf,
+    "stylize_orf": stylize_orf,
     # Generation
     "generate_library": generate_library,
 }

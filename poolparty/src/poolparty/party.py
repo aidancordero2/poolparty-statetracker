@@ -11,7 +11,7 @@ import logging
 import statetracker as st
 
 from .codon_table import CodonTable
-from .region import Region
+from .region import OrfRegion, Region
 from .types import Any, Operation_type, Optional, Pool_type, Union, beartype
 from .utils import dna_utils
 
@@ -373,6 +373,117 @@ class Party:
         self._regions_by_name[name] = region
         logger.debug("Registered region id=%s name=%s seq_length=%s", region._id, name, seq_length)
         return region
+
+    def register_orf_region(
+        self, name: str, seq_length: Optional[int], frame: int = 1
+    ) -> OrfRegion:
+        """
+        Register an ORF region with this party.
+
+        If a region with the same name already exists:
+        - If it's an OrfRegion with same seq_length and frame, return it
+        - Otherwise raise ValueError
+
+        Parameters
+        ----------
+        name : str
+            The region name.
+        seq_length : Optional[int]
+            The expected content length (None for variable, 0 for zero-length).
+        frame : int
+            Reading frame (+1, +2, +3, -1, -2, -3). Default +1.
+
+        Returns
+        -------
+        OrfRegion
+            The registered ORF region.
+        """
+        existing = self._regions_by_name.get(name)
+        if existing is not None:
+            if isinstance(existing, OrfRegion):
+                if existing.seq_length == seq_length and existing.frame == frame:
+                    return existing
+                else:
+                    raise ValueError(
+                        f"OrfRegion '{name}' already registered with different attributes. "
+                        f"Existing: seq_length={existing.seq_length}, frame={existing.frame}. "
+                        f"Requested: seq_length={seq_length}, frame={frame}."
+                    )
+            else:
+                raise ValueError(
+                    f"Region '{name}' already exists as a plain Region. "
+                    f"Use upgrade_to_orf_region() to convert it to an OrfRegion."
+                )
+
+        # Create and register new ORF region
+        orf_region = OrfRegion(
+            name=name, seq_length=seq_length, _id=self._get_next_region_id(), frame=frame
+        )
+        self._regions_by_id.append(orf_region)
+        self._regions_by_name[name] = orf_region
+        logger.debug(
+            "Registered ORF region id=%s name=%s seq_length=%s frame=%s",
+            orf_region._id,
+            name,
+            seq_length,
+            frame,
+        )
+        return orf_region
+
+    def upgrade_to_orf_region(self, name: str, frame: int = 1) -> OrfRegion:
+        """
+        Upgrade an existing plain Region to an OrfRegion.
+
+        Only valid if the existing region is a plain Region (not already an OrfRegion).
+
+        Parameters
+        ----------
+        name : str
+            The name of the existing region to upgrade.
+        frame : int
+            Reading frame for the ORF (+1, +2, +3, -1, -2, -3). Default +1.
+
+        Returns
+        -------
+        OrfRegion
+            The upgraded ORF region.
+
+        Raises
+        ------
+        ValueError
+            If region doesn't exist or is already an OrfRegion.
+        """
+        existing = self._regions_by_name.get(name)
+        if existing is None:
+            raise ValueError(f"Region '{name}' not found. Cannot upgrade non-existent region.")
+
+        if isinstance(existing, OrfRegion):
+            raise ValueError(
+                f"Region '{name}' is already an OrfRegion with frame={existing.frame}. "
+                f"Cannot change frame of an existing OrfRegion."
+            )
+
+        # Create new OrfRegion with same name/seq_length but new frame
+        # Keep the same _id for consistency
+        orf_region = OrfRegion(
+            name=existing.name,
+            seq_length=existing.seq_length,
+            _id=existing._id,
+            frame=frame,
+        )
+
+        # Replace in registry (by name only, _regions_by_id keeps original order)
+        self._regions_by_name[name] = orf_region
+        # Update in the id list as well
+        for i, r in enumerate(self._regions_by_id):
+            if r._id == existing._id:
+                self._regions_by_id[i] = orf_region
+                break
+
+        logger.debug(
+            "Upgraded region '%s' to OrfRegion with frame=%s", name, frame
+        )
+        return orf_region
 
     def get_region_by_id(self, id_: int) -> Region:
         """Get a region by its ID."""

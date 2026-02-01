@@ -10,13 +10,48 @@ from ..codon_table import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
 from ..operation import Operation
 from ..party import get_active_party
 from ..pool import Pool
+from ..region import VALID_FRAMES, OrfRegion
 from ..types import ModeType, Optional, RegionType, Seq, Sequence, Union, beartype
 from ..utils.dna_utils import reverse_complement
 from ..utils.parsing_utils import find_all_regions
 
 
-# Valid frame values: +1, +2, +3, -1, -2, -3
-VALID_FRAMES = {-3, -2, -1, 1, 2, 3}
+def _resolve_frame(region: RegionType, frame: Optional[int]) -> int:
+    """Resolve the frame value, looking up from OrfRegion if needed.
+
+    Backward compatibility: defaults to frame=1 when region is None or an interval.
+    When region is a named OrfRegion, uses the stored frame.
+    When region is a named plain Region, raises an error (must specify frame).
+    """
+    # If frame is explicitly provided, validate and use it
+    if frame is not None:
+        if frame not in VALID_FRAMES:
+            raise ValueError(f"frame must be one of {sorted(VALID_FRAMES)}, got {frame}")
+        return frame
+
+    # frame is None - try to get from OrfRegion or use default
+    if region is None or not isinstance(region, str):
+        # Backward compatibility: default to frame=1 for non-named regions
+        return 1
+
+    # region is a string (region name) - look it up
+    party = get_active_party()
+    if party is None:
+        raise RuntimeError("No active Party context.")
+
+    if not party.has_region(region):
+        # Region doesn't exist yet - use default frame=1
+        return 1
+
+    registered_region = party.get_region(region)
+    if isinstance(registered_region, OrfRegion):
+        return registered_region.frame
+    else:
+        raise ValueError(
+            f"Region '{region}' is a plain Region, not an OrfRegion. "
+            f"frame must be specified explicitly, or use annotate_orf() to "
+            f"upgrade the region to an OrfRegion with a frame."
+        )
 
 
 @beartype
@@ -29,7 +64,7 @@ def mutagenize_orf(
     mutation_type: str = "missense_only_first",
     codon_positions: Union[Sequence[Integral], slice, None] = None,
     style: Optional[str] = None,
-    frame: int = 1,
+    frame: Optional[int] = None,
     mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
@@ -55,11 +90,12 @@ def mutagenize_orf(
         Eligible codon indices: None (all), list of indices, or slice.
     style : Optional[str], default=None
         Style to apply to mutated codon positions (e.g., 'red', 'bold').
-    frame : int, default=1
+    frame : Optional[int], default=None
         Reading frame and orientation. Valid values: +1, +2, +3, -1, -2, -3.
         Positive values indicate left-to-right orientation (5'->3'),
         negative values indicate right-to-left orientation (3'->5').
         The absolute value indicates the frame of the boundary base (1-indexed).
+        If None and region is a named OrfRegion, uses the OrfRegion's frame.
     mode : ModeType, default='random'
         Selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
@@ -71,10 +107,19 @@ def mutagenize_orf(
     -------
     Pool
         A Pool that generates codon-mutated sequences.
+
+    Raises
+    ------
+    ValueError
+        If frame is None and region is not a named OrfRegion.
     """
     from ..fixed_ops.from_seq import from_seq
 
     pool = from_seq(pool) if isinstance(pool, str) else pool
+
+    # Resolve frame (may look up from OrfRegion)
+    resolved_frame = _resolve_frame(region, frame)
+
     op = MutagenizeOrfOp(
         parent_pool=pool,
         region=region,
@@ -83,7 +128,7 @@ def mutagenize_orf(
         mutation_type=mutation_type,
         codon_positions=codon_positions,
         style=style,
-        frame=frame,
+        frame=resolved_frame,
         mode=mode,
         num_states=num_states,
         name=None,

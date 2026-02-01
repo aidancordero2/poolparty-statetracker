@@ -15,7 +15,7 @@ Finally, write a jupyter notebook that concisely demonstrates this functionality
 - Keep the notebook concise -- one code cell only!
 - No markdown cells
 - At the top of each cell do: `import poolparty as pp; pp.init()`; this will make it so that a context manger isn't needed.
-- Do not add comments; the code and perhaps print statements should speak for themselves. 
+- DO NOT ADD COMMENTS; the code and perhaps print statements should speak for themselves. 
 - If you want the cell to have multiple sections, start each section with a one-line print() statement explaining the section.
 To demonstrate each function in, I suggest using pool.[chained function].print_library()
 

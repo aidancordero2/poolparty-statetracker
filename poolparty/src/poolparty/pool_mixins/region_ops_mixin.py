@@ -6,6 +6,24 @@ from ..types import Callable, Optional, Pool_type, Real, Union
 class RegionOpsMixin:
     """Mixin providing region operation methods for Pool."""
 
+    def annotate_region(
+        self,
+        name: str,
+        extent: Optional[tuple[int, int]] = None,
+        style: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Annotate a region, optionally applying styling. See annotate_region() for details."""
+        from ..region_ops.annotate_region import annotate_region
+
+        return annotate_region(
+            self,
+            name,
+            extent=extent,
+            style=style,
+            iter_order=iter_order,
+        )
+
     def apply_at_region(
         self,
         region_name: str,

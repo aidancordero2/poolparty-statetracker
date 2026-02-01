@@ -384,7 +384,9 @@ class TestMutagenizeOrfWithXMLMarkers:
             # ATG TGT GGT TAA with region between codons
             orf_with_region = "ATGTGT<site/>GGTTAA"
             pool = pp.from_seq(orf_with_region)
-            mutated = pp.mutagenize_orf(pool, num_mutations=1, codon_positions=[1], mode="random")
+            mutated = pp.mutagenize_orf(
+                pool, num_mutations=1, codon_positions=[1], frame=1, mode="random"
+            )
 
         df = mutated.generate_library(num_seqs=5, seed=42)
         for seq in df["seq"]:
@@ -422,11 +424,11 @@ class TestPartyMethodsWithXMLMarkers:
                 assert i not in positions
 
 
-class TestMarkerClass:
-    """Test the Marker class and Party registration."""
+class TestRegionClass:
+    """Test the Region class and Party registration."""
 
     def test_region_creation(self):
-        """Test creating Marker objects."""
+        """Test creating Region objects."""
         from poolparty.region import Region
 
         m1 = Region(name="test", seq_length=10)
@@ -441,7 +443,7 @@ class TestMarkerClass:
         assert m3.is_variable_length
 
     def test_region_validation(self):
-        """Test Marker validation."""
+        """Test Region validation."""
         from poolparty.region import Region
 
         # Empty name
@@ -455,6 +457,78 @@ class TestMarkerClass:
         # Negative seq_length
         with pytest.raises(ValueError, match="must be None or >= 0"):
             Region(name="test", seq_length=-1)
+
+    def test_region_is_frozen(self):
+        """Test that Region is an immutable frozen dataclass."""
+        from poolparty.region import Region
+
+        r = Region(name="test", seq_length=10)
+        with pytest.raises(Exception):  # FrozenInstanceError
+            r.name = "other"
+
+
+class TestOrfRegionClass:
+    """Test the OrfRegion class."""
+
+    def test_orf_region_creation(self):
+        """Test creating OrfRegion objects."""
+        from poolparty.region import OrfRegion
+
+        orf = OrfRegion(name="orf", seq_length=30, frame=1)
+        assert orf.name == "orf"
+        assert orf.seq_length == 30
+        assert orf.frame == 1
+
+    def test_orf_region_default_frame(self):
+        """Test OrfRegion default frame is +1."""
+        from poolparty.region import OrfRegion
+
+        orf = OrfRegion(name="orf", seq_length=30)
+        assert orf.frame == 1
+
+    def test_orf_region_all_valid_frames(self):
+        """Test all valid frame values."""
+        from poolparty.region import OrfRegion
+
+        for frame in [-3, -2, -1, 1, 2, 3]:
+            orf = OrfRegion(name="orf", seq_length=30, frame=frame)
+            assert orf.frame == frame
+
+    def test_orf_region_invalid_frame(self):
+        """Test invalid frame values raise error."""
+        from poolparty.region import OrfRegion
+
+        with pytest.raises(ValueError, match="frame must be one of"):
+            OrfRegion(name="orf", seq_length=30, frame=0)
+
+        with pytest.raises(ValueError, match="frame must be one of"):
+            OrfRegion(name="orf", seq_length=30, frame=4)
+
+        with pytest.raises(ValueError, match="frame must be one of"):
+            OrfRegion(name="orf", seq_length=30, frame=-4)
+
+    def test_orf_region_is_frozen(self):
+        """Test that OrfRegion is an immutable frozen dataclass."""
+        from poolparty.region import OrfRegion
+
+        orf = OrfRegion(name="orf", seq_length=30, frame=1)
+        with pytest.raises(Exception):  # FrozenInstanceError
+            orf.frame = 2
+
+    def test_orf_region_inherits_from_region(self):
+        """Test that OrfRegion inherits Region properties."""
+        from poolparty.region import OrfRegion, Region
+
+        orf = OrfRegion(name="orf", seq_length=0, frame=1)
+        assert isinstance(orf, Region)
+        assert orf.is_zero_length
+
+        orf2 = OrfRegion(name="orf2", seq_length=None, frame=-1)
+        assert orf2.is_variable_length
+
+
+class TestMarkerClass:
+    """Test the Marker class and Party registration (legacy tests)."""
 
     def test_party_register_region(self):
         """Test registering regions with Party."""

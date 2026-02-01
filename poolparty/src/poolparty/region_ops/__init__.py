@@ -15,6 +15,7 @@ from ..utils.parsing_utils import (
     strip_all_tags,
     validate_single_region,
 )
+from .annotate_region import annotate_region as annotate_region
 from .apply_at_region import apply_at_region as apply_at_region
 from .extract_region import extract_region as extract_region
 
@@ -42,6 +43,7 @@ __all__ = [
     "nontag_pos_to_literal_pos",
     "build_region_tags",
     # Operations
+    "annotate_region",
     "insert_tags",
     "extract_region",
     "replace_region",

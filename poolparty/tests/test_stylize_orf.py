@@ -360,7 +360,8 @@ class TestStylizeOrfRegion:
             pool = stylize_orf(
                 "AA<cre>ACGTAC</cre>TT",
                 region="cre",
-                style_frames=["red", "green", "blue"]
+                style_frames=["red", "green", "blue"],
+                frame=1,
             ).named("test")
 
         df = pool.generate_library(

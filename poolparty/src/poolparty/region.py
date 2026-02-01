@@ -1,11 +1,15 @@
-"""Region class for poolparty - represents a registered region with its properties."""
+"""Region and OrfRegion classes for poolparty - represent registered regions with their properties."""
 
 from dataclasses import dataclass, field
 
 from poolparty.types import Optional
 
 
-@dataclass
+# Valid frame values for ORF regions
+VALID_FRAMES = {-3, -2, -1, 1, 2, 3}
+
+
+@dataclass(frozen=True)
 class Region:
     """
     Represents a registered region in a poolparty Party.
@@ -25,18 +29,6 @@ class Region:
         - >0: Fixed-length region (content must be this length)
     _id : int
         Unique identifier assigned by the Party upon registration.
-
-    Examples
-    --------
-    Regions are typically created through region operations, not directly:
-
-    >>> with pp.Party() as party:
-    ...     # insert_tags registers a region with the party
-    ...     pool = pp.insert_tags(bg, 'orf', start=10, stop=100)
-    ...
-    ...     # Retrieve the registered region
-    ...     region = party.get_region_by_name('orf')
-    ...     print(region.seq_length)  # 90
     """
 
     name: str
@@ -74,3 +66,33 @@ class Region:
         if isinstance(other, Region):
             return self.name == other.name
         return False
+
+
+@dataclass(frozen=True)
+class OrfRegion(Region):
+    """
+    Represents an ORF (Open Reading Frame) region with associated reading frame.
+
+    Extends Region with frame information for ORF-aware operations like
+    stylize_orf() and mutagenize_orf().
+
+    Attributes
+    ----------
+    frame : int
+        Reading frame and orientation. Valid values: +1, +2, +3, -1, -2, -3.
+        Positive values indicate forward orientation (5'->3'),
+        negative values indicate reverse orientation (3'->5').
+        The absolute value indicates the frame offset (1-indexed).
+    """
+
+    frame: int = 1
+
+    def __post_init__(self):
+        """Validate OrfRegion attributes."""
+        # Call parent validation
+        super().__post_init__()
+        # Validate frame
+        if self.frame not in VALID_FRAMES:
+            raise ValueError(
+                f"frame must be one of {sorted(VALID_FRAMES)}, got {self.frame}"
+            )

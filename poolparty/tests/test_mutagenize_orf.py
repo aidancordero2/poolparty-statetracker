@@ -210,7 +210,7 @@ class TestMutagenizeOrfRegion:
         # Sequence with ORF marked by tags
         seq = "GGG<orf>ATGAAA</orf>CCC"
         with pp.Party() as party:
-            pool = mutagenize_orf(seq, "orf", num_mutations=1).named("mutant")
+            pool = mutagenize_orf(seq, "orf", num_mutations=1, frame=1).named("mutant")
 
         df = pool.generate_library(num_seqs=10, seed=42)
         for mutant in df["seq"]:
@@ -583,7 +583,7 @@ class TestMutagenizeOrfStyle:
         """Test style with marker-based region."""
         seq = "GGG<orf>ATGAAA</orf>CCC"
         with pp.Party() as party:
-            pool = mutagenize_orf(seq, "orf", num_mutations=1, style="cyan").named("mutant")
+            pool = mutagenize_orf(seq, "orf", num_mutations=1, style="cyan", frame=1).named("mutant")
 
         df = pool.generate_library(num_seqs=5, seed=42)
         assert len(df) == 5
@@ -654,7 +654,7 @@ class TestMutagenizeOrfPoolMethod:
         with pp.Party() as party:
             pool = (
                 pp.from_seq("GGG<orf>ATGAAA</orf>CCC")
-                .mutagenize_orf("orf", num_mutations=1)
+                .mutagenize_orf("orf", num_mutations=1, frame=1)
                 .named("mutant")
             )
 

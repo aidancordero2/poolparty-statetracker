@@ -6,11 +6,49 @@ import numpy as np
 
 from ..operation import Operation
 from ..pool import Pool
+from ..region import VALID_FRAMES, OrfRegion
 from ..types import Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils.dna_utils import VALID_CHARS
 
-# Valid frame values: +1, +2, +3, -1, -2, -3
-VALID_FRAMES = {-3, -2, -1, 1, 2, 3}
+
+def _resolve_frame(region: RegionType, frame: Optional[int]) -> int:
+    """Resolve the frame value, looking up from OrfRegion if needed.
+
+    Backward compatibility: defaults to frame=1 when region is None or an interval.
+    When region is a named OrfRegion, uses the stored frame.
+    When region is a named plain Region, raises an error (must specify frame).
+    """
+    from ..party import get_active_party
+
+    # If frame is explicitly provided, validate and use it
+    if frame is not None:
+        if frame not in VALID_FRAMES:
+            raise ValueError(f"frame must be one of {sorted(VALID_FRAMES)}, got {frame}")
+        return frame
+
+    # frame is None - try to get from OrfRegion or use default
+    if region is None or not isinstance(region, str):
+        # Backward compatibility: default to frame=1 for non-named regions
+        return 1
+
+    # region is a string (region name) - look it up
+    party = get_active_party()
+    if party is None:
+        raise RuntimeError("No active Party context.")
+
+    if not party.has_region(region):
+        # Region doesn't exist yet - use default frame=1
+        return 1
+
+    registered_region = party.get_region(region)
+    if isinstance(registered_region, OrfRegion):
+        return registered_region.frame
+    else:
+        raise ValueError(
+            f"Region '{region}' is a plain Region, not an OrfRegion. "
+            f"frame must be specified explicitly, or use annotate_orf() to "
+            f"upgrade the region to an OrfRegion with a frame."
+        )
 
 
 @beartype
@@ -20,7 +58,7 @@ def stylize_orf(
     *,
     style_codons: Optional[list[str]] = None,
     style_frames: Optional[list[str]] = None,
-    frame: int = 1,
+    frame: Optional[int] = None,
     iter_order: Optional[Real] = None,
 ) -> Pool:
     """
@@ -42,11 +80,12 @@ def stylize_orf(
         List of styles with length a multiple of 3. Each group of 3 styles
         is applied to frames 0, 1, 2 of a codon, cycling through groups.
         Mutually exclusive with style_codons.
-    frame : int, default=1
+    frame : Optional[int], default=None
         Reading frame and orientation. Valid values: +1, +2, +3, -1, -2, -3.
         Positive values indicate left-to-right orientation (5'->3'),
         negative values indicate right-to-left orientation (3'->5').
         The absolute value indicates the frame of the boundary base (1-indexed).
+        If None and region is a named OrfRegion, uses the OrfRegion's frame.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
 
@@ -54,17 +93,25 @@ def stylize_orf(
     -------
     Pool
         A Pool with ORF-aware inline styling attached to sequences.
+
+    Raises
+    ------
+    ValueError
+        If frame is None and region is not a named OrfRegion.
     """
     from ..fixed_ops.from_seq import from_seq
 
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
+
+    # Resolve frame (may look up from OrfRegion)
+    resolved_frame = _resolve_frame(region, frame)
 
     op = StylizeOrfOp(
         pool=pool_obj,
         region=region,
         style_codons=style_codons,
         style_frames=style_frames,
-        frame=frame,
+        frame=resolved_frame,
         name=None,
         iter_order=iter_order,
     )
