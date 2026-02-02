@@ -3,6 +3,36 @@
 from numbers import Real
 
 from ..types import Optional, Pool_type, Sequence, Union, beartype
+from ..utils.style_utils import SeqStyle
+
+
+def _make_join_style_combiner(spacer_str: str):
+    """Create a style combiner function for join that handles spacers.
+
+    Returns a function that combines parent styles with proper position offsets,
+    inserting empty SeqStyle objects for spacer strings between parents.
+    """
+
+    def combine_styles(parent_styles, result_length: int):
+        """Combine parent styles with spacer handling."""
+        # If any parent has None style (styles suppressed), return None
+        if any(s is None for s in parent_styles):
+            return None
+
+        # Build list of styles including spacers
+        styles_with_spacers = []
+        spacer_len = len(spacer_str)
+
+        for i, parent_style in enumerate(parent_styles):
+            if i > 0 and spacer_len > 0:
+                # Insert empty style for spacer between parents
+                styles_with_spacers.append(SeqStyle.empty(spacer_len))
+            styles_with_spacers.append(parent_style)
+
+        # Join all styles with proper position offsets
+        return SeqStyle.join(styles_with_spacers)
+
+    return combine_styles
 
 
 @beartype
@@ -43,6 +73,9 @@ def join(
             return sum(lengths) + len(spacer_str) * n_spacers
         return None
 
+    # Create style combiner that properly joins styles from all parents
+    style_combiner = _make_join_style_combiner(spacer_str)
+
     result_pool = fixed_operation(
         parent_pools=pools,
         seq_from_seqs_fn=lambda seqs: spacer_str.join(seqs),
@@ -50,6 +83,7 @@ def join(
         iter_order=iter_order,
         prefix=prefix,
         _factory_name=_factory_name if _factory_name is not None else "join",
+        _style_combiner_fn=style_combiner,
     )
 
     # Apply style if specified

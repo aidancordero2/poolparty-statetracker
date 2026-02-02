@@ -4,10 +4,9 @@ Note: The + operator on Pools now does stacking (union of states), not joining.
 Use join() for sequence joining.
 """
 
+import poolparty as pp
 from poolparty.fixed_ops.fixed import FixedOp
 from poolparty.fixed_ops.join import join
-
-import poolparty as pp
 
 
 class TestJoinFactory:
@@ -380,6 +379,109 @@ class TestJoinSpacerStr:
 
         df = combined.generate_library(num_seqs=1)
         assert df["seq"].iloc[0] == "AAA"  # No spacer for single item
+
+
+class TestJoinStylePreservation:
+    """Test that join preserves styles from parent pools."""
+
+    def test_styled_pool_preserves_style(self):
+        """Test that styles from a styled pool are preserved through join."""
+        with pp.Party() as party:
+            # Create a styled pool
+            styled_pool = pp.from_seqs(["ACGT"], style="cyan")
+            # Join with plain strings
+            combined = join(["AA", styled_pool, "TT"])
+
+        # Compute to get the output sequence with styles
+        from poolparty.utils.dna_seq import DnaSeq
+        from poolparty.utils.style_utils import SeqStyle
+
+        parents = [
+            DnaSeq.from_string("AA"),
+            DnaSeq.from_string("ACGT", SeqStyle.full(4, "cyan")),
+            DnaSeq.from_string("TT"),
+        ]
+        output_seq, _ = combined.operation.compute(parents)
+
+        # Check that output has styles
+        assert output_seq.style is not None
+        assert len(output_seq.style.style_list) > 0
+
+        # The cyan style should be at positions 2-5 (after "AA")
+        style_spec, positions = output_seq.style.style_list[0]
+        assert "cyan" in style_spec or "96" in style_spec  # ANSI code for cyan
+        assert all(2 <= p < 6 for p in positions)
+
+    def test_multiple_styled_pools(self):
+        """Test that styles from multiple styled pools are preserved."""
+        with pp.Party() as party:
+            red_pool = pp.from_seqs(["AAA"], style="red")
+            blue_pool = pp.from_seqs(["TTT"], style="blue")
+            combined = join([red_pool, blue_pool])
+
+        from poolparty.utils.dna_seq import DnaSeq
+        from poolparty.utils.style_utils import SeqStyle
+
+        parents = [
+            DnaSeq.from_string("AAA", SeqStyle.full(3, "red")),
+            DnaSeq.from_string("TTT", SeqStyle.full(3, "blue")),
+        ]
+        output_seq, _ = combined.operation.compute(parents)
+
+        # Check that both styles are present
+        assert output_seq.style is not None
+        assert len(output_seq.style.style_list) == 2
+
+        # Red should be at positions 0-2, blue at positions 3-5
+        red_spec, red_pos = output_seq.style.style_list[0]
+        blue_spec, blue_pos = output_seq.style.style_list[1]
+
+        assert all(0 <= p < 3 for p in red_pos)
+        assert all(3 <= p < 6 for p in blue_pos)
+
+    def test_styled_pool_with_spacer(self):
+        """Test that styles are preserved with spacer_str."""
+        with pp.Party() as party:
+            styled_pool = pp.from_seqs(["ACGT"], style="green")
+            combined = join(["AA", styled_pool], spacer_str="-")
+
+        from poolparty.utils.dna_seq import DnaSeq
+        from poolparty.utils.style_utils import SeqStyle
+
+        parents = [
+            DnaSeq.from_string("AA"),
+            DnaSeq.from_string("ACGT", SeqStyle.full(4, "green")),
+        ]
+        output_seq, _ = combined.operation.compute(parents)
+
+        # Result should be "AA-ACGT" (length 7)
+        assert output_seq.string == "AA-ACGT"
+        assert output_seq.style is not None
+
+        # Green style should be at positions 3-6 (after "AA-")
+        style_spec, positions = output_seq.style.style_list[0]
+        assert all(3 <= p < 7 for p in positions)
+
+    def test_none_style_propagates(self):
+        """Test that if any parent has None style, result has None style."""
+        with pp.Party() as party:
+            # Create pools (we'll test with manually constructed DnaSeq with None style)
+            pool_a = pp.from_seqs(["TTT"], style="red")
+            pool_b = pp.from_seqs(["AAA"])
+            combined = join([pool_a, pool_b])
+
+        from poolparty.utils.dna_seq import DnaSeq
+        from poolparty.utils.style_utils import SeqStyle
+
+        # Manually create parents where one has None style
+        parents = [
+            DnaSeq.from_string("TTT", SeqStyle.full(3, "red")),
+            DnaSeq("AAA", None),  # None style (styles suppressed)
+        ]
+        output_seq, _ = combined.operation.compute(parents)
+
+        # Result should have None style since one parent has None
+        assert output_seq.style is None
 
 
 class TestStackBranchIndex:

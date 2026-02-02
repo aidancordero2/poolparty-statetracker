@@ -20,6 +20,7 @@ def fixed_operation(
     prefix: Optional[str] = None,
     _factory_name: Optional[str] = None,
     _pass_through_styles: bool = True,
+    _style_combiner_fn: Optional[Callable] = None,
 ) -> Pool:
     """
     Create a Pool from a fixed transformation of parent sequences.
@@ -65,6 +66,7 @@ def fixed_operation(
         prefix=prefix,
         _factory_name=_factory_name,
         _pass_through_styles=_pass_through_styles,
+        _style_combiner_fn=_style_combiner_fn,
     )
     # Preserve the pool type from the first parent
     pool_class = type(parent_pools_resolved[0]) if parent_pools_resolved else DnaPool
@@ -91,6 +93,7 @@ class FixedOp(Operation):
         prefix: Optional[str] = None,
         _factory_name: Optional[str] = None,
         _pass_through_styles: bool = True,
+        _style_combiner_fn: Optional[Callable] = None,
     ) -> None:
         """Initialize FixedOp."""
         from ..party import get_active_party
@@ -101,6 +104,7 @@ class FixedOp(Operation):
         self.seq_from_seqs_fn = seq_from_seqs_fn
         self._seq_length_from_pool_lengths_fn = seq_length_from_pool_lengths_fn
         self._pass_through_styles = _pass_through_styles
+        self._style_combiner_fn = _style_combiner_fn
 
         # Compute seq_length from pool_lengths
         party = get_active_party()
@@ -146,10 +150,15 @@ class FixedOp(Operation):
         parent_strings = [p.string for p in parents]
         result_string = self.seq_from_seqs_fn(parent_strings)
 
-        # Pass through parent styles only if _pass_through_styles is True
-        # When doing content replacement (e.g., from_seq with region), styles
-        # from the original content should not apply to the new content
-        if self._pass_through_styles and parents:
+        # Determine output style based on configuration
+        if self._style_combiner_fn is not None:
+            # Use custom combiner to join styles from all parents (e.g., for join operation)
+            parent_styles = [p.style for p in parents]
+            output_style = self._style_combiner_fn(parent_styles, len(result_string))
+        elif self._pass_through_styles and parents:
+            # Pass through first parent's style only
+            # When doing content replacement (e.g., from_seq with region), styles
+            # from the original content should not apply to the new content
             output_style = (
                 parents[0].style[: len(result_string)]
                 if len(parents[0]) >= len(result_string)
