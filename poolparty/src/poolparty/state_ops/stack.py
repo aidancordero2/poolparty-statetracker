@@ -8,21 +8,21 @@ import statetracker as st
 
 from ..operation import Operation
 from ..pool import Pool
-from ..types import Optional, Real, Seq, Sequence, beartype
+from ..types import Optional, Pool_type, Real, Seq, Sequence, beartype
 
 
 @beartype
 def stack(
-    pools: Sequence[Pool],
+    pools: Sequence[Pool_type],
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
-) -> Pool:
+) -> Pool_type:
     """
     Create a Pool by stacking multiple input Pools state-wise.
 
     Parameters
     ----------
-    pools : Sequence[Pool]
+    pools : Sequence[Pool_type]
         Sequence of Pool objects to stack into a single Pool.
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
@@ -31,12 +31,14 @@ def stack(
 
     Returns
     -------
-    Pool
+    Pool_type
         A Pool object representing the state-wise stacking of all provided input Pools.
         Each state corresponds to a sequence from one of the input Pools.
     """
     op = StackOp(pools, prefix=prefix, name=None, iter_order=iter_order)
-    result_pool = Pool(operation=op)
+    # Return same type as first input pool
+    pool_class = type(pools[0]) if pools else Pool
+    result_pool = pool_class(operation=op)
     return result_pool
 
 
@@ -48,7 +50,7 @@ class StackOp(Operation):
 
     def __init__(
         self,
-        parent_pools: Sequence[Pool],
+        parent_pools: Sequence[Pool_type],
         prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -72,7 +74,7 @@ class StackOp(Operation):
 
     def build_pool_counter(
         self,
-        parent_pools: Sequence[Pool],
+        parent_pools: Sequence[Pool_type],
     ) -> st.State:
         """Build pool state using st.stack (disjoint union)."""
         parent_states = [p.state for p in parent_pools]

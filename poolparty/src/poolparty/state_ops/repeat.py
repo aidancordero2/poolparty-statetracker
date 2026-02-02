@@ -37,7 +37,9 @@ def repeat(
         A new Pool with `times` as many states as the input pool has.
     """
     op = RepeatOp(pool, times=times, prefix=prefix, name=None, iter_order=iter_order)
-    result_pool = Pool(operation=op)
+    # Return same type as input
+    pool_class = type(pool)
+    result_pool = pool_class(operation=op)
     return result_pool
 
 

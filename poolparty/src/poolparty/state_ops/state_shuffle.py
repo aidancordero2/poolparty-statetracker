@@ -8,23 +8,23 @@ import statetracker as st
 
 from ..operation import Operation
 from ..pool import Pool
-from ..types import Integral, Optional, Real, Seq, Sequence, beartype
+from ..types import Integral, Optional, Pool_type, Real, Seq, Sequence, beartype
 
 
 @beartype
 def state_shuffle(
-    pool: Pool,
+    pool: Pool_type,
     seed: Optional[Integral] = None,
     permutation: Optional[Sequence[Integral]] = None,
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
-) -> Pool:
+) -> Pool_type:
     """
     Create a Pool with randomly permuted states from the input Pool.
 
     Parameters
     ----------
-    pool : Pool
+    pool : Pool_type
         The Pool whose states will be shuffled.
     seed : Optional[Integral], default=None
         Random seed for deterministic shuffling. If None, a random seed is generated.
@@ -37,13 +37,15 @@ def state_shuffle(
 
     Returns
     -------
-    Pool
+    Pool_type
         A Pool containing the same states as the input but in a randomly permuted order.
     """
     op = StateShuffleOp(
         pool, seed=seed, permutation=permutation, prefix=prefix, name=None, iter_order=iter_order
     )
-    result_pool = Pool(operation=op)
+    # Return same type as input
+    pool_class = type(pool)
+    result_pool = pool_class(operation=op)
     return result_pool
 
 
@@ -55,7 +57,7 @@ class StateShuffleOp(Operation):
 
     def __init__(
         self,
-        parent_pool: Pool,
+        parent_pool: Pool_type,
         seed: Optional[Integral] = None,
         permutation: Optional[Sequence[Integral]] = None,
         prefix: Optional[str] = None,

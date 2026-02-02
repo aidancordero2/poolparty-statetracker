@@ -87,3 +87,28 @@ class OrfOpsMixin:
             num_states=num_states,
             iter_order=iter_order,
         )
+
+    def translate(
+        self,
+        region: RegionType = None,
+        *,
+        frame: Optional[int] = None,
+        include_stop: bool = True,
+        preserve_codon_styles: bool = True,
+        genetic_code: Union[str, dict] = "standard",
+        iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
+    ):
+        """Translate DNA to protein. See translate() for details."""
+        from ..orf_ops.translate import translate
+
+        return translate(
+            pool=self,
+            region=region,
+            frame=frame,
+            include_stop=include_stop,
+            preserve_codon_styles=preserve_codon_styles,
+            genetic_code=genetic_code,
+            iter_order=iter_order,
+            prefix=prefix,
+        )

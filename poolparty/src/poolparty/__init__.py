@@ -63,6 +63,7 @@ from .operation import Operation
 
 # Import ORF operations from orf_ops module
 from .orf_ops import MutagenizeOrfOp, StylizeOrfOp, annotate_orf, mutagenize_orf, stylize_orf
+from .orf_ops.translate import TranslateOp, translate
 from .party import (
     Party,
     _init_default_party,
@@ -73,6 +74,7 @@ from .party import (
     load_config,
 )
 from .pool import Pool
+from .protein_pool import ProteinPool
 from .region import OrfRegion, Region
 
 # Import from region_ops module
@@ -130,6 +132,7 @@ __all__ = [
     "toggle_styles",
     "toggle_cards",
     "Pool",
+    "ProteinPool",
     "Operation",
     "Region",
     "OrfRegion",
@@ -166,6 +169,8 @@ __all__ = [
     "MutagenizeOrfOp",
     "stylize_orf",
     "StylizeOrfOp",
+    "translate",
+    "TranslateOp",
     "recombine",
     "RecombineOp",
     "insertion_scan",
@@ -309,6 +314,7 @@ _POOL_FACTORY_MAP = {
     "annotate_orf": annotate_orf,
     "mutagenize_orf": mutagenize_orf,
     "stylize_orf": stylize_orf,
+    "translate": translate,
     # Generation
     "generate_library": generate_library,
 }

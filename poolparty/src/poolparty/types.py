@@ -8,7 +8,7 @@ import numpy as np
 from beartype import beartype
 
 # Forward reference type aliases (resolve circular imports)
-Pool_type: TypeAlias = "poolparty.pool.Pool"
+Pool_type: TypeAlias = Union["poolparty.pool.Pool", "poolparty.protein_pool.ProteinPool"]
 Operation_type: TypeAlias = "poolparty.operation.Operation"
 State_type: TypeAlias = "statetracker.state.State"
 
@@ -39,6 +39,7 @@ StyleList: TypeAlias = list[StyleTuple]
 # Import SeqStyle and Seq classes for convenience
 from .utils.seq import NullSeq, Seq, is_null_seq
 from .utils.style_utils import SeqStyle
+from .utils.protein_seq import ProteinSeq, VALID_PROTEIN_CHARS
 
 __all__ = [
     "beartype",
@@ -65,4 +66,6 @@ __all__ = [
     "Seq",
     "NullSeq",
     "is_null_seq",
+    "ProteinSeq",
+    "VALID_PROTEIN_CHARS",
 ]

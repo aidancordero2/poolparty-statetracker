@@ -8,25 +8,25 @@ import statetracker as st
 
 from ..operation import Operation
 from ..pool import Pool
-from ..types import Integral, Optional, Real, Seq, Sequence, beartype
+from ..types import Integral, Optional, Pool_type, Real, Seq, Sequence, beartype
 
 
 @beartype
 def sample(
-    pool: Pool,
+    pool: Pool_type,
     num_seqs: Optional[Integral] = None,
     seq_states: Optional[Sequence[Integral]] = None,
     seed: Optional[Integral] = None,
     with_replacement: bool = True,
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
-) -> Pool:
+) -> Pool_type:
     """
     Create a Pool with sampled states from the input Pool.
 
     Parameters
     ----------
-    pool : Pool
+    pool : Pool_type
         The Pool to sample states from.
     num_seqs : Optional[Integral], default=None
         Number of states to sample. Mutually exclusive with seq_states.
@@ -43,7 +43,7 @@ def sample(
 
     Returns
     -------
-    Pool
+    Pool_type
         A Pool containing the sampled states from the input Pool.
     """
     op = SampleOp(
@@ -56,7 +56,9 @@ def sample(
         name=None,
         iter_order=iter_order,
     )
-    result_pool = Pool(operation=op)
+    # Return same type as input
+    pool_class = type(pool)
+    result_pool = pool_class(operation=op)
     return result_pool
 
 
@@ -68,7 +70,7 @@ class SampleOp(Operation):
 
     def __init__(
         self,
-        parent_pool: Pool,
+        parent_pool: Pool_type,
         num_seqs: Optional[Integral] = None,
         seq_states: Optional[Sequence[Integral]] = None,
         seed: Optional[Integral] = None,

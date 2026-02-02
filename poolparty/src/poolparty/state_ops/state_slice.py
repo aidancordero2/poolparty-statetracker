@@ -8,22 +8,22 @@ import statetracker as st
 
 from ..operation import Operation
 from ..pool import Pool
-from ..types import Integral, Optional, Real, Seq, Sequence, Union, beartype
+from ..types import Integral, Optional, Pool_type, Real, Seq, Sequence, Union, beartype
 
 
 @beartype
 def state_slice(
-    pool: Pool,
+    pool: Pool_type,
     key: Union[Integral, slice],
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
-) -> Pool:
+) -> Pool_type:
     """
     Create a Pool containing a slice of states from the input Pool.
 
     Parameters
     ----------
-    pool : Pool
+    pool : Pool_type
         The Pool whose states will be sliced.
     key : Union[Integral, slice]
         Integer index or slice specifying which states to include from the input Pool.
@@ -34,7 +34,7 @@ def state_slice(
 
     Returns
     -------
-    Pool
+    Pool_type
         A Pool containing states selected by applying the provided index or slice to the input Pool's state space.
     """
     if isinstance(key, Integral):
@@ -52,7 +52,9 @@ def state_slice(
     op = StateSliceOp(
         pool, start=start, stop=stop, step=step, prefix=prefix, name=None, iter_order=iter_order
     )
-    result_pool = Pool(operation=op)
+    # Return same type as input
+    pool_class = type(pool)
+    result_pool = pool_class(operation=op)
     return result_pool
 
 
@@ -64,7 +66,7 @@ class StateSliceOp(Operation):
 
     def __init__(
         self,
-        parent_pool: Pool,
+        parent_pool: Pool_type,
         start: Optional[Integral],
         stop: Optional[Integral],
         step: Optional[Integral],
