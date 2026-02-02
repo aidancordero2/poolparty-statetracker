@@ -1,5 +1,7 @@
 """Tests for add_prefix operation."""
 
+import re
+
 import poolparty as pp
 from poolparty.fixed_ops.add_prefix import AddPrefixOp, add_prefix
 
@@ -54,7 +56,10 @@ class TestAddPrefixChaining:
         df = pool.generate_library(num_cycles=1)
 
         for idx, name in enumerate(df["name"]):
-            assert f"mut_{idx}" in name, f"Name should contain 'mut_{idx}': {name}"
+            # Check for zero-padded index (e.g., "mut_01" for idx=1)
+            # Use regex to match mut_ followed by zero-padded number
+            pattern = rf"mut_0*{idx}(?:\D|$)"
+            assert re.search(pattern, name), f"Name should contain 'mut_' with index {idx}: {name}"
             assert "final" in name, f"Name should contain 'final': {name}"
 
     def test_chained_with_from_seq_prefix(self):

@@ -138,6 +138,7 @@ def generate_library(
     iterations = 0
     valid_count = 0
     seq_col = f"{pool.name}.seq"
+    max_global_state = state + num_seqs - 1  # For zero-padding in names
 
     while len(rows) < num_seqs:
         global_state = state
@@ -146,6 +147,7 @@ def generate_library(
             sorted_ops,
             outputs,
             global_state,
+            max_global_state,
             states,
             report_design_cards and not suppress_cards,
             ops_to_report,
@@ -327,6 +329,7 @@ def _compute_one(
     sorted_ops: list,
     outputs: dict,
     global_state: int,
+    max_global_state: int,
     states: list[st.State] = (),
     report_design_cards: bool = True,
     ops_to_report: set = None,
@@ -372,7 +375,7 @@ def _compute_one(
         card_cache[op.id] = card
 
         # Collect name contributions from this operation
-        all_contributions.extend(op.compute_name_contributions(global_state))
+        all_contributions.extend(op.compute_name_contributions(global_state, max_global_state))
 
         # Design cards are already filtered in Operation.compute()
         if report_design_cards and (ops_to_report is None or op.id in ops_to_report):

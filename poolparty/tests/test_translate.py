@@ -5,7 +5,13 @@ import pytest
 
 import poolparty as pp
 from poolparty.orf_ops.translate import TranslateOp, translate, _resolve_frame, _get_shared_styles
-from poolparty.utils.protein_seq import ProteinSeq, VALID_PROTEIN_CHARS
+from poolparty.utils.protein_seq import (
+    ProteinSeq,
+    VALID_PROTEIN_CHARS,
+    AA_THREE_LETTER,
+    to_three_letter,
+    map_style_positions_to_three_letter,
+)
 from poolparty.utils.style_utils import SeqStyle
 from poolparty.codon_table import CodonTable
 
@@ -330,3 +336,150 @@ class TestTranslateOp:
             pool = pp.from_seq("ATG")
             protein_pool = translate(pool)
             assert isinstance(protein_pool, pp.ProteinPool)
+
+
+class TestThreeLetterConversion:
+    """Test 3-letter amino acid conversion functions."""
+
+    def test_aa_three_letter_mapping(self):
+        """Test AA_THREE_LETTER contains all standard amino acids."""
+        # Check uppercase
+        assert AA_THREE_LETTER["A"] == "Ala"
+        assert AA_THREE_LETTER["M"] == "Met"
+        assert AA_THREE_LETTER["K"] == "Lys"
+        assert AA_THREE_LETTER["*"] == "***"
+        # Check lowercase
+        assert AA_THREE_LETTER["a"] == "ala"
+        assert AA_THREE_LETTER["m"] == "met"
+
+    def test_to_three_letter_basic(self):
+        """Test basic conversion to 3-letter codes."""
+        assert to_three_letter("MAK") == "Met-Ala-Lys"
+        assert to_three_letter("M*") == "Met-***"
+
+    def test_to_three_letter_empty(self):
+        """Test conversion of empty sequence."""
+        assert to_three_letter("") == ""
+
+    def test_to_three_letter_single(self):
+        """Test conversion of single amino acid."""
+        assert to_three_letter("M") == "Met"
+        assert to_three_letter("*") == "***"
+
+    def test_to_three_letter_custom_separator(self):
+        """Test conversion with custom separator."""
+        assert to_three_letter("MAK", separator=".") == "Met.Ala.Lys"
+        assert to_three_letter("MAK", separator="") == "MetAlaLys"
+        assert to_three_letter("MAK", separator=" ") == "Met Ala Lys"
+
+    def test_to_three_letter_unknown_char(self):
+        """Test conversion with unknown character."""
+        assert to_three_letter("MXK") == "Met-???-Lys"
+
+    def test_to_three_letter_lowercase(self):
+        """Test conversion preserves case."""
+        assert to_three_letter("mak") == "met-ala-lys"
+        assert to_three_letter("Mak") == "Met-ala-lys"
+
+
+class TestStylePositionMapping:
+    """Test style position mapping for 3-letter display."""
+
+    def test_map_positions_default_separator(self):
+        """Test position mapping with default '-' separator."""
+        # Position 0 (M) in "MAK" maps to positions 0,1,2 in "Met-Ala-Lys"
+        # Position 1 (A) maps to positions 4,5,6
+        # Position 2 (K) maps to positions 8,9,10
+        positions = np.array([1], dtype=np.int64)
+        result = map_style_positions_to_three_letter(positions, seq_len=3)
+        np.testing.assert_array_equal(result, np.array([4, 5, 6]))
+
+    def test_map_positions_no_separator(self):
+        """Test position mapping with empty separator."""
+        # Position 1 (A) in "MAK" maps to positions 3,4,5 in "MetAlaLys"
+        positions = np.array([1], dtype=np.int64)
+        result = map_style_positions_to_three_letter(positions, seq_len=3, separator="")
+        np.testing.assert_array_equal(result, np.array([3, 4, 5]))
+
+    def test_map_positions_multiple(self):
+        """Test mapping multiple positions."""
+        positions = np.array([0, 2], dtype=np.int64)
+        result = map_style_positions_to_three_letter(positions, seq_len=3)
+        # Position 0 -> 0,1,2; Position 2 -> 8,9,10
+        np.testing.assert_array_equal(result, np.array([0, 1, 2, 8, 9, 10]))
+
+    def test_map_positions_empty(self):
+        """Test mapping empty positions array."""
+        positions = np.array([], dtype=np.int64)
+        result = map_style_positions_to_three_letter(positions, seq_len=3)
+        np.testing.assert_array_equal(result, np.array([]))
+
+
+class TestPrintLibraryThreeLetter:
+    """Test ProteinPool.print_library() with 3-letter display."""
+
+    def test_print_library_three_letter(self, capsys):
+        """Test print_library with chars_per_aa=3."""
+        with pp.Party():
+            pool = pp.from_seq("ATGGCTTAA").translate()
+            pool.print_library(chars_per_aa=3, show_header=False, show_state=False, show_name=False)
+            captured = capsys.readouterr()
+            assert "Met Ala ***" in captured.out
+
+    def test_print_library_custom_separator(self, capsys):
+        """Test print_library with custom aa_separator."""
+        with pp.Party():
+            pool = pp.from_seq("ATGGCTTAA").translate()
+            pool.print_library(
+                chars_per_aa=3,
+                aa_separator=".",
+                show_header=False,
+                show_state=False,
+                show_name=False,
+            )
+            captured = capsys.readouterr()
+            assert "Met.Ala.***" in captured.out
+
+    def test_print_library_no_separator(self, capsys):
+        """Test print_library with empty separator."""
+        with pp.Party():
+            pool = pp.from_seq("ATGGCTTAA").translate()
+            pool.print_library(
+                chars_per_aa=3,
+                aa_separator="",
+                show_header=False,
+                show_state=False,
+                show_name=False,
+            )
+            captured = capsys.readouterr()
+            assert "MetAla***" in captured.out
+
+    def test_print_library_one_letter_default(self, capsys):
+        """Test print_library with default chars_per_aa=1."""
+        with pp.Party():
+            pool = pp.from_seq("ATGGCTTAA").translate()
+            pool.print_library(show_header=False, show_state=False, show_name=False)
+            captured = capsys.readouterr()
+            assert "MA*" in captured.out
+
+    def test_print_library_three_letter_returns_self(self):
+        """Test print_library returns self for chaining."""
+        with pp.Party():
+            pool = pp.from_seq("ATGGCTTAA").translate()
+            result = pool.print_library(chars_per_aa=3)
+            assert result is pool
+
+    def test_print_library_three_letter_with_styles(self, capsys):
+        """Test print_library with chars_per_aa=3 and styled input."""
+        with pp.Party():
+            # Create a styled protein pool (codon styles propagate to amino acids)
+            pool = (
+                pp.from_seq("ATGGCTTAA")
+                .annotate_orf("cds", frame=1, style_codons=["red", "green", "blue"])
+                .translate(region="cds", preserve_codon_styles=True)
+            )
+            # This should not raise - was previously failing with SeqStyle argument order bug
+            pool.print_library(chars_per_aa=3, show_header=False, show_state=False, show_name=False)
+            captured = capsys.readouterr()
+            # Should contain 3-letter codes (with ANSI escape codes for styling)
+            assert "Met" in captured.out or "\x1b[" in captured.out

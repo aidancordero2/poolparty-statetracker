@@ -140,7 +140,7 @@ class MaterializeOp(Operation):
             "seq_name": self._names[idx],
         }
 
-    def compute_name_contributions(self, global_state=None) -> list[str]:
+    def compute_name_contributions(self, global_state=None, max_global_state=None) -> list[str]:
         """Compute name contributions - use stored names or prefix pattern."""
         # Check if state is inactive
         if not self.state.is_active:
@@ -149,7 +149,7 @@ class MaterializeOp(Operation):
             # Use stored name for current index
             return [self._names[self._current_idx]]
         # Otherwise use default prefix logic from base class
-        return super().compute_name_contributions(global_state)
+        return super().compute_name_contributions(global_state, max_global_state)
 
 
 @beartype

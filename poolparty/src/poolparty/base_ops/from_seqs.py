@@ -214,7 +214,7 @@ class FromSeqsOp(Operation):
             "seq_index": int(idx),
         }
 
-    def compute_name_contributions(self, global_state=None) -> list[str]:
+    def compute_name_contributions(self, global_state=None, max_global_state=None) -> list[str]:
         """Compute name contributions - explicit seq_names or prefix pattern."""
         # Check if state is inactive (for branch selection)
         if not self.state.is_active:
@@ -223,7 +223,7 @@ class FromSeqsOp(Operation):
             # Use explicit seq_name for current index
             return [self.seq_names[self._current_idx]]
         # Otherwise use default prefix logic from base class
-        return super().compute_name_contributions(global_state)
+        return super().compute_name_contributions(global_state, max_global_state)
 
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

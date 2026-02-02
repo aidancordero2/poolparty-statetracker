@@ -321,7 +321,11 @@ class Operation:
         """
         raise NotImplementedError("Subclasses must implement _compute_core()")
 
-    def compute_name_contributions(self, global_state: Optional[int] = None) -> list[str]:
+    def compute_name_contributions(
+        self,
+        global_state: Optional[int] = None,
+        max_global_state: Optional[int] = None,
+    ) -> list[str]:
         """Compute this operation's contributions to the final sequence name.
 
         Returns list of name elements in the order they should appear.
@@ -332,6 +336,8 @@ class Operation:
         ----------
         global_state : Optional[int]
             The global row index, used for stateless random operations.
+        max_global_state : Optional[int]
+            The maximum global state that will be used, for zero-padding.
 
         Returns
         -------
@@ -345,9 +351,13 @@ class Operation:
         if self.mode == "fixed":
             return [f"{self.prefix}"]  # Fixed: just prefix
         elif self.action_uniquely_determined_by_state:
-            return [f"{self.prefix}_{self.state.value}"]  # State determines output
+            # Padding based on operation's own num_states
+            width = len(str(self.state.num_values - 1)) if self.state.num_values > 1 else 1
+            return [f"{self.prefix}_{self.state.value:0{width}d}"]
         else:
-            return [f"{self.prefix}_{global_state}"]  # Global state determines output
+            # Stateless random: padding based on total sequences being generated
+            width = len(str(max_global_state)) if max_global_state else 1
+            return [f"{self.prefix}_{global_state:0{width}d}"]
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self._id}, name={self.name!r}, mode={self.mode!r}, num_states={self.num_states})"

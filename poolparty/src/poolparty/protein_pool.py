@@ -214,8 +214,20 @@ class ProteinPool(StateOpsMixin):
         max_iterations: Optional[int] = None,
         min_acceptance_rate: Optional[float] = None,
         attempts_per_rate_assessment: int = 100,
+        chars_per_aa: Literal[1, 3] = 1,
+        aa_separator: str = " ",
     ) -> "ProteinPool":
-        """Print preview protein sequences from this pool; returns self for chaining."""
+        """Print preview protein sequences from this pool; returns self for chaining.
+
+        Parameters
+        ----------
+        chars_per_aa : Literal[1, 3], default=1
+            Number of characters per amino acid. Use 1 for single-letter codes
+            (e.g., "MAK") or 3 for three-letter codes (e.g., "Met Ala Lys").
+        aa_separator : str, default=" "
+            Separator between amino acids when chars_per_aa=3. Ignored when
+            chars_per_aa=1.
+        """
         gen_kwargs = {
             "seqs_only": False,
             "report_design_cards": True,
@@ -267,6 +279,26 @@ class ProteinPool(StateOpsMixin):
                     from .utils.style_utils import SeqStyle
 
                     inline_styles = row.get("_inline_styles", SeqStyle.empty(0))
+
+                    # Convert to 3-letter if requested
+                    if chars_per_aa == 3:
+                        from .utils.protein_seq import (
+                            map_style_positions_to_three_letter,
+                            to_three_letter,
+                        )
+
+                        # Map style positions before converting sequence
+                        if inline_styles is not None and inline_styles.style_list:
+                            new_style_list = []
+                            for spec, positions in inline_styles.style_list:
+                                new_positions = map_style_positions_to_three_letter(
+                                    positions, len(seq), separator=aa_separator
+                                )
+                                new_style_list.append((spec, new_positions))
+                            three_letter_seq = to_three_letter(seq, separator=aa_separator)
+                            inline_styles = SeqStyle(new_style_list, len(three_letter_seq))
+                        seq = to_three_letter(seq, separator=aa_separator)
+
                     if inline_styles is not None:
                         seq = inline_styles.apply(seq)
                     row_parts.append(seq)

@@ -63,8 +63,8 @@ class PassthroughOp(Operation):
         """Pass through the parent sequence unchanged."""
         return parents[0], {}
 
-    def compute_name_contributions(self, global_state=None) -> list[str]:
+    def compute_name_contributions(self, global_state=None, max_global_state=None) -> list[str]:
         """Return custom name contributions if _name_fn is set."""
         if self._name_fn is not None:
             return self._name_fn()
-        return super().compute_name_contributions(global_state)
+        return super().compute_name_contributions(global_state, max_global_state)

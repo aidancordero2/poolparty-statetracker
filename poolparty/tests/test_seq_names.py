@@ -1,5 +1,7 @@
 """Integration tests for sequence name construction through DAG execution."""
 
+import re
+
 import poolparty as pp
 
 
@@ -10,9 +12,11 @@ def test_simple_operation_naming():
 
     df = pool.generate_library(num_cycles=1)
 
-    # Check that names follow the pattern: mut_0, mut_1, mut_2, ...
+    # Check that names follow the pattern: mut_00, mut_01, mut_02, ... (zero-padded)
     for idx, name in enumerate(df["name"]):
-        assert name == f"mut_{idx}", f"Expected 'mut_{idx}', got '{name}'"
+        # Match mut_ followed by zero-padded number
+        pattern = rf"^mut_0*{idx}$"
+        assert re.match(pattern, name), f"Expected name matching 'mut_{{zero-padded idx}}', got '{name}'"
 
     # Verify no duplicate segments
     for name in df["name"]:
@@ -358,10 +362,12 @@ def test_fixed_and_variable_ops_prefix():
 
     df = pool.generate_library(num_cycles=1)
 
-    # Names should be like: bg.mut_0.upper, bg.mut_1.upper, ...
+    # Names should be like: bg.mut_00.upper, bg.mut_01.upper, ... (zero-padded)
     for idx, name in enumerate(df["name"]):
         assert "bg" in name, f"Name should contain 'bg': {name}"
-        assert f"mut_{idx}" in name, f"Name should contain 'mut_{idx}': {name}"
+        # Match mut_ followed by zero-padded number
+        pattern = rf"mut_0*{idx}(?:\D|$)"
+        assert re.search(pattern, name), f"Name should contain 'mut_' with index {idx}: {name}"
         assert "upper" in name, f"Name should contain 'upper': {name}"
 
 

@@ -2,11 +2,78 @@
 
 from dataclasses import dataclass
 
+import numpy as np
+
 from .seq import Seq, _NOT_COMPUTED
 from .style_utils import SeqStyle, styles_suppressed
 
 # Valid amino acid characters (single-letter codes + stop codon)
 VALID_PROTEIN_CHARS = frozenset("ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy*")
+
+# 1-letter to 3-letter amino acid code mapping
+AA_THREE_LETTER = {
+    "A": "Ala", "C": "Cys", "D": "Asp", "E": "Glu", "F": "Phe",
+    "G": "Gly", "H": "His", "I": "Ile", "K": "Lys", "L": "Leu",
+    "M": "Met", "N": "Asn", "P": "Pro", "Q": "Gln", "R": "Arg",
+    "S": "Ser", "T": "Thr", "V": "Val", "W": "Trp", "Y": "Tyr",
+    "*": "***",  # Stop codon
+    # Lowercase versions
+    "a": "ala", "c": "cys", "d": "asp", "e": "glu", "f": "phe",
+    "g": "gly", "h": "his", "i": "ile", "k": "lys", "l": "leu",
+    "m": "met", "n": "asn", "p": "pro", "q": "gln", "r": "arg",
+    "s": "ser", "t": "thr", "v": "val", "w": "trp", "y": "tyr",
+}
+
+
+def to_three_letter(seq: str, separator: str = "-") -> str:
+    """Convert 1-letter amino acid sequence to 3-letter format.
+
+    Parameters
+    ----------
+    seq : str
+        Protein sequence in 1-letter codes.
+    separator : str, default="-"
+        Separator between 3-letter codes.
+
+    Returns
+    -------
+    str
+        Sequence in 3-letter format (e.g., "Met-Ala-Lys").
+    """
+    codes = [AA_THREE_LETTER.get(aa, "???") for aa in seq]
+    return separator.join(codes)
+
+
+def map_style_positions_to_three_letter(
+    positions: np.ndarray,
+    seq_len: int,
+    separator: str = "-",
+) -> np.ndarray:
+    """Map 1-letter style positions to 3-letter positions.
+
+    Each amino acid at position i in the 1-letter sequence maps to positions
+    covering the 3-letter code in the expanded sequence.
+
+    Parameters
+    ----------
+    positions : np.ndarray
+        Style positions in 1-letter sequence coordinates.
+    seq_len : int
+        Length of the 1-letter sequence.
+    separator : str, default="-"
+        Separator used between 3-letter codes.
+
+    Returns
+    -------
+    np.ndarray
+        Mapped positions for the 3-letter sequence.
+    """
+    new_positions = []
+    sep_len = len(separator)
+    for pos in positions:
+        base = pos * (3 + sep_len)
+        new_positions.extend([base, base + 1, base + 2])
+    return np.array(new_positions, dtype=np.int64)
 
 
 @dataclass(frozen=True)
