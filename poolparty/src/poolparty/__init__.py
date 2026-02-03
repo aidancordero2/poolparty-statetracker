@@ -120,6 +120,23 @@ from .utils.dna_utils import BASES, COMPLEMENT, IGNORE_CHARS, IUPAC_TO_DNA, VALI
 # Import styling utilities
 from .utils.style_utils import print_named_colors
 
+# Import sequence property functions
+from .utils.seq_properties import (
+    calc_gc,
+    calc_complexity,
+    calc_dust,
+    has_homopolymer,
+    has_restriction_site,
+)
+
+# Import restriction enzyme data
+from .data.restriction_enzymes import (
+    ENZYME_SITES,
+    ENZYME_PRESETS,
+    get_enzyme_site,
+    get_preset_enzymes,
+)
+
 __all__ = [
     "__version__",
     "Party",
@@ -219,6 +236,17 @@ __all__ = [
     "replacement_multiscan",
     # Styling utilities
     "print_named_colors",
+    # Sequence property functions
+    "calc_gc",
+    "calc_complexity",
+    "calc_dust",
+    "has_homopolymer",
+    "has_restriction_site",
+    # Restriction enzyme data
+    "ENZYME_SITES",
+    "ENZYME_PRESETS",
+    "get_enzyme_site",
+    "get_preset_enzymes",
 ]
 
 # Re-export statetracker primitives for backward compatibility
