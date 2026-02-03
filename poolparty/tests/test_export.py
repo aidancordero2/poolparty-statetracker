@@ -97,9 +97,7 @@ class TestToFileCSV:
     def test_export_csv_chunked(self):
         """Test CSV export with chunking."""
         with pp.Party():
-            pool = pp.from_seqs(
-                ["ACGT", "TGCA", "GGCC", "AATT", "CCGG"], mode="sequential"
-            )
+            pool = pp.from_seqs(["ACGT", "TGCA", "GGCC", "AATT", "CCGG"], mode="sequential")
 
             with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
                 path = Path(f.name)
@@ -174,9 +172,7 @@ class TestToFileFASTA:
                 path = Path(f.name)
 
             try:
-                count = pool.to_file(
-                    path, file_type="fasta", num_seqs=1, line_width=60
-                )
+                count = pool.to_file(path, file_type="fasta", num_seqs=1, line_width=60)
 
                 assert count == 1
                 content = path.read_text()
@@ -198,9 +194,7 @@ class TestToFileFASTA:
                 path = Path(f.name)
 
             try:
-                count = pool.to_file(
-                    path, file_type="fasta", num_seqs=1, line_width=None
-                )
+                count = pool.to_file(path, file_type="fasta", num_seqs=1, line_width=None)
 
                 assert count == 1
                 content = path.read_text()
@@ -264,9 +258,7 @@ class TestToFileFASTA:
                 path = Path(f.name)
 
             try:
-                count = pool.to_file(
-                    path, file_type="fasta", num_seqs=1, write_tags=False
-                )
+                count = pool.to_file(path, file_type="fasta", num_seqs=1, write_tags=False)
 
                 assert count == 1
                 content = path.read_text()
@@ -331,9 +323,7 @@ class TestToFileJSONL:
                 path = Path(f.name)
 
             try:
-                count = pool.to_file(
-                    path, file_type="jsonl", num_seqs=1, write_tags=False
-                )
+                count = pool.to_file(path, file_type="jsonl", num_seqs=1, write_tags=False)
 
                 assert count == 1
                 content = path.read_text()
@@ -390,9 +380,7 @@ class TestToFileStreaming:
 
             try:
                 # Export with small chunks
-                count = pool.to_file(
-                    path, file_type="csv", num_seqs=50, chunk_size=10
-                )
+                count = pool.to_file(path, file_type="csv", num_seqs=50, chunk_size=10)
 
                 assert count == 50
                 content = path.read_text()
@@ -411,9 +399,7 @@ class TestToFileStreaming:
                 path = Path(f.name)
 
             try:
-                count = pool.to_file(
-                    path, file_type="fasta", num_seqs=50, chunk_size=10
-                )
+                count = pool.to_file(path, file_type="fasta", num_seqs=50, chunk_size=10)
 
                 assert count == 50
                 content = path.read_text()

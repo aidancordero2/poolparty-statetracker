@@ -5,8 +5,7 @@ import json
 import re
 from pathlib import Path
 
-from ..types import Callable, Integral, Literal, Optional, Pool_type, Real, Union
-
+from ..types import Callable, Integral, Literal, Optional, Union
 
 # Regex to strip region tags from sequences
 _TAG_PATTERN = re.compile(r"</?[^>]+>")
