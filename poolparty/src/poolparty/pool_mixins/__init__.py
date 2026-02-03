@@ -7,6 +7,7 @@ from .common_ops_mixin import CommonOpsMixin
 
 # Sequence-type specific mixins
 from .dna_mixin import DnaMixin
+from .export_mixin import ExportMixin
 from .filter_mixin import FilterMixin
 from .fixed_ops_mixin import FixedOpsMixin
 from .generic_fixed_ops_mixin import GenericFixedOpsMixin
@@ -25,6 +26,7 @@ __all__ = [
     "RegionOpsMixin",
     # Sequence-type specific mixins
     "DnaMixin",
+    "ExportMixin",
     "FilterMixin",
     "ProteinMixin",
     # Legacy (deprecated)
