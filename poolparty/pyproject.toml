@@ -46,7 +46,7 @@ docs = [
 [project.urls]
 Homepage = "https://github.com/aidancordero2/poolparty-statecounter"
 Documentation = "https://aidancordero2-poolparty.readthedocs.io"
-Repository = "https://github.com/aidancordero2-poolparty-statecounter/tree/main/poolparty"
+Repository = "https://github.com/aidancordero2/poolparty-statecounter/tree/main/poolparty"
 Issues = "https://github.com/aidancordero2/poolparty-statecounter/issues"
 
 [tool.setuptools.packages.find]
