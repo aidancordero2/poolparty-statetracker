@@ -3,8 +3,8 @@
 import os
 import sys
 
-# Add the package source to the path for autodoc
-sys.path.insert(0, os.path.abspath("../src"))
+# Add the package source to the path for autodoc (path relative to this file so RTD works)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 
 # -- Project information -----------------------------------------------------
 project = "StateCounter"

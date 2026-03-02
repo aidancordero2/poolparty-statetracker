@@ -10,18 +10,19 @@ build:
     python: "3.11"
 
 # Build documentation in the "docs/" directory with Sphinx
+# Path is relative to repository root (use statetracker/docs/conf.py when config is in subdir)
 sphinx:
-  configuration: docs/conf.py
+  configuration: statetracker/docs/conf.py
 
 # Optionally build your docs in additional formats such as PDF and ePub
 formats:
   - pdf
 
 # Optional but recommended, declare the Python requirements required
-# to build your documentation
+# to build your documentation. Path is relative to repository root.
 python:
   install:
     - method: pip
-      path: .
+      path: statetracker
       extra_requirements:
         - docs
