@@ -10,22 +10,21 @@ build:
     python: "3.11"
 
 # Build documentation in the "docs/" directory with Sphinx
-# Path is relative to repository root (use poolparty/docs/conf.py when config is in subdir)
+# Paths are relative to this config file's directory (poolparty/).
 sphinx:
-  configuration: poolparty/docs/conf.py
+  configuration: docs/conf.py
 
 # Optionally build your docs in additional formats such as PDF and ePub
 formats:
   - pdf
 
-# Optional but recommended, declare the Python requirements required
-# to build your documentation. Path is relative to repository root.
-# Install statetracker first (same repo, not on PyPI), then poolparty.
+# Install statetracker first (same repo, not on PyPI), then this package.
+# Paths are relative to this config file's directory (poolparty/).
 python:
   install:
     - method: pip
-      path: statetracker
+      path: ../statetracker
     - method: pip
-      path: poolparty
+      path: .
       extra_requirements:
         - docs
