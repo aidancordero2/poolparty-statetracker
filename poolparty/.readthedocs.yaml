@@ -1,3 +1,4 @@
+
 # Read the Docs configuration file for PoolParty
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 
@@ -10,21 +11,22 @@ build:
     python: "3.11"
 
 # Build documentation in the "docs/" directory with Sphinx
-# Paths are relative to this config file's directory (poolparty/).
+# Path is relative to repository root (use poolparty/docs/conf.py when config is in subdir)
 sphinx:
-  configuration: docs/conf.py
+  configuration: poolparty/docs/conf.py
 
 # Optionally build your docs in additional formats such as PDF and ePub
 formats:
   - pdf
 
-# Install statetracker first (same repo, not on PyPI), then this package.
-# Paths are relative to this config file's directory (poolparty/).
+# Optional but recommended, declare the Python requirements required
+# to build your documentation. Path is relative to repository root.
+# Install statetracker first (same repo, not on PyPI), then poolparty.
 python:
   install:
     - method: pip
-      path: ../statetracker
+      path: statetracker
     - method: pip
-      path: .
+      path: poolparty
       extra_requirements:
         - docs
