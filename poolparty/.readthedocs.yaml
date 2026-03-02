@@ -20,8 +20,11 @@ formats:
 
 # Optional but recommended, declare the Python requirements required
 # to build your documentation. Path is relative to repository root.
+# Install statetracker first (same repo, not on PyPI), then poolparty.
 python:
   install:
+    - method: pip
+      path: statetracker
     - method: pip
       path: poolparty
       extra_requirements:
