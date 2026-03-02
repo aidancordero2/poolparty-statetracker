@@ -139,6 +139,7 @@ Contents
    :caption: Reference
 
    api
+   BUILD
 
 Indices and Tables
 ==================

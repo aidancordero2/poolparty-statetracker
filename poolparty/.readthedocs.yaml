@@ -21,10 +21,6 @@ formats:
 # to build your documentation
 python:
   install:
-    # Install statetracker first (dependency)
-    - method: pip
-      path: ../statetracker
-    # Install poolparty with docs extras
     - method: pip
       path: .
       extra_requirements:
